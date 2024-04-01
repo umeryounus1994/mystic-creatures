@@ -16,7 +16,7 @@ router.post(
   checkAdminUserAuth,
   questController.createQuestQuiz
 );
-router.get("/get_all", checkAdminUserAuth, questController.getQuests);
+router.get("/get_all", questController.getQuests);
 router.get("/unlock_quest", checkAdminUserAuth, questController.unlockQuestForUser);
 
 module.exports = router;
