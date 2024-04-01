@@ -9,14 +9,11 @@
   ],
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
-    "build": "webpack --mode development",
-    "start:prod": "node dist/server.js"
-  },
-  "engines": {
-    "node": "16.x"
-  },
+		"start": "node app.js"
+	},
+	"engines": {
+		"node": "16.x"
+	},
   "imports": {
     ".": "app.js",
     "#src/*": "./src/*",
