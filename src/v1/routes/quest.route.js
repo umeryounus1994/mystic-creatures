@@ -5,6 +5,9 @@ const questController = require("../controllers/quest.controller");
 const {
   checkAdminUserAuth,
 } = require("../../../middlewares/authMiddlewareAdminPanel");
+const {
+  checkUserAuth,
+} = require("../../../middlewares/authMiddleware");
 
 router.post(
   "/createQuest",
@@ -17,6 +20,8 @@ router.post(
   questController.createQuestQuiz
 );
 router.get("/get_all", questController.getQuests);
-router.get("/unlock_quest", checkAdminUserAuth, questController.unlockQuestForUser);
+router.post("/unlock_quest", checkUserAuth, questController.unlockQuestForUser);
+router.get("/get_player_quest/:status", checkUserAuth, questController.getPlayerQuests);
+router.get("/get_quest_by_id/:id", checkUserAuth, questController.getQuestById);
 
 module.exports = router;

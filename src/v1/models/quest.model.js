@@ -11,6 +11,7 @@ const questSchema = new mongoose.Schema(
         no_of_crypes: { type: Number, default: 0 },
         mythica: { type: String },
         mythica_model: { type: String },
+        quest_image: {type: String, default: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg'},
         status: {
             type: String,
             enum: ["active", "deleted"],
