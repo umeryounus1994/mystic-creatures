@@ -14,6 +14,10 @@ const userQuestsSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'User'
         },
+        submitted_answer: {
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'QuestQuiz'
+        }
     },
     {
         timestamps: {

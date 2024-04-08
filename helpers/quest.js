@@ -19,6 +19,7 @@ module.exports.getAllQuests = async function (data) {
                         no_of_xp: element.no_of_xp,
                         no_of_crypes : element.no_of_crypes,
                         mythica: element.mythica,
+                        level_increase: element.level_increase,
                         mythica_model: element.mythica_model,
                         status: element.status,
                         options: findQuestQuiz,

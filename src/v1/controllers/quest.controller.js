@@ -7,6 +7,7 @@ const QuestModel = require("../models/quest.model");
 const QuestQuizModel = require("../models/questquiz.model");
 const UserQuestModel = require("../models/userquest.model");
 var questHelper = require("../../../helpers/quest");
+const userModel = require("../models/user.model");
 
 const createQuest = async (req, res, next) => {
   try {
@@ -149,6 +150,71 @@ const getQuestById = async (req, res, next) => {
   }
 };
 
+const completeQuest = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const user_answer = req.body.user_answer;
+    if(!user_answer) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Answer is required"
+      );
+    }
+
+    const quest = await QuestModel.findOne({_id: new ObjectId(id)});
+    if(!quest){
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest not found"
+      );
+    }
+    const questOption = await QuestQuizModel.findOne({_id: new ObjectId(user_answer), quest_id: new ObjectId(id)});
+    if(!questOption){
+      return apiResponse.ErrorResponse(
+        res,
+        "No Option found"
+      );
+    }
+    const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(id)});
+    if(!userQuest){
+      return apiResponse.ErrorResponse(
+        res,
+        "Please add quest to user first"
+      );
+    }
+    if(userQuest?.status == 'completed'){
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest already completed"
+      );
+    }
+    await UserQuestModel.findOneAndUpdate(
+      { quest_id: id, user_id: req.user.id },
+      {
+        submitted_answer: user_answer,
+        status: 'completed'
+      },
+      { upsert: true, new: true }
+    );
+    const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
+    let current_xp = parseInt(user.current_xp) + parseInt(quest?.no_of_xp);
+    let current_level = parseInt(user.current_level) + parseInt(quest?.level_increase);
+    await userModel.findOneAndUpdate(
+      { _id: req.user.id },
+      {
+        current_xp: current_xp,
+        current_level: current_level
+      },
+      { upsert: true, new: true }
+    );
+    return apiResponse.successResponse(
+      res,
+      "Quest completed"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 module.exports = {
@@ -157,5 +223,6 @@ module.exports = {
   getQuests,
   unlockQuestForUser,
   getPlayerQuests,
-  getQuestById
+  getQuestById,
+  completeQuest
 };
