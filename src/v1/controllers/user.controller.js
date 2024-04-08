@@ -8,12 +8,14 @@ const {
   verifyToken,
 } = require("../../../middlewares/authMiddleware");
 const UserModel = require("../models/user.model");
+const UserPasswordResetModel = require("../models/userReset.model");
 const {
   getPagination,
   softDelete,
   totalItems,
   hashPassord,
 } = require("../../../helpers/commonApis");
+const { sendEmail } = require("../../../helpers/emailSender");
 
 
 const createUser = async (req, res, next) => {
@@ -364,6 +366,106 @@ const refreshTokenUser = async (req, res, next) => {
   }
 };
 
+const sendUserPasswordResetEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (email) {
+      const user = await UserModel.findOne({ email });
+      if (user) {
+        const passwordReset = await UserPasswordResetModel.create({
+          user_id: user?.id,
+        });
+        const emailBody = `Hey ${user.full_name},
+        <br>Follow the link below to enter a new password for your Support account:
+        <br><a href=${process.env.ORG_DOMAIN_URL}/reset-password/${passwordReset.id} target="_blank">${process.env.ORG_DOMAIN_URL}/reset-password/${passwordReset.id}</a>
+        <br><br>With best regards,
+        <br>Team Mystic Creatures`;
+        sendEmail(user.email, "Reset your password", emailBody);
+        // await sendPasswordResetEmail(user.email, { user, link }, res);
+
+        return apiResponse.successResponse(
+          res,
+          "Password Reset Email Sent... Please Check Your Email"
+        );
+      }
+      return apiResponse.notFoundResponse(
+        res,
+        "Email doesn't exists"
+      );
+    }
+    return apiResponse.ErrorResponse(
+      res,
+      "Email Field is Required"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getResetPasswordRequestDetails = async (req, res, next) => {
+  try {
+    const requestId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(requestId)) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Validation Error",
+        "Invalid Data"
+      );
+    }
+
+    const requestDetail = await UserPasswordResetModel.findById(
+      requestId
+    ).select("-user_id");
+    if (!requestDetail) {
+      return apiResponse.ErrorResponse(res, "Link Expired");
+    }
+    return apiResponse.successResponseWithData(
+      res,
+      "Detail Fetched",
+      requestDetail
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const changeUserPassword = async (req, res, next) => {
+  try {
+    const { password, request_id } = req.body;
+    if (!password) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Password is Required"
+      );
+    }
+    if (!request_id) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Request is invalid"
+      );
+    }
+    const requestDetail = await UserPasswordResetModel.findById(
+      request_id
+    );
+    if (!requestDetail) {
+      return apiResponse.ErrorResponse(res, "Link Expired");
+    }
+    const salt = await bcrypt.genSalt(10);
+    const newHashPassword = await bcrypt.hash(password, salt);
+    await UserModel.findByIdAndUpdate(requestDetail.user_id, {
+      $set: { password: newHashPassword },
+    });
+    await UserPasswordResetModel.findByIdAndDelete(request_id);
+
+    return apiResponse.successResponse(
+      res,
+      "Password reset succesfully"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 
 module.exports = {
@@ -375,5 +477,8 @@ module.exports = {
   totalUsers,
   loginUser,
   refreshTokenUser,
-  logout
+  logout,
+  sendUserPasswordResetEmail,
+  getResetPasswordRequestDetails,
+  changeUserPassword
 };

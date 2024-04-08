@@ -9,6 +9,10 @@ const {
 } = require("../../../middlewares/authMiddlewareAdminPanel");
 const { checkAuthGuard } = require("../../../middlewares/authGuard");
 const Roles = require("../../../utils/roles");
+const {
+  passwordValidation,
+  validateRequest,
+} = require("./authValidation/authValidation");
 
 router.post(
   "/signup",
@@ -37,6 +41,20 @@ router.patch(
   mediaUpload.single("picture"),
   userController.updateUser
 );
-// router.delete("/:id", userController.deleteUser);
+router.post(
+  "/send-reset-password-email",
+  userController.sendUserPasswordResetEmail
+);
+router.get(
+  "/reset-password-request-details/:id",
+  userController.getResetPasswordRequestDetails
+);
+
+router.post(
+  "/change-password",
+  passwordValidation,
+  validateRequest,
+  userController.changeUserPassword
+);
 
 module.exports = router;

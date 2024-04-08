@@ -19,7 +19,6 @@ const validateRequest = (req, res, next) => {
 
   return apiResponse.validationErrorWithData(
     res,
-    "Passordvalidering mislyktes",
     "Password validation failed",
     "Invalid Data"
   );

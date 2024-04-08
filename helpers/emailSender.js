@@ -32,10 +32,10 @@ module.exports.sendEmail = (toEmail, emailSubject, emailBody) => {
   sgMail
     .send({
       to: toEmail,
-      from: { name: "Stotte", email: "tech@stotte.no" },
+      from: { name: "Mystic Creatures", email: "tech@stotte.no" },
       subject: emailSubject,
       text: emailBody,
-      html: `<img src="https://org.stotte.no/media/logos/SlogoNew.jpg" alt="stotte" width="50" height="50"> <br><br> ${emailBody}`,
+      html: `<br><br> ${emailBody}`,
     })
     .then(
       () => {},
@@ -53,7 +53,7 @@ module.exports.sendEmail = (toEmail, emailSubject, emailBody) => {
 module.exports.sendTemplate = (to, from, templateId, dynamic_template_data) => {
   const msg = {
     to,
-    from: { name: "Stotte", email: from },
+    from: { name: "Mystic Creatures", email: from },
     templateId,
     dynamic_template_data,
   };
