@@ -14,7 +14,7 @@ const createQuest = async (req, res, next) => {
     const { ...itemDetails } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return apiResponse.validationErrorWithData(
+      return apiResponse.ErrorResponse(
         res,
         "Invalid Data"
       );
@@ -43,7 +43,7 @@ const createQuestQuiz = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return apiResponse.validationErrorWithData(
+      return apiResponse.ErrorResponse(
         res,
         "Invalid Data"
       );
@@ -89,6 +89,13 @@ const unlockQuestForUser = async (req, res, next) => {
       return apiResponse.ErrorResponse(
         res,
         "Quest already unlocked for this user"
+      );
+    }
+    const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: 'draft'});
+    if(findDraftQuests.length > 0){
+      return apiResponse.ErrorResponse(
+        res,
+        "Complete previous quest to unlock new"
       );
     }
     const itemToAdd = {
@@ -142,7 +149,7 @@ const getQuestById = async (req, res, next) => {
 
     const quest = await QuestModel.findOne({_id: new ObjectId(id)});
     if(!quest){
-      return apiResponse.validationErrorWithData(
+      return apiResponse.ErrorResponse(
         res,
         "Quest not found"
       );
