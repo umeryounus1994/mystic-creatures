@@ -45,12 +45,20 @@ module.exports.getAllPlayerQuests = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var findQuest = await QuestModel.findOne({quest_id: new ObjectID(element.quest_id)})
+                    var findQuestQuiz = await QuestQuizModel.find({quest_id: new ObjectID(element.quest_id)})
                     var el ={}
                     var el ={
                         id: findQuest._id,
                         quest_question : findQuest.quest_question,
                         status: element.status,
-                        quest_image: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg'
+                        quest_image: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg',
+                        qr_code: findQuest.qr_code,
+                        no_of_xp: findQuest.no_of_xp,
+                        no_of_crypes : findQuest.no_of_crypes,
+                        mythica: findQuest.mythica,
+                        level_increase: findQuest.level_increase,
+                        mythica_model: findQuest.mythica_model,
+                        options: findQuestQuiz
                     }
                     result.push(el)
                     resolvve(result);

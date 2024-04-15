@@ -84,6 +84,13 @@ const unlockQuestForUser = async (req, res, next) => {
         "Not found!"
       );
     }
+    const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(quest?._id)});
+    if(userQuest){
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest already unlocked for this user"
+      );
+    }
     const itemToAdd = {
       user_id: req.user._id,
       quest_id: quest?._id

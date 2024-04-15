@@ -376,7 +376,7 @@ const sendUserPasswordResetEmail = async (req, res, next) => {
           user_id: user?.id,
         });
         const emailBody = `Hey ${user.full_name},
-        <br>Follow the link below to enter a new password for your Support account:
+        <br>Follow the link below to enter a new password for your account:
         <br><a href=${process.env.ORG_DOMAIN_URL}/reset-password/${passwordReset.id} target="_blank">${process.env.ORG_DOMAIN_URL}/reset-password/${passwordReset.id}</a>
         <br><br>With best regards,
         <br>Team Mystic Creatures`;
