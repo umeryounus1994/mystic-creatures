@@ -47,3 +47,34 @@ module.exports.getAllMissions = async function (data, latitude, longitude) {
         })
     })
 }
+
+module.exports.getSingleMission = async function (data) {
+    var findMissionQuiz = await MissionQuizModel.find({mission_id: new ObjectID(data._id)})
+    var quizPromises = findMissionQuiz.map(async (quiz) => {
+        var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(data?._id) });
+        var simplifiedOptions = options.map(option => ({
+            _id: option.id,
+            answer: option.answer,
+            correct_option: option.correct_option
+        }));
+        return {
+            ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
+            options: simplifiedOptions
+        };
+    });
+    var quizzesWithOptions = await Promise.all(quizPromises);
+    var el ={
+        id: data._id,
+        mission_title : data.mission_title,
+        no_of_xp: data.no_of_xp,
+        no_of_crypes: data.no_of_crypes,
+        level_increase : data.level_increase,
+        mythica: data.mythica,
+        mythica_ar_model: data.mythica_ar_model,
+        status: data.status,
+        mission_image: data.mission_image,
+        quiz: quizzesWithOptions
+    }
+    // const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
+    return el;
+}

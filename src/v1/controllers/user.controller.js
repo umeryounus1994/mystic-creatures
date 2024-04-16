@@ -266,19 +266,11 @@ const loginUser = async (req, res, next) => {
       process.env.JWT_AUTH_TOKEN_EXPIRE
     );
 
-    // Generate JWT Refresh Token
-    const refreshToken = await generateToken(
-      { id: user.id, role: "app" },
-      process.env.JWT_SECRET_KEY_REFRESH_TOKEN,
-      process.env.JWT_REFRESH_TOKEN_EXPIRE
-    );
-
     user.access_token = token;
-    user.refresh_token = refreshToken;
     await user.save();
 
     user.password = undefined;
-    res.set("Authorization", `Bearer ${refreshToken}`);
+    res.set("Authorization", `Bearer ${token}`);
 
     return apiResponse.successResponseWithData(
       res,
@@ -292,79 +284,6 @@ const loginUser = async (req, res, next) => {
   }
 };
 
-const refreshTokenUser = async (req, res, next) => {
-  try {
-    const authorization =
-      req.headers.Authorization || req.headers.authorization;
-
-    if (authorization && authorization.startsWith("Bearer")) {
-      const token = authorization.split(" ")[1];
-
-      if (!token) {
-        return apiResponse.JwtErrorResponse(
-          res,
-          "Ugyldig token",
-          "Invalid Token"
-        );
-      }
-      const decodedPayload = await verifyToken(
-        token,
-        process.env.JWT_SECRET_KEY_REFRESH_TOKEN
-      );
-
-      if (decodedPayload && decodedPayload.id) {
-        const user = await UserModel.findOne({
-          _id: decodedPayload.id,
-          refresh_token: token,
-        }).exec();
-        if (!user) {
-          return apiResponse.JwtErrorResponse(
-            res,
-            "Ugyldig token / utløpt token",
-            "Invalid Token / Expired Token"
-          );
-        }
-
-        const newToken = await generateToken(
-          { id: user.id, user_type: "", role: "app" },
-          process.env.JWT_SECRET_KEY,
-          process.env.JWT_AUTH_TOKEN_EXPIRE
-        );
-        user.access_token = newToken;
-        await user.save();
-        // res.set("Authorization", `Bearer ${newToken}`);
-        user.password = undefined;
-        user.ip_address = undefined;
-        user.access_token = undefined;
-        user.refresh_token = undefined;
-        user.session_id = undefined;
-        user.bank_name = undefined;
-        user.account_id = undefined;
-        user.agreement_id = undefined;
-        user.bank_account = undefined;
-        user.bank_connection_list = undefined;
-        user.push_token = undefined;
-
-        return apiResponse.successResponseWithData(
-          res,
-          "Oppdatert token",
-          "Updated Token",
-          {
-            access_token: newToken,
-            user,
-          }
-        );
-      }
-      return apiResponse.JwtErrorResponse(
-        res,
-        "Ugyldig token bestått",
-        "Invalid Token Passed"
-      );
-    }
-  } catch (err) {
-    next(err);
-  }
-};
 
 const sendUserPasswordResetEmail = async (req, res, next) => {
   try {
@@ -476,7 +395,6 @@ module.exports = {
   deleteUser,
   totalUsers,
   loginUser,
-  refreshTokenUser,
   logout,
   sendUserPasswordResetEmail,
   getResetPasswordRequestDetails,

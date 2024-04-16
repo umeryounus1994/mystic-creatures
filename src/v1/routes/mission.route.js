@@ -20,6 +20,7 @@ router.post(
   missionController.createMissionQuiz
 );
 router.post("/get_all", missionController.getMissions);
+router.get("/get_mission_by_id/:id", checkUserAuth, missionController.getMissionById);
 // router.post("/start_mission", checkUserAuth, missionController.startMission);
 
 module.exports = router;

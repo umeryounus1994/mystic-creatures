@@ -21,7 +21,6 @@ router.post(
 );
 router.get("/get_all", checkAdminUserAuth, userController.getUsers);
 router.post("/login", userController.loginUser);
-router.get("/refresh_token", userController.refreshTokenUser);
 router.get(
   "/logout",
   checkUserAuth,

@@ -117,6 +117,27 @@ const getMissions = async (req, res, next) => {
       next(err);
     }
   };
+
+  const getMissionById = async (req, res, next) => {
+    try {
+      const id = req.params.id;
+  
+      const mission = await MissionModel.findOne({_id: new ObjectId(id)});
+      if(!mission){
+        return apiResponse.ErrorResponse(
+          res,
+          "Mission not found"
+        );
+      }
+      return res.json({
+        status: true,
+        message: "Data Found",
+        data: await missionHelper.getSingleMission(mission)
+      })
+    } catch (err) {
+      next(err);
+    }
+  };
   
 // const startMission = async (req, res, next) => {
 //     try {
@@ -164,7 +185,7 @@ const getMissions = async (req, res, next) => {
 //     } catch (err) {
 //       next(err);
 //     }
-//   };
+// };
 
 
 
@@ -172,5 +193,6 @@ module.exports = {
   createMission,
   createMissionQuiz,
   getMissions,
+  getMissionById
   //startMission
 };
