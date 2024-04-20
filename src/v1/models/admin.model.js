@@ -21,7 +21,6 @@ const adminSchema = new mongoose.Schema(
     image: { type: String, default: "" },
     user_type: { type: String, enum: ["admin", "manager"], default: "admin" },
     access_token: { type: String, default: "" },
-    refresh_token: { type: String, default: "" },
     status: {
       type: String,
       enum: ["active", "blocked", "pending_verification"],

@@ -52,20 +52,13 @@ const loginAdmin = async (req, res, next) => {
       process.env.JWT_AUTH_TOKEN_EXPIRE
     );
 
-    // Generate JWT Refresh Token
-    const refreshToken = await generateToken(
-      { id: user.id, user_type: user.user_type, role: "admin" },
-      process.env.JWT_SECRET_KEY_REFRESH_TOKEN,
-      process.env.JWT_REFRESH_TOKEN_EXPIRE
-    );
 
     user.last_login = new Date();
     user.access_token = token;
-    user.refresh_token = refreshToken;
     await user.save();
   
 
-    res.set("Authorization", `Bearer ${refreshToken}`);
+    res.set("Authorization", `Bearer ${token}`);
     user.password = undefined;
 
     return apiResponse.successResponseWithData(
@@ -81,51 +74,6 @@ const loginAdmin = async (req, res, next) => {
 };
 
 
-const logoutAdmin = async (req, res, next) => {
-  try {
-    // check refresh token from header and then decode it and save object in req.user
-    const authorization =
-      req.headers.Authorization || req.headers.authorization;
-    if (authorization && authorization.startsWith("Bearer")) {
-      const token = authorization.split(" ")[1];
-      if (!token) {
-        return apiResponse.ErrorResponse(res, "Invalid Token");
-      }
-      const decodedPayload = await verifyToken(
-        token,
-        process.env.JWT_SECRET_KEY_REFRESH_TOKEN
-      );
-      if (!decodedPayload || !decodedPayload.id) {
-        return apiResponse.ErrorResponse(
-          res,
-          "Invalid Token / Expired Token"
-        );
-      }
-      req.user = decodedPayload;
-    }
-    // eslint-disable-next-line prefer-const
-    let findParams = {
-      _id: new ObjectId(req.user.id),
-    };
-    // eslint-disable-next-line prefer-const
-    let user = await AdminModel.findOne(findParams).exec();
-    if (!user) {
-      return apiResponse.notFoundResponse(
-        res,
-        "Not found!"
-      );
-    }
-    user.access_token = "";
-    user.refresh_token = "";
-    user.save();
-    return apiResponse.successResponse(
-      res,
-      "User Logged out successfully"
-    );
-  } catch (err) {
-    next(err);
-  }
-};
 
 const createAdmin = async (req, res, next) => {
   try {
@@ -190,7 +138,6 @@ const getAdmin = async (req, res, next) => {
     user.password = undefined;
     user.ip_address = undefined;
     user.access_token = undefined;
-    user.refresh_token = undefined;
 
     return apiResponse.successResponseWithData(
       res,
@@ -227,7 +174,6 @@ const getAdminById = async (req, res, next) => {
     user.password = undefined;
     user.ip_address = undefined;
     user.access_token = undefined;
-    user.refresh_token = undefined;
 
     return apiResponse.successResponseWithData(
       res,
@@ -331,7 +277,6 @@ const updateProfile = async (req, res, next) => {
     updatedAdmin.password = undefined;
     updatedAdmin.ip_address = undefined;
     updatedAdmin.access_token = undefined;
-    updatedAdmin.refresh_token = undefined;
 
     return apiResponse.successResponseWithData(
       res,
@@ -396,7 +341,6 @@ const updateAdmin = async (req, res, next) => {
     updatedAdmin.password = undefined;
     updatedAdmin.ip_address = undefined;
     updatedAdmin.access_token = undefined;
-    updatedAdmin.refresh_token = undefined;
 
     return apiResponse.successResponseWithData(
       res,
@@ -445,70 +389,6 @@ const userPasswordReset = async (req, res, next) => {
   }
 };
 
-const refreshingToken = async (req, res, next) => {
-  try {
-    const authorization =
-      req.headers.Authorization || req.headers.authorization;
-
-    if (authorization && authorization.startsWith("Bearer")) {
-      const token = authorization.split(" ")[1];
-
-      if (!token) {
-        return apiResponse.ErrorResponse(res, "Ugyldig token", "Invalid Token");
-      }
-      const decodedPayload = await verifyToken(
-        token,
-        process.env.JWT_SECRET_KEY_REFRESH_TOKEN
-      );
-
-      if (decodedPayload && decodedPayload.id) {
-        const user = await AdminModel.findOne({
-          _id: decodedPayload.id,
-          refresh_token: token,
-        }).exec();
-
-        if (!user) {
-          return apiResponse.ErrorResponse(
-            res,
-            "Ugyldig token / utløpt token",
-            "Invalid Token / Expired Token"
-          );
-        }
-
-        const newToken = await generateToken(
-          { id: user.id, user_type: user.user_type, role: "admin" },
-          process.env.JWT_SECRET_KEY,
-          process.env.JWT_AUTH_TOKEN_EXPIRE
-        );
-        user.access_token = newToken;
-        await user.save();
-        user.password = undefined;
-        user.ip_address = undefined;
-        user.access_token = undefined;
-        user.refresh_token = undefined;
-        // res.set("Authorization", `Bearer ${newToken}`);
-
-        return apiResponse.successResponseWithData(
-          res,
-          "Oppdatert token",
-          "Updated Token",
-          {
-            access_token: newToken,
-            user,
-          }
-        );
-      }
-      return apiResponse.ErrorResponse(
-        res,
-        "Ugyldig token bestått",
-        "Invalid Token Passed"
-      );
-    }
-  } catch (err) {
-    next(err);
-  }
-};
-
 const loggedUser = async (req, res, next) => {
   try {
     if (req.user) {
@@ -530,7 +410,6 @@ const loggedUser = async (req, res, next) => {
 
 module.exports = {
   loginAdmin,
-  logoutAdmin,
   createAdmin,
   getAdmins,
   getAdmin,
@@ -539,6 +418,5 @@ module.exports = {
   updateAdmin,
   deleteAdmin,
   userPasswordReset,
-  refreshingToken,
   loggedUser
 };

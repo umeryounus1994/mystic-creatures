@@ -82,7 +82,6 @@ const getUser = async (req, res, next) => {
     user.password = undefined;
     user.ip_address = undefined;
     user.access_token = undefined;
-    user.refresh_token = undefined;
     user.session_id = undefined;
     user.bank_name = undefined;
     user.account_id = undefined;
@@ -172,7 +171,6 @@ const updateUser = async (req, res, next) => {
     updatedUser.password = undefined;
     updatedUser.ip_address = undefined;
     updatedUser.access_token = undefined;
-    updatedUser.refresh_token = undefined;
     updatedUser.session_id = undefined;
     updatedUser.bank_name = undefined;
     updatedUser.account_id = undefined;
@@ -267,6 +265,7 @@ const loginUser = async (req, res, next) => {
     );
 
     user.access_token = token;
+   
     await user.save();
 
     user.password = undefined;

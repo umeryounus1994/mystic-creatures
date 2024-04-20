@@ -21,7 +21,6 @@ router.post(
   adminController.createAdmin
 );
 router.post("/login", adminController.loginAdmin);
-router.get("/logout", adminController.logoutAdmin);
 router.patch(
   "/update_profile/:id",
   checkAdminUserAuth,
@@ -49,8 +48,6 @@ router.get(
   checkAuthGuard(Roles.Admin),
   adminController.getAdmins
 );
-// router.post("/reset-password/:id/:token", checkAdminUserAuth, adminController.userPasswordReset);
-router.get("/refresh-token", adminController.refreshingToken);
 
 router.get(
   "/loggeduser",

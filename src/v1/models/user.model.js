@@ -23,7 +23,6 @@ const userSchema = new mongoose.Schema(
     },
     image: { type: String, default: "" },
     access_token: { type: String, default: "" },
-    refresh_token: { type: String, default: "" },
     current_level: { type: Number, default: 0 },
     current_xp: { type: Number, default: 0 },
     status: {

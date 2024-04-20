@@ -13,6 +13,10 @@ const transactionsSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'Quest'
         },
+        mission_id: {
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'Mission'
+        },
         no_of_xp: { type: Number, default: 0 },
         no_of_crypes: { type: Number, default: 0 },
         level_increase: { type: Number, default: 0 },
