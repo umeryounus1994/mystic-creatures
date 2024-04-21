@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-restricted-syntax */
 const { ObjectId } = require("mongodb");
+const mongoose = require("mongoose");
 const { validationResult } = require("express-validator");
 const apiResponse = require("../../../helpers/apiResponse");
 const {
@@ -62,37 +63,25 @@ const createUser = async (req, res, next) => {
 const getUser = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    // if (!mongoose.Types.ObjectId.isValid(userId)) {
-    //   return apiResponse.validationErrorWithData(
-    //     res,
-    //     "Beklager, det oppstod en valideringsfeil.",
-    //     "Validation Error",
-    //     "Invalid Data"
-    //   );
-    // }
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Validation Error"
+      );
+    }
     const user = await UserModel.findById(userId).select("-password");
     if (!user) {
       return apiResponse.notFoundResponse(
         res,
-        "Beklager, vi finner ikke dataen du ser etter.",
         "Not found!"
       );
     }
     // remove extra fields from response
     user.password = undefined;
-    user.ip_address = undefined;
     user.access_token = undefined;
-    user.session_id = undefined;
-    user.bank_name = undefined;
-    user.account_id = undefined;
-    user.agreement_id = undefined;
-    user.bank_account = undefined;
-    user.bank_connection_list = undefined;
-    user.push_token = undefined;
 
     return apiResponse.successResponseWithData(
       res,
-      "Brukerdetaljer hentet",
       "User Details Fetched",
       user
     );
@@ -145,7 +134,6 @@ const updateUser = async (req, res, next) => {
     if (req.user.id !== req.params.id) {
       return apiResponse.ErrorResponse(
         res,
-        "Du har ikke tilgang til å oppdatere andre brukeres data",
         "You are not allowed to update other user's data"
       );
     }
@@ -169,19 +157,10 @@ const updateUser = async (req, res, next) => {
 
     // remove password extra fields from user object
     updatedUser.password = undefined;
-    updatedUser.ip_address = undefined;
     updatedUser.access_token = undefined;
-    updatedUser.session_id = undefined;
-    updatedUser.bank_name = undefined;
-    updatedUser.account_id = undefined;
-    updatedUser.agreement_id = undefined;
-    updatedUser.bank_account = undefined;
-    updatedUser.bank_connection_list = undefined;
-    updatedUser.push_token = undefined;
 
     return apiResponse.successResponseWithData(
       res,
-      "Brukerdetaljer oppdatert",
       "User Details Updated",
       updatedUser
     );

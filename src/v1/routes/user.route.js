@@ -24,19 +24,16 @@ router.post("/login", userController.loginUser);
 router.get(
   "/logout",
   checkUserAuth,
-  checkAuthGuard([Roles.User]),
   userController.logout
 );
 router.get(
   "/",
   checkUserAuth,
-  checkAuthGuard([Roles.User]),
   userController.getUser
 );
 router.patch(
   "/:id",
   checkUserAuth,
-  checkAuthGuard([Roles.User]),
   mediaUpload.single("picture"),
   userController.updateUser
 );
