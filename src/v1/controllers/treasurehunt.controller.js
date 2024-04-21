@@ -3,14 +3,14 @@
 const { ObjectId } = require("mongodb");
 const { validationResult } = require("express-validator");
 const apiResponse = require("../../../helpers/apiResponse");
-const MissionModel = require("../models/mission.model");
-const MissionQuizModel = require("../models/missionquiz.model");
-const MissionQuizOptionModel = require("../models/missionquizoption.model");
-const UserMissionModel = require("../models/usermission.model");
-var missionHelper = require("../../../helpers/mission");
+const TreasureHuntModel = require("../models/treasure.model");
+const TreasureHuntQuizModel = require("../models/treasurequiz.model");
+const TreasureHuntQuizOptionModel = require("../models/treasurequizoption.model");
+const UserTreasureHuntModel = require("../models/usertreasurehunt.model");
+var huntHelper = require("../../../helpers/hunt");
 const userModel = require("../models/user.model");
 
-const createMission = async (req, res, next) => {
+const createTreasureHunt = async (req, res, next) => {
   try {
     const { ...itemDetails } = req.body;
     const errors = validationResult(req);
@@ -20,7 +20,7 @@ const createMission = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    const createdItem = new MissionModel(itemDetails);
+    const createdItem = new TreasureHuntModel(itemDetails);
 
     createdItem.save(async (err) => {
       if (err) {
@@ -40,7 +40,7 @@ const createMission = async (req, res, next) => {
   }
 };
 
-const createMissionQuiz = async (req, res, next) => {
+const createTreasureHuntQuiz = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -49,22 +49,22 @@ const createMissionQuiz = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    var checkMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectId(req.body.mission_id) });
-    if (checkMissionQuiz.length == 3) {
+    var checkTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectId(req.body.treasure_hunt_id) });
+    if (checkTreasureHuntQuiz.length == 5) {
       return apiResponse.ErrorResponse(
         res,
-        "Maximum 3 Quizez can be in one mission"
+        "Maximum 5 Quizez can be in one Treasure Hunt"
       );
     }
     var location = { type: 'Point', coordinates: [req.body?.longitude, req.body?.latitude] };
     var itemDetails = {
-      quiz_title: req.body?.quiz_title,
-      mission_id: req.body?.mission_id,
+      treasure_hunt_title: req.body?.treasure_hunt_title,
+      treasure_hunt_id: req.body?.treasure_hunt_id,
       creature: req.body?.creature,
       location: location,
       mythica: req.body?.mythica
     };
-    const createdItem = new MissionQuizModel(itemDetails);
+    const createdItem = new TreasureHuntQuizModel(itemDetails);
     createdItem.save(async (err) => {
       if (err) {
         return apiResponse.ErrorResponse(
@@ -77,11 +77,11 @@ const createMissionQuiz = async (req, res, next) => {
         options.push({
           answer: element.answer,
           correct_option: element.correct_option,
-          mission_id: req.body.mission_id,
-          mission_quiz_id: createdItem?._id
+          treasure_hunt_id: req.body.treasure_hunt_id,
+          treasure_hunt_quiz_id: createdItem?._id
         });
       });
-      MissionQuizOptionModel.insertMany(options)
+      TreasureHuntQuizOptionModel.insertMany(options)
         .then(function () {
 
           return apiResponse.successResponseWithData(
@@ -97,7 +97,7 @@ const createMissionQuiz = async (req, res, next) => {
 };
 
 
-const getMissions = async (req, res, next) => {
+const getTreasureHunts = async (req, res, next) => {
   try {
     if (req.body.latitude == undefined || req.body.longitude == undefined) {
       return apiResponse.ErrorResponse(
@@ -107,18 +107,18 @@ const getMissions = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const missions = await MissionModel.find({});
+    const hunts = await TreasureHuntModel.find({});
     return res.json({
       status: true,
       message: "Data Found",
-      data: await missionHelper.getAllMissions(missions, latitude, longitude)
+      data: await huntHelper.getAllTreasureHunt(hunts, latitude, longitude)
     })
   } catch (err) {
     next(err);
   }
 };
 
-const getMissionById = async (req, res, next) => {
+const getHuntById = async (req, res, next) => {
   try {
     if (req.body.latitude == undefined || req.body.longitude == undefined) {
       return apiResponse.ErrorResponse(
@@ -130,52 +130,52 @@ const getMissionById = async (req, res, next) => {
     const longitude = req.body.longitude;
     const id = req.params.id;
 
-    const mission = await MissionModel.findOne({ _id: new ObjectId(id) });
-    if (!mission) {
+    const hunts = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunts) {
       return apiResponse.ErrorResponse(
         res,
-        "Mission not found"
+        "Treasure hunt not found"
       );
     }
     return res.json({
       status: true,
       message: "Data Found",
-      data: await missionHelper.getSingleMission(mission, latitude, longitude)
+      data: await huntHelper.getSingleHunt(hunts, latitude, longitude)
     })
   } catch (err) {
     next(err);
   }
 };
 
-const startMission = async (req, res, next) => {
+const startTreasureHunt = async (req, res, next) => {
   try {
     const id = req.params.id;
-    const mission = await MissionModel.findOne({ _id: new ObjectId(id) });
-    if (!mission) {
+    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunt) {
       return apiResponse.notFoundResponse(
         res,
         "Not found!"
       );
     }
-    const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id) });
-    if (userMission) {
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id) });
+    if (userHunt) {
       return apiResponse.ErrorResponse(
         res,
-        "Mission already unlocked for this user"
+        "Treasure Hunt already unlocked for this user"
       );
     }
-    const findDraftMission = await UserMissionModel.find({ user_id: new ObjectId(req.user.id), status: 'draft' });
-    if (findDraftMission.length > 0) {
+    const findDraftHunt = await UserTreasureHuntModel.find({ user_id: new ObjectId(req.user.id), status: 'draft' });
+    if (findDraftHunt.length > 0) {
       return apiResponse.ErrorResponse(
         res,
-        "Complete previous mission to unlock new"
+        "Complete previous Treasure Hunt to unlock new"
       );
     }
     const itemToAdd = {
       user_id: req.user._id,
-      mission_id: id
+      treasure_hunt_id: id
     };
-    const createdItem = new UserMissionModel(itemToAdd);
+    const createdItem = new UserTreasureHuntModel(itemToAdd);
 
     createdItem.save(async (err) => {
       if (err) {
@@ -195,63 +195,63 @@ const startMission = async (req, res, next) => {
   }
 };
 
-const submitMissionQuizAnswer = async (req, res, next) => {
+const submitHuntQuizAnswer = async (req, res, next) => {
   try {
     const id = req.params.id;
 
-    if (req.body.mission_quiz_id == undefined || req.body.mission_quiz_option_id == undefined) {
+    if (req.body.treasure_hunt_quiz_id == undefined || req.body.treasure_hunt_quiz_option_id == undefined) {
       return apiResponse.ErrorResponse(
         res,
         "Quiz and selected option is required"
       );
     }
-    const mission_quiz_id = req.body.mission_quiz_id;
-    const mission_quiz_option_id = req.body.mission_quiz_option_id;
-    const mission = await MissionModel.findOne({ _id: new ObjectId(id) });
-    if (!mission) {
+    const treasure_hunt_quiz_id = req.body.treasure_hunt_quiz_id;
+    const treasure_hunt_quiz_option_id = req.body.treasure_hunt_quiz_option_id;
+    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunt) {
       return apiResponse.notFoundResponse(
         res,
         "Not found!"
       );
     }
  
-    const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id) });
-    if (!userMission) {
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id) });
+    if (!userHunt) {
       return apiResponse.ErrorResponse(
         res,
-        "You have to unlock this mission first"
+        "You have to unlock this treasure hunt first"
       );
     }
-    const findCompletedMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id), status: 'completed' });
-    if (findCompletedMission) {
+    const findCompletedHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'completed' });
+    if (findCompletedHunt) {
       return apiResponse.ErrorResponse(
         res,
-        "Mission already completed"
+        "Treasure hunt already completed"
       );
     }
-    const checkMissionQuiz = await MissionQuizModel.findOne({ mission_id: new ObjectId(id), _id: new ObjectId(mission_quiz_id) });
-    if (!checkMissionQuiz) {
+    const checkHuntQuiz = await TreasureHuntQuizModel.findOne({ treasure_hunt_id: new ObjectId(id), _id: new ObjectId(treasure_hunt_quiz_id) });
+    if (!checkHuntQuiz) {
       return apiResponse.ErrorResponse(
         res,
-        "No quiz found in this mission with given id"
+        "No quiz found in this treasure hunt with given id"
       );
     }
-    const checkMissionOptionQuiz = await MissionQuizOptionModel.findOne({ mission_quiz_id: new ObjectId(mission_quiz_id), _id: new ObjectId(mission_quiz_option_id) });
-    if (!checkMissionOptionQuiz) {
+    const checkHuntOptionQuiz = await TreasureHuntQuizOptionModel.findOne({ treasure_hunt_quiz_id: new ObjectId(treasure_hunt_quiz_id), _id: new ObjectId(treasure_hunt_quiz_option_id) });
+    if (!checkHuntOptionQuiz) {
       return apiResponse.ErrorResponse(
         res,
         "No Option found in this Quiz with given id"
       );
     }
-    const findDraftMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id), status: 'draft' });
-    if (findDraftMission) {
-      await findDraftMission.updateUserAnswer(mission_quiz_id, mission_quiz_option_id);
+    const findDraftHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'draft' });
+    if (findDraftHunt) {
+      await findDraftHunt.updateUserAnswer(treasure_hunt_quiz_id, treasure_hunt_quiz_option_id);
     }
     const allQuizzesAnswered = await areAllQuizzesAnswered(req.user.id, id);
     if(allQuizzesAnswered == true){
 
-      await UserMissionModel.findOneAndUpdate(
-        { mission_id: id, user_id: req.user.id },
+      await UserTreasureHuntModel.findOneAndUpdate(
+        { treasure_hunt_id: id, user_id: req.user.id },
         {
           status: 'completed'
         },
@@ -270,13 +270,13 @@ const submitMissionQuizAnswer = async (req, res, next) => {
       );
       return apiResponse.successResponse(
         res,
-        "Mission Completed"
+        "Treasure Hunt Completed"
       );
     }
 
     return apiResponse.successResponse(
       res,
-      "Mission option submitted"
+      "Treasure Hunt submitted"
     );
   } catch (err) {
     next(err);
@@ -286,42 +286,44 @@ const submitMissionQuizAnswer = async (req, res, next) => {
 
 
 // Function to check if all quizzes in a mission are answered by a user
-async function areAllQuizzesAnswered(user_id, mission_id) {
+async function areAllQuizzesAnswered(user_id, treasure_hunt_id) {
   // Get the list of quizzes in the mission
-  const missionQuizzes = await MissionQuizModel.find({ mission_id: mission_id });
+  const huntQuizzes = await TreasureHuntQuizModel.find({ treasure_hunt_id: treasure_hunt_id });
 
   // Get the list of quizzes the user has answered for the mission
-  const userMission = await UserMissionModel.findOne({ user_id: user_id, mission_id: mission_id });
+  const userHunts = await UserTreasureHuntModel.findOne({ user_id: user_id, treasure_hunt_id: treasure_hunt_id });
 
-  if (!userMission) {
+  if (!userHunts) {
       // If there are no user answers for this mission, return false
       return false;
   }
-  if (userMission && userMission.quiz_answers && Array.isArray(userMission.quiz_answers)) {
+  if (userHunts && userHunts.quiz_answers && Array.isArray(userHunts.quiz_answers)) {
     const userAnsweredQuizzes = userHunts.quiz_answers.map(answer => {
-        if (answer && answer.mission_quiz_id) {
-            return answer.mission_quiz_id.toString();
+        if (answer && answer.treasure_hunt_quiz_id) {
+            return answer.treasure_hunt_quiz_id.toString();
         } else {
             return null; // or any other value to indicate missing quiz ID
         }
     });
-    const missionQuizIDs = missionQuizzes.map(quiz => quiz._id.toString());
-  
-    // Check if all quizzes in the mission have been answered by the user
-    return missionQuizIDs.every(quizID => userAnsweredQuizzes.includes(quizID));
-  } else {
-    return false;
-  }
+    const treasureHuntQuizIDs = huntQuizzes.map(quiz => quiz._id.toString());
 
+  // Check if all quizzes in the mission have been answered by the user
+    return treasureHuntQuizIDs.every(quizID => userAnsweredQuizzes.includes(quizID));
+    // Rest of your code
+    } else {
+        // Handle the case where userHunts or userHunts.quiz_answers is undefined or not an array
+        return false;
+    }
+  
 }
 
 
 
 module.exports = {
-  createMission,
-  createMissionQuiz,
-  getMissions,
-  getMissionById,
-  startMission,
-  submitMissionQuizAnswer
+    createTreasureHunt,
+    createTreasureHuntQuiz,
+    getTreasureHunts,
+    getHuntById,
+    startTreasureHunt,
+    submitHuntQuizAnswer
 };

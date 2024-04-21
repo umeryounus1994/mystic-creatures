@@ -29,7 +29,7 @@ const userMissionSchema = new mongoose.Schema(
 
 // Add a method to the schema to update user answers
 userMissionSchema.methods.updateUserAnswer = async function(quiz_id, selected_option_id) {
-    const existingAnswerIndex = this.quiz_answers.findIndex(answer => answer.mission_quiz_id.equals(quiz_id));
+    const existingAnswerIndex = this.quiz_answers.findIndex(answer => answer.mission_quiz_id && answer.mission_quiz_id.equals(quiz_id));
 
     if (existingAnswerIndex !== -1) {
         // If the user has already answered this quiz, update the selected option
