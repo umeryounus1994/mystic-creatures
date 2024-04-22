@@ -164,7 +164,7 @@ const startTreasureHunt = async (req, res, next) => {
         "Treasure Hunt already unlocked for this user"
       );
     }
-    const findDraftHunt = await UserTreasureHuntModel.find({ user_id: new ObjectId(req.user.id), status: 'draft' });
+    const findDraftHunt = await UserTreasureHuntModel.find({ user_id: new ObjectId(req.user.id), status: 'inprogress' });
     if (findDraftHunt.length > 0) {
       return apiResponse.ErrorResponse(
         res,
@@ -243,7 +243,7 @@ const submitHuntQuizAnswer = async (req, res, next) => {
         "No Option found in this Quiz with given id"
       );
     }
-    const findDraftHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'draft' });
+    const findDraftHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'inprogress' });
     if (findDraftHunt) {
       await findDraftHunt.updateUserAnswer(treasure_hunt_quiz_id, treasure_hunt_quiz_option_id);
     }
@@ -277,6 +277,99 @@ const submitHuntQuizAnswer = async (req, res, next) => {
     return apiResponse.successResponse(
       res,
       "Treasure Hunt submitted"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const claimHunt = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunt) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Not found!"
+      );
+    }
+ 
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id) });
+    if (!userHunt) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have to unlock this treasure hunt first"
+      );
+    }
+    const findCompletedHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'claimed' });
+    if (findCompletedHunt) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Treasure hunt already claimed"
+      );
+    }
+    const allQuizzesAnswered = await areAllQuizzesAnswered(req.user.id, id);
+    if(allQuizzesAnswered == true){
+
+      await UserTreasureHuntModel.findOneAndUpdate(
+        { treasure_hunt_id: id, user_id: req.user.id },
+        {
+          status: 'claimed'
+        },
+        { upsert: true, new: true }
+      );
+      const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
+      let current_xp = parseInt(user.current_xp) + parseInt(mission?.no_of_xp);
+      let current_level = parseInt(user.current_level) + parseInt(mission?.level_increase);
+      await userModel.findOneAndUpdate(
+        { _id: req.user.id },
+        {
+          current_xp: current_xp,
+          current_level: current_level
+        },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponse(
+        res,
+        "Treasure Hunt Claimed"
+      );
+    }
+
+    return apiResponse.successResponse(
+      res,
+      "Treasure Hunt submitted"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const userHuntProgress = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunt) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Not found!"
+      );
+    }
+
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id) });
+    if (!userHunt) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have to unlock this hunt first"
+      );
+    }
+    const checkAnswered = await checkQuizStatus(req.user.id, id);
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Hunt found",
+      { hunt, current_progress: checkAnswered.answered, user_hunt_status: userHunt?.status }
     );
   } catch (err) {
     next(err);
@@ -317,6 +410,42 @@ async function areAllQuizzesAnswered(user_id, treasure_hunt_id) {
   
 }
 
+// Function to check if all quizzes in a mission are answered by a user
+async function checkQuizStatus(user_id, treasure_hunt_id) {
+
+  // Get the list of quizzes the user has answered for the mission
+  const userHunts = await UserTreasureHuntModel.findOne({ user_id: user_id, treasure_hunt_id: treasure_hunt_id });
+
+  if (!userHunts) {
+       // If there are no user answers for this mission, return object indicating all unanswered
+       return {
+        answered: 0
+    };
+  }
+  if (userHunts && userHunts.quiz_answers && Array.isArray(userHunts.quiz_answers)) {
+    const answeredQuizIds = userHunts.quiz_answers.map(answer => {
+        if (answer && answer.treasure_hunt_quiz_id) {
+            return answer.treasure_hunt_quiz_id.toString();
+        } else {
+            return null; // or any other value to indicate missing quiz ID
+        }
+    });
+    return {
+      answered: answeredQuizIds.length
+  };
+
+    // Rest of your code
+    } else {
+       // If userMission.quiz_answers is not an array or undefined, return object indicating all unanswered
+      return {
+        answered: 0
+    };
+    }
+  
+}
+
+
+
 
 
 module.exports = {
@@ -325,5 +454,7 @@ module.exports = {
     getTreasureHunts,
     getHuntById,
     startTreasureHunt,
-    submitHuntQuizAnswer
+    submitHuntQuizAnswer,
+    claimHunt,
+    userHuntProgress
 };

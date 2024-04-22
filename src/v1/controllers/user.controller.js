@@ -6,7 +6,6 @@ const { validationResult } = require("express-validator");
 const apiResponse = require("../../../helpers/apiResponse");
 const {
   generateToken,
-  verifyToken,
 } = require("../../../middlewares/authMiddleware");
 const UserModel = require("../models/user.model");
 const UserPasswordResetModel = require("../models/userReset.model");
@@ -150,7 +149,6 @@ const updateUser = async (req, res, next) => {
     if (!updatedUser) {
       return apiResponse.ErrorResponse(
         res,
-        "Beklager, det oppstod en systemfeil. Vennligst prøv igjen senere.",
         "Something went wrong, Kindly try again later"
       );
     }

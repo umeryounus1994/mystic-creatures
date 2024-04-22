@@ -164,7 +164,7 @@ const startMission = async (req, res, next) => {
         "Mission already unlocked for this user"
       );
     }
-    const findDraftMission = await UserMissionModel.find({ user_id: new ObjectId(req.user.id), status: 'draft' });
+    const findDraftMission = await UserMissionModel.find({ user_id: new ObjectId(req.user.id), status: 'inprogress' });
     if (findDraftMission.length > 0) {
       return apiResponse.ErrorResponse(
         res,
@@ -214,7 +214,7 @@ const submitMissionQuizAnswer = async (req, res, next) => {
         "Not found!"
       );
     }
- 
+
     const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id) });
     if (!userMission) {
       return apiResponse.ErrorResponse(
@@ -243,28 +243,17 @@ const submitMissionQuizAnswer = async (req, res, next) => {
         "No Option found in this Quiz with given id"
       );
     }
-    const findDraftMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id), status: 'draft' });
+    const findDraftMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id), status: 'inprogress' });
     if (findDraftMission) {
       await findDraftMission.updateUserAnswer(mission_quiz_id, mission_quiz_option_id);
     }
     const allQuizzesAnswered = await areAllQuizzesAnswered(req.user.id, id);
-    if(allQuizzesAnswered == true){
+    if (allQuizzesAnswered == true) {
 
       await UserMissionModel.findOneAndUpdate(
         { mission_id: id, user_id: req.user.id },
         {
           status: 'completed'
-        },
-        { upsert: true, new: true }
-      );
-      const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
-      let current_xp = parseInt(user.current_xp) + parseInt(mission?.no_of_xp);
-      let current_level = parseInt(user.current_level) + parseInt(mission?.level_increase);
-      await userModel.findOneAndUpdate(
-        { _id: req.user.id },
-        {
-          current_xp: current_xp,
-          current_level: current_level
         },
         { upsert: true, new: true }
       );
@@ -282,6 +271,99 @@ const submitMissionQuizAnswer = async (req, res, next) => {
     next(err);
   }
 };
+const claimMission = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const mission = await MissionModel.findOne({ _id: new ObjectId(id) });
+    if (!mission) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Not found!"
+      );
+    }
+
+    const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id) });
+    if (!userMission) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have to unlock this mission first"
+      );
+    }
+    const findCompletedMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id), status: 'claimed' });
+    if (findCompletedMission) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Mission already claimed"
+      );
+    }
+
+    const allQuizzesAnswered = await areAllQuizzesAnswered(req.user.id, id);
+    if (allQuizzesAnswered == true) {
+
+      await UserMissionModel.findOneAndUpdate(
+        { mission_id: id, user_id: req.user.id },
+        {
+          status: 'claimed'
+        },
+        { upsert: true, new: true }
+      );
+      const user = await userModel.findOne({ _id: new ObjectId(req.user.id) });
+      let current_xp = parseInt(user.current_xp) + parseInt(mission?.no_of_xp);
+      let current_level = parseInt(user.current_level) + parseInt(mission?.level_increase);
+      await userModel.findOneAndUpdate(
+        { _id: req.user.id },
+        {
+          current_xp: current_xp,
+          current_level: current_level
+        },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponse(
+        res,
+        "Mission Claimed"
+      );
+    }
+
+    return apiResponse.successResponse(
+      res,
+      "Mission option submitted"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const userMissionProgress = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const mission = await MissionModel.findOne({ _id: new ObjectId(id) });
+    if (!mission) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Not found!"
+      );
+    }
+
+    const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id) });
+    if (!userMission) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have to unlock this mission first"
+      );
+    }
+    const checkAnswered = await checkQuizStatus(req.user.id, id);
+    
+    return apiResponse.successResponseWithData(
+      res,
+      "Mission found",
+      { mission, current_progress: checkAnswered.answered, user_mission_status: userMission?.status }
+    );
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 
@@ -294,25 +376,57 @@ async function areAllQuizzesAnswered(user_id, mission_id) {
   const userMission = await UserMissionModel.findOne({ user_id: user_id, mission_id: mission_id });
 
   if (!userMission) {
-      // If there are no user answers for this mission, return false
-      return false;
+    // If there are no user answers for this mission, return false
+    return false;
   }
   if (userMission && userMission.quiz_answers && Array.isArray(userMission.quiz_answers)) {
-    const userAnsweredQuizzes = userHunts.quiz_answers.map(answer => {
-        if (answer && answer.mission_quiz_id) {
-            return answer.mission_quiz_id.toString();
-        } else {
-            return null; // or any other value to indicate missing quiz ID
-        }
+    const userAnsweredQuizzes = userMission.quiz_answers.map(answer => {
+      if (answer && answer.mission_quiz_id) {
+        return answer.mission_quiz_id.toString();
+      } else {
+        return null; // or any other value to indicate missing quiz ID
+      }
     });
     const missionQuizIDs = missionQuizzes.map(quiz => quiz._id.toString());
-  
+
     // Check if all quizzes in the mission have been answered by the user
     return missionQuizIDs.every(quizID => userAnsweredQuizzes.includes(quizID));
   } else {
     return false;
   }
+}
 
+// Function to check if all quizzes in a mission are answered by a user
+async function checkQuizStatus(user_id, mission_id) {
+
+  // Get the list of quizzes the user has answered for the mission
+  const userMission = await UserMissionModel.findOne({ user_id: user_id, mission_id: mission_id });
+
+  if (!userMission) {
+      // If there are no user answers for this mission, return object indicating all unanswered
+      return {
+          answered: 0
+      };
+  }
+
+  if (userMission.quiz_answers && Array.isArray(userMission.quiz_answers)) {
+      const answeredQuizIds = userMission.quiz_answers.map(answer => {
+          if (answer && answer.mission_quiz_id) {
+              return answer.mission_quiz_id.toString();
+          } else {
+              return null; // or any other value to indicate missing quiz ID
+          }
+      });
+
+      return {
+          answered: answeredQuizIds.length
+      };
+  } else {
+      // If userMission.quiz_answers is not an array or undefined, return object indicating all unanswered
+      return {
+          answered: 0
+      };
+  }
 }
 
 
@@ -323,5 +437,7 @@ module.exports = {
   getMissions,
   getMissionById,
   startMission,
-  submitMissionQuizAnswer
+  submitMissionQuizAnswer,
+  claimMission,
+  userMissionProgress
 };

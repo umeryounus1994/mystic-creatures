@@ -23,5 +23,7 @@ router.post("/get_all", treasureHuntController.getTreasureHunts);
 router.get("/get_hunt_by_id/:id", checkUserAuth, treasureHuntController.getHuntById);
 router.get("/unlock_hunt/:id", checkUserAuth, treasureHuntController.startTreasureHunt);
 router.get("/submit_hunt_quiz_answer/:id", checkUserAuth, treasureHuntController.submitHuntQuizAnswer);
+router.get("/claim_hunt/:id", checkUserAuth, treasureHuntController.claimHunt);
+router.get("/user_hunt_progress/:id", checkUserAuth, treasureHuntController.userHuntProgress);
 
 module.exports = router;

@@ -5,7 +5,7 @@ const mongooseDelete = require("mongoose-delete");
 
 const userTreasureHuntSchema = new mongoose.Schema(
     {
-        status: { type: String, enum: ["draft", "completed"], default: "draft" },
+        status: { type: String, enum: ["inprogress", "completed", 'claimed'], default: "inprogress" },
         treasure_hunt_id: {
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'TreasureHunt'
