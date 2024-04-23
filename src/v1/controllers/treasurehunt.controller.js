@@ -118,6 +118,26 @@ const getTreasureHunts = async (req, res, next) => {
   }
 };
 
+const getAllUserHunts = async (req, res, next) => {
+  try {
+    const hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id)})
+    .populate("treasure_hunt_id");
+    if(hunt.length < 1){
+      return apiResponse.ErrorResponse(
+        res,
+        "No user treasure hunts found"
+      );
+    }
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await huntHelper.getAllUserTreasureHunt(hunt, req.user.id)
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getHuntById = async (req, res, next) => {
   try {
     if (req.body.latitude == undefined || req.body.longitude == undefined) {
@@ -456,5 +476,6 @@ module.exports = {
     startTreasureHunt,
     submitHuntQuizAnswer,
     claimHunt,
-    userHuntProgress
+    userHuntProgress,
+    getAllUserHunts
 };

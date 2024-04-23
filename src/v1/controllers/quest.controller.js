@@ -91,7 +91,7 @@ const unlockQuestForUser = async (req, res, next) => {
         "Quest already unlocked for this user"
       );
     }
-    const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: 'draft'});
+    const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: 'inprogress'});
     if(findDraftQuests.length > 0){
       return apiResponse.ErrorResponse(
         res,

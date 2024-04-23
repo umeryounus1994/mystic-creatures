@@ -118,6 +118,26 @@ const getMissions = async (req, res, next) => {
   }
 };
 
+const getAllUserMissions = async (req, res, next) => {
+  try {
+    const missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id)})
+    .populate("mission_id");
+    if(missions.length < 1){
+      return apiResponse.ErrorResponse(
+        res,
+        "No user missions found"
+      );
+    }
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await missionHelper.getAllUserMissions(missions, req.user.id)
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getMissionById = async (req, res, next) => {
   try {
     if (req.body.latitude == undefined || req.body.longitude == undefined) {
@@ -439,5 +459,6 @@ module.exports = {
   startMission,
   submitMissionQuizAnswer,
   claimMission,
-  userMissionProgress
+  userMissionProgress,
+  getAllUserMissions
 };
