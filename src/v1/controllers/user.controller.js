@@ -97,12 +97,7 @@ const getUsers = async (req, res, next) => {
       req,
       res,
       model: UserModel,
-      findOptions: {
-        $or: [
-          { full_name: { $regex: term, $options: "i" } },
-          { full_name: { $regex: term, $options: "i" } },
-        ],
-      },
+      findOptions: {},
     });
   } catch (err) {
     next(err);
@@ -250,7 +245,7 @@ const loginUser = async (req, res, next) => {
 
     return apiResponse.successResponseWithData(
       res,
-      `Welcome ${user.full_name}, Authenticated Successfully`,
+      `Welcome ${user.username}, Authenticated Successfully`,
       {
         user,
       }
@@ -270,9 +265,9 @@ const sendUserPasswordResetEmail = async (req, res, next) => {
         const passwordReset = await UserPasswordResetModel.create({
           user_id: user?.id,
         });
-        const emailBody = `Hey ${user.full_name},
+        const emailBody = `Hey ${user.username},
         <br>Follow the link below to enter a new password for your account:
-        <br><a href=${process.env.ORG_DOMAIN_URL}/reset-password/${passwordReset.id} target="_blank">${process.env.ORG_DOMAIN_URL}/reset-password/${passwordReset.id}</a>
+        <br><a href=${process.env.ORG_DOMAIN_URL}?id=${passwordReset.id} target="_blank">${process.env.ORG_DOMAIN_URL}?id=${passwordReset.id}</a>
         <br><br>With best regards,
         <br>Team Mystic Creatures`;
         sendEmail(user.email, "Reset your password", emailBody);
