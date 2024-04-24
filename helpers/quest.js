@@ -58,7 +58,8 @@ module.exports.getAllPlayerQuests = async function (data) {
                         mythica: findQuest.mythica,
                         level_increase: findQuest.level_increase,
                         mythica_model: findQuest.mythica_model,
-                        options: findQuestQuiz
+                        options: findQuestQuiz,
+                        quest_progress: element?.submitted_answer ? 1 : 0
                     }
                     result.push(el)
                     resolvve(result);
