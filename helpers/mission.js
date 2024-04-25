@@ -5,7 +5,7 @@ const MissionQuizModel = require("../src/v1/models/missionquiz.model");
 const MissionQuizOptionModel = require("../src/v1/models/missionquizoption.model");
 const UserMissionModel = require("../src/v1/models/usermission.model");
 
-module.exports.getAllMissions = async function (data, latitude, longitude) {
+module.exports.getAllMissions = async function (data) {
     const promiseArr = [];
     var result = [];
     return new Promise((resolve, reject) => {
@@ -14,16 +14,7 @@ module.exports.getAllMissions = async function (data, latitude, longitude) {
                 new Promise(async (resolvve, rejectt) => {
                     var findMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectID(element._id) })
                     var quizPromises = findMissionQuiz.map(async (quiz) => {
-                        let endLocation = {
-                            latitude: quiz.location.coordinates[1],
-                            longitude: quiz.location.coordinates[0]
-                        }
-                        const userLocation = {
-                            latitude: latitude,
-                            longitude: longitude
-                        }
-                        const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
-                        if (locationDistance < 30) {
+       
                             var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(element?._id) });
                             var simplifiedOptions = options.map(option => ({
                                 _id: option.id,
@@ -34,7 +25,6 @@ module.exports.getAllMissions = async function (data, latitude, longitude) {
                                 ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
                                 options: simplifiedOptions
                             };
-                        }
                     });
                     var quizzesWithOptions = await Promise.all(quizPromises);
                     var el = {

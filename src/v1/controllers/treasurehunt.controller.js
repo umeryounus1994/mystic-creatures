@@ -96,22 +96,83 @@ const createTreasureHuntQuiz = async (req, res, next) => {
   }
 };
 
+const createHuntQuiz = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    var options = [];
+    req.body.forEach(element => {
+      var location = { type: 'Point', coordinates: [element?.longitude, element?.latitude] };
+      options.push({
+        treasure_hunt_title: element.treasure_hunt_title,
+        mythica: element.mythica,
+        treasure_hunt_id: element.treasure_hunt_id,
+        location: location,
+        creature: element?.creature,
+      });
+    });
+    TreasureHuntQuizModel.insertMany(options)
+      .then(function () {
+
+        return apiResponse.successResponseWithData(
+          res,
+          "Created successfully"
+        );
+      });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const createHuntOptions = async (req, res, next) => {
+  try {
+    const { ...itemDetails } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    var checkTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectId(req.body.treasure_hunt_id) });
+    if (checkTreasureHuntQuiz.length == 5) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Maximum 5 Quizez can be in one Treasure Hunt"
+      );
+    }
+    const createdItem = new TreasureHuntQuizOptionModel(itemDetails);
+    createdItem.save(async (err) => {
+      if (err) {
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      return apiResponse.successResponseWithData(
+        res,
+        "Created successfully"
+      );
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 const getTreasureHunts = async (req, res, next) => {
   try {
-    if (req.body.latitude == undefined || req.body.longitude == undefined) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Lat, Long is required"
-      );
-    }
-    const latitude = req.body.latitude;
-    const longitude = req.body.longitude;
     const hunts = await TreasureHuntModel.find({});
     return res.json({
       status: true,
       message: "Data Found",
-      data: await huntHelper.getAllTreasureHunt(hunts, latitude, longitude)
+      data: await huntHelper.getAllTreasureHunt(hunts)
     })
   } catch (err) {
     next(err);
@@ -477,5 +538,7 @@ module.exports = {
     submitHuntQuizAnswer,
     claimHunt,
     userHuntProgress,
-    getAllUserHunts
+    getAllUserHunts,
+    createHuntQuiz,
+    createHuntOptions
 };
