@@ -99,7 +99,7 @@ const unlockQuestForUser = async (req, res, next) => {
       );
     }
     const itemToAdd = {
-      user_id: req.user._id,
+      user_id: req.user.id,
       quest_id: quest?._id
     };
     const createdItem = new UserQuestModel(itemToAdd);
@@ -210,6 +210,52 @@ const completeQuest = async (req, res, next) => {
       },
       { upsert: true, new: true }
     );
+    return apiResponse.successResponse(
+      res,
+      "Quest completed"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const claimQuest = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const quest = await QuestModel.findOne({_id: new ObjectId(id)});
+    if(!quest){
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest not found"
+      );
+    }
+    const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(id)});
+    if(!userQuest){
+      return apiResponse.ErrorResponse(
+        res,
+        "Please add quest to user first"
+      );
+    }
+    if(!userQuest?.submitted_answer || userQuest?.submitted_answer == null){
+      return apiResponse.ErrorResponse(
+        res,
+        "Submit Answer first"
+      );
+    }
+    if(userQuest?.status == 'claimed'){
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest already Claimed"
+      );
+    }
+    await UserQuestModel.findOneAndUpdate(
+      { quest_id: id, user_id: req.user.id },
+      {
+        status: 'claimed'
+      },
+      { upsert: true, new: true }
+    );
     const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
     let current_xp = parseInt(user.current_xp) + parseInt(quest?.no_of_xp);
     let current_level = parseInt(user.current_level) + parseInt(quest?.level_increase);
@@ -223,7 +269,7 @@ const completeQuest = async (req, res, next) => {
     );
     return apiResponse.successResponse(
       res,
-      "Quest completed"
+      "Quest Claimed"
     );
   } catch (err) {
     next(err);
@@ -238,5 +284,6 @@ module.exports = {
   unlockQuestForUser,
   getPlayerQuests,
   getQuestById,
-  completeQuest
+  completeQuest,
+  claimQuest
 };

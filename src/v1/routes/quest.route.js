@@ -24,5 +24,6 @@ router.post("/unlock_quest", checkUserAuth, questController.unlockQuestForUser);
 router.get("/get_player_quest/:status", checkUserAuth, questController.getPlayerQuests);
 router.get("/get_quest_by_id/:id", checkUserAuth, questController.getQuestById);
 router.post("/complete_quest/:id", checkUserAuth, questController.completeQuest);
+router.get("/claim_quest/:id", checkUserAuth, questController.claimQuest);
 
 module.exports = router;

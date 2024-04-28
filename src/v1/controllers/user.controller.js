@@ -16,6 +16,7 @@ const {
   hashPassord,
 } = require("../../../helpers/commonApis");
 const { sendEmail } = require("../../../helpers/emailSender");
+const bcrypt = require("bcrypt");
 
 
 const createUser = async (req, res, next) => {

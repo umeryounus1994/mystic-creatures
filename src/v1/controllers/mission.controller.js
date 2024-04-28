@@ -181,8 +181,15 @@ const getMissions = async (req, res, next) => {
 
 const getAllUserMissions = async (req, res, next) => {
   try {
-    const missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id)})
-    .populate("mission_id");
+    const status = req.params.status;
+    let missions = null;
+    if(status == "all"){
+      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id)})
+      .populate("mission_id");
+    } else {
+      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id),status: status})
+      .populate("mission_id");
+    }
     if(missions.length < 1){
       return apiResponse.ErrorResponse(
         res,

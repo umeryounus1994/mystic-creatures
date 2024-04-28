@@ -181,8 +181,15 @@ const getTreasureHunts = async (req, res, next) => {
 
 const getAllUserHunts = async (req, res, next) => {
   try {
-    const hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id)})
-    .populate("treasure_hunt_id");
+    const status = req.params.status;
+    let hunt = null;
+    if(status == "all"){
+      hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id)})
+      .populate("treasure_hunt_id");
+    } else {
+      hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id),status: status})
+      .populate("treasure_hunt_id");
+    }
     if(hunt.length < 1){
       return apiResponse.ErrorResponse(
         res,
