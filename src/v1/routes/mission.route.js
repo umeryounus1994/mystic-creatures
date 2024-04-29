@@ -8,6 +8,9 @@ const {
 const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
+const {
+  checkAuthOrigins,
+} = require("../../../middlewares/authMiddlewareGenericAll");
 
 router.post(
   "/createMission",
@@ -29,7 +32,7 @@ router.post(
   checkAdminUserAuth,
   missionController.createQuizOptions
 );
-router.get("/get_all", missionController.getMissions);
+router.get("/get_all", checkAuthOrigins,missionController.getMissions);
 router.get("/get_all_user_missions/:status", checkUserAuth, missionController.getAllUserMissions);
 router.get("/get_mission_by_id/:id", checkUserAuth, missionController.getMissionById);
 router.get("/unlock_mission/:id", checkUserAuth, missionController.startMission);

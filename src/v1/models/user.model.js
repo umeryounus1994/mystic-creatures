@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
     image: { type: String, default: "" },
     access_token: { type: String, default: "" },
     current_level: { type: Number, default: 0 },
-    current_xp: { type: Number, default: 0 },
+    current_xp: { type: Number, default: 0 },  //XP required = 100 * (1.2^(currentLevel - 1))
     status: {
       type: String,
       enum: ["active", "blocked", "pending_verification"],
@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema(
     },
   }
 );
+//so current xp will be = total xp - sum series formula of all xp requirement from levels 1 to 2, 2 to 3, 3 to current level
 
 userSchema.pre("save", function (next) {
   if (!this.isModified("password")) {

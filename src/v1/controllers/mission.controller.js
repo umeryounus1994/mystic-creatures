@@ -172,7 +172,7 @@ const getMissions = async (req, res, next) => {
     return res.json({
       status: true,
       message: "Data Found",
-      data: await missionHelper.getAllMissions(missions)
+      data: await missionHelper.getAllMissions(missions,req.user.id)
     })
   } catch (err) {
     next(err);
@@ -196,6 +196,7 @@ const getAllUserMissions = async (req, res, next) => {
         "No user missions found"
       );
     }
+    console.log(missions.length)
     return res.json({
       status: true,
       message: "Data Found",

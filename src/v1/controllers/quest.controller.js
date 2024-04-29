@@ -91,7 +91,7 @@ const unlockQuestForUser = async (req, res, next) => {
         "Quest already unlocked for this user"
       );
     }
-    const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: 'inprogress'});
+    const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: { $in: ['unlocked', 'inprogress'] } });
     if(findDraftQuests.length > 0){
       return apiResponse.ErrorResponse(
         res,
@@ -206,52 +206,6 @@ const completeQuest = async (req, res, next) => {
       { quest_id: id, user_id: req.user.id },
       {
         submitted_answer: user_answer,
-        status: 'completed'
-      },
-      { upsert: true, new: true }
-    );
-    return apiResponse.successResponse(
-      res,
-      "Quest completed"
-    );
-  } catch (err) {
-    next(err);
-  }
-};
-
-const claimQuest = async (req, res, next) => {
-  try {
-    const id = req.params.id;
-
-    const quest = await QuestModel.findOne({_id: new ObjectId(id)});
-    if(!quest){
-      return apiResponse.ErrorResponse(
-        res,
-        "Quest not found"
-      );
-    }
-    const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(id)});
-    if(!userQuest){
-      return apiResponse.ErrorResponse(
-        res,
-        "Please add quest to user first"
-      );
-    }
-    if(!userQuest?.submitted_answer || userQuest?.submitted_answer == null){
-      return apiResponse.ErrorResponse(
-        res,
-        "Submit Answer first"
-      );
-    }
-    if(userQuest?.status == 'claimed'){
-      return apiResponse.ErrorResponse(
-        res,
-        "Quest already Claimed"
-      );
-    }
-    await UserQuestModel.findOneAndUpdate(
-      { quest_id: id, user_id: req.user.id },
-      {
         status: 'claimed'
       },
       { upsert: true, new: true }
@@ -269,7 +223,7 @@ const claimQuest = async (req, res, next) => {
     );
     return apiResponse.successResponse(
       res,
-      "Quest Claimed"
+      "Quest completed"
     );
   } catch (err) {
     next(err);
@@ -284,6 +238,5 @@ module.exports = {
   unlockQuestForUser,
   getPlayerQuests,
   getQuestById,
-  completeQuest,
-  claimQuest
+  completeQuest
 };

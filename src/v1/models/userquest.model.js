@@ -5,7 +5,7 @@ const mongooseDelete = require("mongoose-delete");
 
 const userQuestsSchema = new mongoose.Schema(
     {
-        status: { type: String, enum: ["inprogress", "completed", 'claimed'], default: "inprogress" },
+        status: { type: String, enum: ["unlocked","inprogress", "completed", 'claimed'], default: "unlocked" },
         quest_id: {
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'Quest'

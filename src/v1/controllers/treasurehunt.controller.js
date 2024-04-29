@@ -172,7 +172,7 @@ const getTreasureHunts = async (req, res, next) => {
     return res.json({
       status: true,
       message: "Data Found",
-      data: await huntHelper.getAllTreasureHunt(hunts)
+      data: await huntHelper.getAllTreasureHunt(hunts, req.user.id)
     })
   } catch (err) {
     next(err);

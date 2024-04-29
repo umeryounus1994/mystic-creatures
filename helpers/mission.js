@@ -5,7 +5,7 @@ const MissionQuizModel = require("../src/v1/models/missionquiz.model");
 const MissionQuizOptionModel = require("../src/v1/models/missionquizoption.model");
 const UserMissionModel = require("../src/v1/models/usermission.model");
 
-module.exports.getAllMissions = async function (data) {
+module.exports.getAllMissions = async function (data, user_id) {
     const promiseArr = [];
     var result = [];
     return new Promise((resolve, reject) => {
@@ -14,19 +14,22 @@ module.exports.getAllMissions = async function (data) {
                 new Promise(async (resolvve, rejectt) => {
                     var findMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectID(element._id) })
                     var quizPromises = findMissionQuiz.map(async (quiz) => {
-       
-                            var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(element?._id) });
-                            var simplifiedOptions = options.map(option => ({
-                                _id: option.id,
-                                answer: option.answer,
-                                correct_option: option.correct_option
-                            }));
-                            return {
-                                ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
-                                options: simplifiedOptions
-                            };
+
+                        var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(element?._id) });
+                        var simplifiedOptions = options.map(option => ({
+                            _id: option.id,
+                            answer: option.answer,
+                            correct_option: option.correct_option
+                        }));
+                        return {
+                            ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
+                            options: simplifiedOptions
+                        };
                     });
                     var quizzesWithOptions = await Promise.all(quizPromises);
+                    const filteredArray = quizzesWithOptions.filter(element => element != null);
+                    const userMissions = await UserMissionModel.findOne({mission_id: new ObjectID(element?._id), user_id: new ObjectID(user_id)});
+                    const checkProgress = await checkQuizStatus(element?._id, user_id)
                     var el = {
                         id: element._id,
                         mission_title: element.mission_title,
@@ -37,12 +40,12 @@ module.exports.getAllMissions = async function (data) {
                         mythica_ar_model: element.mythica_ar_model,
                         status: element.status,
                         mission_image: element.mission_image,
-                        quiz: quizzesWithOptions
+                        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
+                        mission_status: userMissions ? userMissions?.status : 'open',
+                        mission_progress: checkProgress?.answered
                     }
-                    const filteredArray = quizzesWithOptions.filter(element => element != null);
-                    if (filteredArray.length > 0) {
-                        result.push(el)
-                    }
+
+                    result.push(el)
                     resolvve(result);
                 })
             )
@@ -56,31 +59,22 @@ module.exports.getAllMissions = async function (data) {
 module.exports.getSingleMission = async function (data, latitude, longitude) {
     var findMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectID(data._id) })
     var quizPromises = findMissionQuiz.map(async (quiz) => {
-        let endLocation = {
-            latitude: quiz.location.coordinates[1],
-            longitude: quiz.location.coordinates[0]
-        }
-        const userLocation = {
-            latitude: latitude,
-            longitude: longitude
-        }
-        const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
-        if (locationDistance < 30) {
-            var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(data?._id) });
-            var simplifiedOptions = options.map(option => ({
-                _id: option.id,
-                answer: option.answer,
-                correct_option: option.correct_option
-            }));
-            return {
-                ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
-                options: simplifiedOptions
-            };
-        }
+
+        var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(data?._id) });
+        var simplifiedOptions = options.map(option => ({
+            _id: option.id,
+            answer: option.answer,
+            correct_option: option.correct_option
+        }));
+        return {
+            ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
+            options: simplifiedOptions
+        };
 
     });
 
     var quizzesWithOptions = await Promise.all(quizPromises);
+    const filteredArray = quizzesWithOptions.filter(element => element != null);
     var el = {
         id: data._id,
         mission_title: data.mission_title,
@@ -91,14 +85,10 @@ module.exports.getSingleMission = async function (data, latitude, longitude) {
         mythica_ar_model: data.mythica_ar_model,
         status: data.status,
         mission_image: data.mission_image,
-        quiz: quizzesWithOptions
+        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
     }
-    const filteredArray = quizzesWithOptions.filter(element => element != null);
-    if (filteredArray.length > 0) {
-        return el;
-    } else {
-        return [];
-    }
+
+    return el;
 
 }
 
@@ -111,20 +101,21 @@ module.exports.getAllUserMissions = async function (data, user_id) {
                 new Promise(async (resolvve, rejectt) => {
                     var findMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectID(element.mission_id) })
                     var quizPromises = findMissionQuiz.map(async (quiz) => {
-  
-                            var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(element?.mission_id) });
-                            var simplifiedOptions = options.map(option => ({
-                                _id: option.id,
-                                answer: option.answer,
-                                correct_option: option.correct_option
-                            }));
-                            return {
-                                ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
-                                options: simplifiedOptions
-                            };
+
+                        var options = await MissionQuizOptionModel.find({ mission_quiz_id: new ObjectID(quiz._id), mission_id: new ObjectID(element?.mission_id) });
+                        var simplifiedOptions = options.map(option => ({
+                            _id: option.id,
+                            answer: option.answer,
+                            correct_option: option.correct_option
+                        }));
+                        return {
+                            ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
+                            options: simplifiedOptions
+                        };
                     });
                     var quizzesWithOptions = await Promise.all(quizPromises);
                     const checkProgress = await checkQuizStatus(element?.mission_id, user_id)
+                    const filteredArray = quizzesWithOptions.filter(element => element != null);
                     var el = {
                         id: element.mission_id?.id,
                         mission_title: element?.mission_id.mission_title,
@@ -135,13 +126,11 @@ module.exports.getAllUserMissions = async function (data, user_id) {
                         mythica_ar_model: element?.mission_id.mythica_ar_model,
                         status: element.status,
                         mission_image: element?.mission_id.mission_image,
-                        quiz: quizzesWithOptions,
+                        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                         mission_progress: checkProgress?.answered,
                     }
-                    const filteredArray = quizzesWithOptions.filter(element => element != null);
-                    if (filteredArray.length > 0) {
-                        result.push(el)
-                    }
+
+                    result.push(el)
                     resolvve(result);
                 })
             )
@@ -157,14 +146,14 @@ async function checkQuizStatus(user_id, mission_id) {
 
     // Get the list of quizzes the user has answered for the mission
     const userMission = await UserMissionModel.findOne({ user_id: user_id, mission_id: mission_id });
-  
+
     if (!userMission) {
         // If there are no user answers for this mission, return object indicating all unanswered
         return {
             answered: 0
         };
     }
-  
+
     if (userMission.quiz_answers && Array.isArray(userMission.quiz_answers)) {
         const answeredQuizIds = userMission.quiz_answers.map(answer => {
             if (answer && answer.mission_quiz_id) {
@@ -173,7 +162,7 @@ async function checkQuizStatus(user_id, mission_id) {
                 return null; // or any other value to indicate missing quiz ID
             }
         });
-  
+
         return {
             answered: answeredQuizIds.length
         };

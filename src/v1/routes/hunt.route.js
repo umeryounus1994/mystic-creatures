@@ -8,6 +8,9 @@ const {
 const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
+const {
+  checkAuthOrigins,
+} = require("../../../middlewares/authMiddlewareGenericAll");
 
 router.post(
   "/createTreasureHunt",
@@ -29,7 +32,7 @@ router.post(
   checkAdminUserAuth,
   treasureHuntController.createHuntOptions
 );
-router.get("/get_all", treasureHuntController.getTreasureHunts);
+router.get("/get_all", checkAuthOrigins, treasureHuntController.getTreasureHunts);
 router.get("/get_all_user_hunts/:status", checkUserAuth, treasureHuntController.getAllUserHunts);
 router.get("/get_hunt_by_id/:id", checkUserAuth, treasureHuntController.getHuntById);
 router.get("/unlock_hunt/:id", checkUserAuth, treasureHuntController.startTreasureHunt);
