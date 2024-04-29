@@ -168,11 +168,19 @@ const createQuizOptions = async (req, res, next) => {
 
 const getMissions = async (req, res, next) => {
   try {
+    if (req.body.latitude == undefined || req.body.longitude == undefined) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Lat, Long is required"
+      );
+    }
+    const latitude = req.body.latitude;
+    const longitude = req.body.longitude;
     const missions = await MissionModel.find({});
     return res.json({
       status: true,
       message: "Data Found",
-      data: await missionHelper.getAllMissions(missions,req.user.id)
+      data: await missionHelper.getAllMissions(missions,req.user.id,latitude,longitude)
     })
   } catch (err) {
     next(err);
@@ -183,6 +191,15 @@ const getAllUserMissions = async (req, res, next) => {
   try {
     const status = req.params.status;
     let missions = null;
+    
+    if (req.body.latitude == undefined || req.body.longitude == undefined) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Lat, Long is required"
+      );
+    }
+    const latitude = req.body.latitude;
+    const longitude = req.body.longitude;
     if(status == "all"){
       missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id)})
       .populate("mission_id");
@@ -196,11 +213,10 @@ const getAllUserMissions = async (req, res, next) => {
         "No user missions found"
       );
     }
-    console.log(missions.length)
     return res.json({
       status: true,
       message: "Data Found",
-      data: await missionHelper.getAllUserMissions(missions, req.user.id)
+      data: await missionHelper.getAllUserMissions(missions, req.user.id, latitude,longitude)
     })
   } catch (err) {
     next(err);

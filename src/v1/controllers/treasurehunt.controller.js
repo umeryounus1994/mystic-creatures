@@ -168,11 +168,19 @@ const createHuntOptions = async (req, res, next) => {
 
 const getTreasureHunts = async (req, res, next) => {
   try {
+    if (req.body.latitude == undefined || req.body.longitude == undefined) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Lat, Long is required"
+      );
+    }
+    const latitude = req.body.latitude;
+    const longitude = req.body.longitude;
     const hunts = await TreasureHuntModel.find({});
     return res.json({
       status: true,
       message: "Data Found",
-      data: await huntHelper.getAllTreasureHunt(hunts, req.user.id)
+      data: await huntHelper.getAllTreasureHunt(hunts, req.user.id, latitude, longitude)
     })
   } catch (err) {
     next(err);
@@ -181,6 +189,14 @@ const getTreasureHunts = async (req, res, next) => {
 
 const getAllUserHunts = async (req, res, next) => {
   try {
+    if (req.body.latitude == undefined || req.body.longitude == undefined) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Lat, Long is required"
+      );
+    }
+    const latitude = req.body.latitude;
+    const longitude = req.body.longitude;
     const status = req.params.status;
     let hunt = null;
     if(status == "all"){
@@ -199,7 +215,7 @@ const getAllUserHunts = async (req, res, next) => {
     return res.json({
       status: true,
       message: "Data Found",
-      data: await huntHelper.getAllUserTreasureHunt(hunt, req.user.id)
+      data: await huntHelper.getAllUserTreasureHunt(hunt, req.user.id, latitude, longitude)
     })
   } catch (err) {
     next(err);

@@ -5,7 +5,7 @@ const TreasureHuntQuizModel = require("../src/v1/models/treasurequiz.model");
 const TreasureHuntQuizOptionModel = require("../src/v1/models/treasurequizoption.model");
 const UserTreasureHuntModel = require("../src/v1/models/usertreasurehunt.model");
 
-module.exports.getAllTreasureHunt = async function (data, user_id) {
+module.exports.getAllTreasureHunt = async function (data, user_id, latitude, longitude) {
     const promiseArr = [];
     var result = [];
     return new Promise((resolve, reject) => {
@@ -14,7 +14,16 @@ module.exports.getAllTreasureHunt = async function (data, user_id) {
                 new Promise(async (resolvve, rejectt) => {
                     var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element._id) })
                     var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
-
+                        let endLocation = {
+                            latitude: quiz.location.coordinates[1],
+                            longitude: quiz.location.coordinates[0]
+                        }
+                        const userLocation = {
+                            latitude: latitude,
+                            longitude: longitude
+                        }
+                        const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
+                        if (locationDistance < 30) {
                         var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(element?._id) });
                         var simplifiedOptions = options.map(option => ({
                             _id: option.id,
@@ -25,6 +34,7 @@ module.exports.getAllTreasureHunt = async function (data, user_id) {
                             ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
                             options: simplifiedOptions
                         };
+                    }
                     });
                     var quizzesWithOptions = await Promise.all(quizPromises);
                     const filteredArray = quizzesWithOptions.filter(element => element != null);
@@ -93,7 +103,7 @@ module.exports.getSingleHunt = async function (data, latitude, longitude) {
 
 }
 
-module.exports.getAllUserTreasureHunt = async function (data, user_id) {
+module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude, longitude) {
     const promiseArr = [];
     var result = [];
     return new Promise((resolve, reject) => {
@@ -102,7 +112,16 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id) {
                 new Promise(async (resolvve, rejectt) => {
                     var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element.treasure_hunt_id) })
                     var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
-
+                        let endLocation = {
+                            latitude: quiz.location.coordinates[1],
+                            longitude: quiz.location.coordinates[0]
+                        }
+                        const userLocation = {
+                            latitude: latitude,
+                            longitude: longitude
+                        }
+                        const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
+                        if (locationDistance < 30) {
                         var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(element?.treasure_hunt_id) });
                         var simplifiedOptions = options.map(option => ({
                             _id: option.id,
@@ -113,6 +132,7 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id) {
                             ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
                             options: simplifiedOptions
                         };
+                    }
                     });
                     var quizzesWithOptions = await Promise.all(quizPromises);
                     const checkProgress = await checkQuizStatus(element?.treasure_hunt_id, user_id)
