@@ -187,6 +187,19 @@ const getMissions = async (req, res, next) => {
   }
 };
 
+const getAdminMissions = async (req, res, next) => {
+  try {
+    const missions = await MissionModel.find({});
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await missionHelper.getAllAdminMissions(missions)
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getAllUserMissions = async (req, res, next) => {
   try {
     const status = req.params.status;
@@ -547,5 +560,6 @@ module.exports = {
   submitMissionQuizAnswer,
   claimMission,
   userMissionProgress,
-  getAllUserMissions
+  getAllUserMissions,
+  getAdminMissions
 };

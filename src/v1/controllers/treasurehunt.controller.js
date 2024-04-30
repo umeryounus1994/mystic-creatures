@@ -187,6 +187,19 @@ const getTreasureHunts = async (req, res, next) => {
   }
 };
 
+const getAdminTreasureHunts = async (req, res, next) => {
+  try {
+    const hunts = await TreasureHuntModel.find({});
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await huntHelper.getAllAdminTreasureHunt(hunts)
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getAllUserHunts = async (req, res, next) => {
   try {
     if (req.body.latitude == undefined || req.body.longitude == undefined) {
@@ -563,5 +576,6 @@ module.exports = {
     userHuntProgress,
     getAllUserHunts,
     createHuntQuiz,
-    createHuntOptions
+    createHuntOptions,
+    getAdminTreasureHunts
 };

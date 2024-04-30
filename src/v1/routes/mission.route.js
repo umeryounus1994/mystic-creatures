@@ -32,6 +32,7 @@ router.post(
   checkAdminUserAuth,
   missionController.createQuizOptions
 );
+router.get("/get_all_admin", checkAdminUserAuth,missionController.getAdminMissions);
 router.post("/get_all", checkAuthOrigins,missionController.getMissions);
 router.post("/get_all_user_missions/:status", checkUserAuth, missionController.getAllUserMissions);
 router.get("/get_mission_by_id/:id", checkUserAuth, missionController.getMissionById);

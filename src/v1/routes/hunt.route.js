@@ -32,6 +32,7 @@ router.post(
   checkAdminUserAuth,
   treasureHuntController.createHuntOptions
 );
+router.get("/get_all_admin", checkAdminUserAuth, treasureHuntController.getAdminTreasureHunts);
 router.post("/get_all", checkAuthOrigins, treasureHuntController.getTreasureHunts);
 router.post("/get_all_user_hunts/:status", checkUserAuth, treasureHuntController.getAllUserHunts);
 router.get("/get_hunt_by_id/:id", checkUserAuth, treasureHuntController.getHuntById);
