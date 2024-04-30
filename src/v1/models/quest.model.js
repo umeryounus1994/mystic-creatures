@@ -6,6 +6,7 @@ const mongooseDelete = require("mongoose-delete");
 const questSchema = new mongoose.Schema(
     {
         quest_question: { type: String },
+        quest_title: { type: String },
         qr_code: { type: String },
         no_of_xp: { type: Number, default: 0 },
         no_of_crypes: { type: Number, default: 0 },

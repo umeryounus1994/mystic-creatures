@@ -14,6 +14,7 @@ module.exports.getAllQuests = async function (data) {
                     var el ={}
                     var el ={
                         id: element._id,
+                        quest_title : element.quest_title,
                         quest_question : element.quest_question,
                         qr_code: element.qr_code,
                         no_of_xp: element.no_of_xp,
@@ -49,6 +50,7 @@ module.exports.getAllPlayerQuests = async function (data) {
                     var el ={}
                     var el ={
                         id: findQuest._id,
+                        quest_title : findQuest.quest_title,
                         quest_question : findQuest.quest_question,
                         status: element.status,
                         quest_image: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg',
