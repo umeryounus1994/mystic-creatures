@@ -26,6 +26,6 @@ module.exports = multer({
     },
   }),
   limits: {
-    fileSize: 16000000, // 8 MB
+    fileSize: 50000000, // 8 MB
   },
 });
