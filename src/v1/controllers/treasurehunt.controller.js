@@ -132,20 +132,19 @@ const createHuntQuiz = async (req, res, next) => {
 const createHuntOptions = async (req, res, next) => {
   try {
     const { ...itemDetails } = req.body;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    if(req.body.answer == undefined || req.body.answer == ""){
       return apiResponse.ErrorResponse(
         res,
-        "Invalid Data"
+        "Answer is required"
       );
     }
-    var checkTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectId(req.body.treasure_hunt_id) });
-    if (checkTreasureHuntQuiz.length == 5) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Maximum 5 Quizez can be in one Treasure Hunt"
-      );
-    }
+    // var checkTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectId(req.body.treasure_hunt_id) });
+    // if (checkTreasureHuntQuiz.length == 5) {
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Maximum 5 Quizez can be in one Treasure Hunt"
+    //   );
+    // }
     const createdItem = new TreasureHuntQuizOptionModel(itemDetails);
     createdItem.save(async (err) => {
       if (err) {

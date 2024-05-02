@@ -132,18 +132,10 @@ const createQuiz = async (req, res, next) => {
 const createQuizOptions = async (req, res, next) => {
   try {
     const { ...itemDetails } = req.body;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    if(req.body.answer == undefined || req.body.answer == ""){
       return apiResponse.ErrorResponse(
         res,
-        "Invalid Data"
-      );
-    }
-    var checkMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectId(req.body.mission_id) });
-    if (checkMissionQuiz.length == 3) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Maximum 3 Quizez can be in one mission"
+        "Answer is required"
       );
     }
     const createdItem = new MissionQuizOptionModel(itemDetails);
