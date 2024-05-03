@@ -207,7 +207,7 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
 }
 
 // Function to check if all quizzes in a mission are answered by a user
-async function checkQuizStatus(user_id, treasure_hunt_id) {
+async function checkQuizStatus(treasure_hunt_id, user_id) {
 
     // Get the list of quizzes the user has answered for the mission
     const userHunts = await UserTreasureHuntModel.findOne({ user_id: new ObjectID(user_id), treasure_hunt_id: new ObjectID(treasure_hunt_id) });
