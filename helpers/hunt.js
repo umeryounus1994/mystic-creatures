@@ -210,7 +210,7 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
 async function checkQuizStatus(user_id, treasure_hunt_id) {
 
     // Get the list of quizzes the user has answered for the mission
-    const userHunts = await UserTreasureHuntModel.findOne({ user_id: user_id, treasure_hunt_id: treasure_hunt_id });
+    const userHunts = await UserTreasureHuntModel.findOne({ user_id: new ObjectID(user_id), treasure_hunt_id: new ObjectID(treasure_hunt_id) });
 
     if (!userHunts) {
         // If there are no user answers for this mission, return object indicating all unanswered

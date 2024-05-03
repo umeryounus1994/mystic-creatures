@@ -109,7 +109,7 @@ module.exports.getAllAdminMissions = async function (data) {
     })
 }
 
-module.exports.getSingleMission = async function (data, latitude, longitude) {
+module.exports.getSingleMission = async function (data) {
     var findMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectID(data._id) })
     var quizPromises = findMissionQuiz.map(async (quiz) => {
 
@@ -203,7 +203,7 @@ module.exports.getAllUserMissions = async function (data, user_id,latitude,longi
 }
 
 // Function to check if all quizzes in a mission are answered by a user
-async function checkQuizStatus(user_id, mission_id) {
+async function checkQuizStatus(mission_id, user_id) {
 
     // Get the list of quizzes the user has answered for the mission
     const userMission = await UserMissionModel.findOne({ user_id: new ObjectID(user_id), mission_id:  new ObjectID(mission_id) });
