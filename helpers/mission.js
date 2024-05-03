@@ -206,7 +206,7 @@ module.exports.getAllUserMissions = async function (data, user_id,latitude,longi
 async function checkQuizStatus(user_id, mission_id) {
 
     // Get the list of quizzes the user has answered for the mission
-    const userMission = await UserMissionModel.findOne({ user_id: user_id, mission_id: mission_id });
+    const userMission = await UserMissionModel.findOne({ user_id: new ObjectID(user_id), mission_id:  new ObjectID(mission_id) });
 
     if (!userMission) {
         // If there are no user answers for this mission, return object indicating all unanswered
