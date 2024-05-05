@@ -184,7 +184,7 @@ const getTreasureHunts = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const hunts = await TreasureHuntModel.find({})
+    const hunts = await TreasureHuntModel.find({status: 'active'})
     .populate("mythica_ID");
     return res.json({
       status: true,

@@ -224,7 +224,7 @@ const getMissions = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const missions = await MissionModel.find({})
+    const missions = await MissionModel.find({status: 'active'})
     .populate("mythica_ID");
     const all_missions = await missionHelper.getAllMissions(missions,req.user.id,latitude,longitude)
     return res.json({
