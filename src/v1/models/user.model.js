@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "blocked", "pending_verification"],
       default: "active",
     },
+    purchased_package: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: {

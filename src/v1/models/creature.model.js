@@ -8,6 +8,7 @@ const creatureSchema = new mongoose.Schema(
         creature_id: { type: Number },
         creature_name: { type: String },
         creature_description: { type: String },
+        creature_food: { type: String },
         creature_element: { type: String },
         creature_rarity: { type: String },
         creature_weight: { type: String },

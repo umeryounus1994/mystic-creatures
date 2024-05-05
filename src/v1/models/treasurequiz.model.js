@@ -21,12 +21,11 @@ const huntQuizSchema = new mongoose.Schema({
         type: String,
         type: mongoose.Schema.Types.ObjectId, ref: 'TreasureHunt'
     },
-    creature: { type: String },
     location: {
         type: pointSchema,
         required: true,
     },
-    mythica: { type: String }
+    mythica: { type: String, type: mongoose.Schema.Types.ObjectId, ref: 'Creature' },
 })
 
 huntQuizSchema.plugin(mongooseDelete, { overrideMethods: "all" });

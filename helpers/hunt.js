@@ -12,50 +12,58 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
         data.forEach(element => {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
-                    var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element._id) })
-                    var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
-                        let endLocation = {
-                            latitude: quiz.location.coordinates[1],
-                            longitude: quiz.location.coordinates[0]
-                        }
-                        const userLocation = {
-                            latitude: latitude,
-                            longitude: longitude
-                        }
-                        const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
-                        if (locationDistance < 30) {
-                        var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(element?._id) });
-                        var simplifiedOptions = options.map(option => ({
-                            _id: option.id,
-                            answer: option.answer,
-                            correct_option: option.correct_option
-                        }));
-                        return {
-                            ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
-                            options: simplifiedOptions
-                        };
+                    let endLocation = {
+                        latitude: element.hunt_location.coordinates[1],
+                        longitude: element.hunt_location.coordinates[0]
                     }
-                    });
-                    var quizzesWithOptions = await Promise.all(quizPromises);
-                    const filteredArray = quizzesWithOptions.filter(element => element != null);
-                    const userHunt = await UserTreasureHuntModel.findOne({ treasure_hunt_id: new ObjectID(element?._id), user_id: new ObjectID(user_id) });
-                    const checkProgress = await checkQuizStatus(element?._id, user_id)
-                    var el = {
-                        id: element._id,
-                        treasure_hunt_title: element.treasure_hunt_title,
-                        no_of_xp: element.no_of_xp,
-                        no_of_crypes: element.no_of_crypes,
-                        level_increase: element.level_increase,
-                        mythica_ID: element.mythica_ID,
-                        status: element.status,
-                        treasure_hunt_image: element.treasure_hunt_image,
-                        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
-                        treasure_hunt_status: userHunt ? userHunt?.status : 'open',
-                        hunt_progress: checkProgress?.answered
+                    const userLocation = {
+                        latitude: latitude,
+                        longitude: longitude
+                    }
+                    const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
+                    if (locationDistance < 10) {
+                        var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element._id) })
+                            .populate([
+                                {
+                                    path: 'mythica', select: {
+                                        creature_name: 1, creature_element: 1, creature_rarity: 1,
+                                        creature_weight: 1, creature_height: 1
+                                    }
+                                }])
+                        var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
+                            var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(element?._id) });
+                            var simplifiedOptions = options.map(option => ({
+                                _id: option.id,
+                                answer: option.answer,
+                                correct_option: option.correct_option
+                            }));
+                            return {
+                                ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
+                                options: simplifiedOptions
+                            };
+                        });
+                        var quizzesWithOptions = await Promise.all(quizPromises);
+                        const filteredArray = quizzesWithOptions.filter(element => element != null);
+                        const userHunt = await UserTreasureHuntModel.findOne({ treasure_hunt_id: new ObjectID(element?._id), user_id: new ObjectID(user_id) });
+                        const checkProgress = await checkQuizStatus(element?._id, user_id)
+                        var el = {
+                            id: element._id,
+                            treasure_hunt_title: element.treasure_hunt_title,
+                            no_of_xp: element.no_of_xp,
+                            no_of_crypes: element.no_of_crypes,
+                            level_increase: element.level_increase,
+                            mythica_ID: element.mythica_ID?.creature_name,
+                            status: element.status,
+                            treasure_hunt_image: element.treasure_hunt_image,
+                            quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
+                            treasure_hunt_status: userHunt ? userHunt?.status : 'open',
+                            hunt_progress: checkProgress?.answered
 
+                        }
+
+                        result.push(el)
                     }
 
-                    result.push(el)
                     resolvve(result);
                 })
             )
@@ -74,6 +82,13 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element._id) })
+                        .populate([
+                            {
+                                path: 'mythica', select: {
+                                    creature_name: 1, creature_element: 1, creature_rarity: 1,
+                                    creature_weight: 1, creature_height: 1
+                                }
+                            }])
                     var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
                         var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(element?._id) });
                         var simplifiedOptions = options.map(option => ({
@@ -95,7 +110,7 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
                         no_of_xp: element.no_of_xp,
                         no_of_crypes: element.no_of_crypes,
                         level_increase: element.level_increase,
-                        mythica_ID: element.mythica_ID,
+                        mythica_ID: element.mythica_ID?.creature_name,
                         status: element.status,
                         treasure_hunt_image: element.treasure_hunt_image,
                         quiz: filteredArray.length > 0 ? quizzesWithOptions : []
@@ -115,6 +130,13 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
 
 module.exports.getSingleHunt = async function (data, latitude, longitude) {
     var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(data._id) })
+        .populate([
+            {
+                path: 'mythica', select: {
+                    creature_name: 1, creature_element: 1, creature_rarity: 1,
+                    creature_weight: 1, creature_height: 1
+                }
+            }])
     var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
 
         var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(data?._id) });
@@ -138,7 +160,7 @@ module.exports.getSingleHunt = async function (data, latitude, longitude) {
         no_of_xp: data.no_of_xp,
         no_of_crypes: data.no_of_crypes,
         level_increase: data.level_increase,
-        mythica_ID: data.mythica_ID,
+        mythica_ID: data.mythica_ID?.creature_name,
         status: data.status,
         treasure_hunt_image: data.treasure_hunt_image,
         quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
@@ -155,47 +177,55 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
         data.forEach(element => {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
-                    var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element.treasure_hunt_id) })
-                    var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
-                        let endLocation = {
-                            latitude: quiz.location.coordinates[1],
-                            longitude: quiz.location.coordinates[0]
-                        }
-                        const userLocation = {
-                            latitude: latitude,
-                            longitude: longitude
-                        }
-                        const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
-                        if (locationDistance < 30) {
-                        var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(element?.treasure_hunt_id) });
-                        var simplifiedOptions = options.map(option => ({
-                            _id: option.id,
-                            answer: option.answer,
-                            correct_option: option.correct_option
-                        }));
-                        return {
-                            ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
-                            options: simplifiedOptions
-                        };
+                    let endLocation = {
+                        latitude: element.treasure_hunt_id?.hunt_location.coordinates[1],
+                        longitude: element.treasure_hunt_id?.hunt_location.coordinates[0]
                     }
-                    });
-                    var quizzesWithOptions = await Promise.all(quizPromises);
-                    const checkProgress = await checkQuizStatus(element?.treasure_hunt_id, user_id)
-                    const filteredArray = quizzesWithOptions.filter(element => element != null);
-                    var el = {
-                        id: element.treasure_hunt_id._id,
-                        treasure_hunt_title: element?.treasure_hunt_id?.treasure_hunt_title,
-                        no_of_xp: element?.treasure_hunt_id.no_of_xp,
-                        no_of_crypes: element?.treasure_hunt_id.no_of_crypes,
-                        level_increase: element?.treasure_hunt_id.level_increase,
-                        mythica_ID: element?.treasure_hunt_id.mythica_ID,
-                        status: element.status,
-                        treasure_hunt_image: element?.treasure_hunt_id.treasure_hunt_image,
-                        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
-                        hunt_progress: checkProgress?.answered,
+                    const userLocation = {
+                        latitude: latitude,
+                        longitude: longitude
+                    }
+                    const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
+                    if (locationDistance < 10) {
+                        var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element.treasure_hunt_id) })
+                            .populate([
+                                {
+                                    path: 'mythica', select: {
+                                        creature_name: 1, creature_element: 1, creature_rarity: 1,
+                                        creature_weight: 1, creature_height: 1
+                                    }
+                                }])
+                        var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
+                            var options = await TreasureHuntQuizOptionModel.find({ treasure_hunt_quiz_id: new ObjectID(quiz._id), treasure_hunt_id: new ObjectID(element?.treasure_hunt_id) });
+                            var simplifiedOptions = options.map(option => ({
+                                _id: option.id,
+                                answer: option.answer,
+                                correct_option: option.correct_option
+                            }));
+                            return {
+                                ...quiz.toObject(), // Convert Mongoose document to plain JavaScript object
+                                options: simplifiedOptions
+                            };
+                        });
+                        var quizzesWithOptions = await Promise.all(quizPromises);
+                        const checkProgress = await checkQuizStatus(element?.treasure_hunt_id, user_id)
+                        const filteredArray = quizzesWithOptions.filter(element => element != null);
+                        var el = {
+                            id: element.treasure_hunt_id._id,
+                            treasure_hunt_title: element?.treasure_hunt_id?.treasure_hunt_title,
+                            no_of_xp: element?.treasure_hunt_id.no_of_xp,
+                            no_of_crypes: element?.treasure_hunt_id.no_of_crypes,
+                            level_increase: element?.treasure_hunt_id.level_increase,
+                            mythica_ID: element?.treasure_hunt_id.mythica_ID?.creature_name,
+                            status: element.status,
+                            treasure_hunt_image: element?.treasure_hunt_id.treasure_hunt_image,
+                            quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
+                            hunt_progress: checkProgress?.answered,
+                        }
+
+                        result.push(el)
                     }
 
-                    result.push(el)
                     resolvve(result);
                 })
             )

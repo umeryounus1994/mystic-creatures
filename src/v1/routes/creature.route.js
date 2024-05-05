@@ -14,7 +14,6 @@ const {
 router.post(
   "/add",
   checkAdminUserAuth,
-  fileUpload.single('model_file'),
   creatureController.addCreature
 );
 router.get("/get_all", checkAuthOrigins, creatureController.listCreatures);

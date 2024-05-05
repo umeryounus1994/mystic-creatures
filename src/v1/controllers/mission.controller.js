@@ -12,7 +12,7 @@ const userModel = require("../models/user.model");
 
 const createMission = async (req, res, next) => {
   try {
-    const { ...itemDetails } = req.body;
+    let { ...itemDetails } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return apiResponse.ErrorResponse(
@@ -20,10 +20,61 @@ const createMission = async (req, res, next) => {
         "Invalid Data"
       );
     }
+    // if(req.body?.mission_title == "" || req.body?.mission_title == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Mission Title is required"
+    //   );
+    // }
+    // if(req.body?.no_of_xp == "" || req.body?.no_of_xp == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "No of XP is required"
+    //   );
+    // }
+    // if(req.body?.no_of_crypes == "" || req.body?.no_of_crypes == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "No of Crypes is required"
+    //   );
+    // }
+    // if(req.body?.level_increase == "" || req.body?.level_increase == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Level Increase is required"
+    //   );
+    // }
+    // if(req.body?.mission_start_date == "" || req.body?.mission_start_date == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Start Date is required"
+    //   );
+    // }
+    // if(req.body?.mission_end_date == "" || req.body?.mission_end_date == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "End Date is required"
+    //   );
+    // }
+    // if(req.body?.mission_latitude == "" || req.body?.mission_latitude == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Latitude is required"
+    //   );
+    // }
+    // if(req.body?.mission_longitude == "" || req.body?.mission_longitude == undefined){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Longitude is required"
+    //   );
+    // }
+    var location = { type: 'Point', coordinates: [req.body?.mission_longitude, req.body?.mission_latitude] };
+    itemDetails.mission_location = location;
     const createdItem = new MissionModel(itemDetails);
 
     createdItem.save(async (err) => {
       if (err) {
+        console.log(err)
         return apiResponse.ErrorResponse(
           res,
           "System went wrong, Kindly try again later"
@@ -146,6 +197,11 @@ const createQuizOptions = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
+      await MissionModel.findByIdAndUpdate(
+        req.body.mission_id,
+        { status: 'active' },
+        { upsert: true, new: true }
+      );
       return apiResponse.successResponseWithData(
         res,
         "Created successfully"
@@ -168,11 +224,13 @@ const getMissions = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const missions = await MissionModel.find({});
+    const missions = await MissionModel.find({})
+    .populate("mythica_ID");
+    const all_missions = await missionHelper.getAllMissions(missions,req.user.id,latitude,longitude)
     return res.json({
-      status: true,
-      message: "Data Found",
-      data: await missionHelper.getAllMissions(missions,req.user.id,latitude,longitude)
+      status: all_missions.length > 0 ? true : false,
+      message: all_missions.length > 0 ? "Data Found" : "No missions found",
+      data: all_missions
     })
   } catch (err) {
     next(err);
@@ -181,7 +239,8 @@ const getMissions = async (req, res, next) => {
 
 const getAdminMissions = async (req, res, next) => {
   try {
-    const missions = await MissionModel.find({});
+    const missions = await MissionModel.find({})
+    .populate("mythica_ID");
     return res.json({
       status: true,
       message: "Data Found",

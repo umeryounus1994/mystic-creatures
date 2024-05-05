@@ -21,12 +21,11 @@ const missionQuizSchema = new mongoose.Schema({
         type: String,
         type: mongoose.Schema.Types.ObjectId, ref: 'Mission'
     },
-    creature: { type: String },
+    mythica: { type: String, type: mongoose.Schema.Types.ObjectId, ref: 'Creature' },
     location: {
         type: pointSchema,
         required: true,
-    },
-    mythica: { type: String }
+    }
 })
 
 missionQuizSchema.plugin(mongooseDelete, { overrideMethods: "all" });

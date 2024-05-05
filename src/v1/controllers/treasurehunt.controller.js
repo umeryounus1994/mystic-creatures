@@ -20,6 +20,8 @@ const createTreasureHunt = async (req, res, next) => {
         "Invalid Data"
       );
     }
+    var location = { type: 'Point', coordinates: [req.body?.hunt_longitude, req.body?.hunt_latitude] };
+    itemDetails.hunt_location = location;
     const createdItem = new TreasureHuntModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -72,6 +74,7 @@ const createTreasureHuntQuiz = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
+ 
       var options = [];
       req.body.options.forEach(element => {
         options.push({
@@ -116,9 +119,10 @@ const createHuntQuiz = async (req, res, next) => {
         creature: element?.creature,
       });
     });
+  
     TreasureHuntQuizModel.insertMany(options)
       .then(function () {
-
+      
         return apiResponse.successResponseWithData(
           res,
           "Created successfully"
@@ -153,6 +157,11 @@ const createHuntOptions = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
+      await TreasureHuntModel.findByIdAndUpdate(
+        req.body.treasure_hunt_id,
+        { status: 'active' },
+        { upsert: true, new: true }
+      );
       return apiResponse.successResponseWithData(
         res,
         "Created successfully"
@@ -175,7 +184,8 @@ const getTreasureHunts = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const hunts = await TreasureHuntModel.find({});
+    const hunts = await TreasureHuntModel.find({})
+    .populate("mythica_ID");
     return res.json({
       status: true,
       message: "Data Found",
@@ -188,7 +198,8 @@ const getTreasureHunts = async (req, res, next) => {
 
 const getAdminTreasureHunts = async (req, res, next) => {
   try {
-    const hunts = await TreasureHuntModel.find({});
+    const hunts = await TreasureHuntModel.find({})
+    .populate("mythica_ID");
     return res.json({
       status: true,
       message: "Data Found",
@@ -246,7 +257,8 @@ const getHuntById = async (req, res, next) => {
     const longitude = req.body.longitude;
     const id = req.params.id;
 
-    const hunts = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    const hunts = await TreasureHuntModel.findOne({ _id: new ObjectId(id) })
+    .populate("mythica_ID");
     if (!hunts) {
       return apiResponse.ErrorResponse(
         res,

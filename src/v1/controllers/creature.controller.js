@@ -26,11 +26,6 @@ const addCreature = async (req, res, next) => {
             "Creature Element is required"
           );
     }
-    if (req?.file?.location) {
-        itemDetails.creature_model = req?.file?.location
-    }
-    const creatures = await CreatureModel.find({});
-    itemDetails.creature_id = creatures != null ? creatures.length + 1 : 1 ;
     const createdItem = new CreatureModel(itemDetails);
 
     createdItem.save(async (err) => {
