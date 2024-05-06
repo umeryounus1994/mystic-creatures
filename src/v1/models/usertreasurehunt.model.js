@@ -36,7 +36,7 @@ userTreasureHuntSchema.methods.updateUserAnswer = async function(quiz_id, select
         this.quiz_answers[existingAnswerIndex].treasure_hunt_quiz_option_id = selected_option_id;
     } else {
         // If the user hasn't answered this quiz yet, add a new answer
-        this.quiz_answers.push({ mission_quiz_id: quiz_id, treasure_hunt_quiz_option_id:selected_option_id });
+        this.quiz_answers.push({ treasure_hunt_quiz_id: quiz_id, treasure_hunt_quiz_option_id:selected_option_id });
     }
 
     await this.save();

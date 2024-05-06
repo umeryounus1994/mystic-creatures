@@ -448,8 +448,8 @@ const claimHunt = async (req, res, next) => {
         { upsert: true, new: true }
       );
       const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
-      let current_xp = parseInt(user.current_xp) + parseInt(mission?.no_of_xp);
-      let current_level = parseInt(user.current_level) + parseInt(mission?.level_increase);
+      let current_xp = parseInt(user.current_xp) + parseInt(hunt?.no_of_xp);
+      let current_level = parseInt(user.current_level) + parseInt(hunt?.level_increase);
       await userModel.findOneAndUpdate(
         { _id: req.user.id },
         {
