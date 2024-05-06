@@ -4,6 +4,7 @@ const { ObjectId } = require("mongodb");
 const { validationResult } = require("express-validator");
 const apiResponse = require("../../../helpers/apiResponse");
 const TreasureHuntModel = require("../models/treasure.model");
+const TransactionModel = require("../models/transactions.model");
 const TreasureHuntQuizModel = require("../models/treasurequiz.model");
 const TreasureHuntQuizOptionModel = require("../models/treasurequizoption.model");
 const UserTreasureHuntModel = require("../models/usertreasurehunt.model");
@@ -458,6 +459,15 @@ const claimHunt = async (req, res, next) => {
         },
         { upsert: true, new: true }
       );
+      var items = {
+        user_id: req.user.id,
+        hunt_id: hunt?._id
+      }
+      const createdItem = new TransactionModel(items);
+  
+      createdItem.save(async (err) => {
+  
+      })
       return apiResponse.successResponse(
         res,
         "Treasure Hunt Claimed"

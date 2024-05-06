@@ -4,6 +4,7 @@ const { ObjectId } = require("mongodb");
 const { validationResult } = require("express-validator");
 const apiResponse = require("../../../helpers/apiResponse");
 const MissionModel = require("../models/mission.model");
+const TransactionModel = require("../models/transactions.model");
 const MissionQuizModel = require("../models/missionquiz.model");
 const MissionQuizOptionModel = require("../models/missionquizoption.model");
 const UserMissionModel = require("../models/usermission.model");
@@ -488,6 +489,15 @@ const claimMission = async (req, res, next) => {
         },
         { upsert: true, new: true }
       );
+      var items = {
+        user_id: req.user.id,
+        mission_id: mission?._id
+      }
+      const createdItem = new TransactionModel(items);
+
+      createdItem.save(async (err) => {
+
+      })
       return apiResponse.successResponse(
         res,
         "Mission Claimed"

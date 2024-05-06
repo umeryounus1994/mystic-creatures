@@ -4,6 +4,7 @@ const { ObjectId } = require("mongodb");
 const { validationResult } = require("express-validator");
 const apiResponse = require("../../../helpers/apiResponse");
 const QuestModel = require("../models/quest.model");
+const TransactionModel = require("../models/transactions.model");
 const QuestQuizModel = require("../models/questquiz.model");
 const UserQuestModel = require("../models/userquest.model");
 var questHelper = require("../../../helpers/quest");
@@ -221,6 +222,15 @@ const completeQuest = async (req, res, next) => {
       },
       { upsert: true, new: true }
     );
+    var items = {
+      user_id: req.user.id,
+      quest_id: quest?._id
+    }
+    const createdItem = new TransactionModel(items);
+
+    createdItem.save(async (err) => {
+
+    })
     return apiResponse.successResponse(
       res,
       "Quest completed"
