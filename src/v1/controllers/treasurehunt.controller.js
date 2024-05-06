@@ -459,15 +459,16 @@ const claimHunt = async (req, res, next) => {
         },
         { upsert: true, new: true }
       );
-      var items = {
-        user_id: req.user.id,
-        hunt_id: hunt?._id
+      const ans = await areAllQuizzesCorrectlyAnswered(req.user.id, id);
+      if(ans == true){
+        var items = {
+          user_id: req.user.id,
+          hunt_id: hunt?._id
+        }
+        const createdItem = new TransactionModel(items);
+        createdItem.save(async (err) => {})
       }
-      const createdItem = new TransactionModel(items);
-  
-      createdItem.save(async (err) => {
-  
-      })
+
       return apiResponse.successResponse(
         res,
         "Treasure Hunt Claimed"
@@ -580,6 +581,38 @@ async function checkQuizStatus(user_id, treasure_hunt_id) {
     };
     }
   
+}
+
+
+async function areAllQuizzesCorrectlyAnswered(user_id, treasure_hunt_id) {
+  // Get the list of quizzes in the mission
+  const huntQuizzes = await TreasureHuntQuizModel.find({ treasure_hunt_id: treasure_hunt_id });
+
+  // Get the list of quizzes the user has answered for the mission
+  const userHunts = await UserTreasureHuntModel.findOne({ user_id: user_id, treasure_hunt_id: treasure_hunt_id });
+
+  if (!userHunts || !userHunts.quiz_answers || !Array.isArray(userHunts.quiz_answers)) {
+    // If there are no user answers for this mission or the quiz answers are not an array, return false
+    return false;
+  }
+
+  // Fetch correct options for quizzes in the mission
+  const correctOptions = await TreasureHuntQuizOptionModel.find({ treasure_hunt_id: treasure_hunt_id, correct_option: true });
+
+  // Check if all quizzes in the mission have been answered by the user and if they are correct
+  return huntQuizzes.every(quiz => {
+    const userAnswer = userHunts.quiz_answers.find(answer => answer.treasure_hunt_quiz_id.toString() === quiz._id.toString());
+    if (!userAnswer) {
+      // User hasn't answered this quiz
+      return false;
+    }
+    const correctOption = correctOptions.find(option => option.treasure_hunt_quiz_id.toString() === quiz._id.toString());
+    if (!correctOption) {
+      // No correct option found for this quiz
+      return false;
+    }
+    return userAnswer.mission_quiz_option_id.toString() === correctOption._id.toString();
+  });
 }
 
 
