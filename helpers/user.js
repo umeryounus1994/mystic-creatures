@@ -24,7 +24,8 @@ module.exports.getAllPlayerData = async function (data) {
                         if(findQuest){
                             el = {
                                 mythica: findQuest?.mythica_ID?.creature_name,
-                                mythica_ID: findQuest?.mythica_ID?.creature_id
+                                mythica_ID: findQuest?.mythica_ID?.creature_id,
+                                gender: findQuest?.mythica_ID?.creature_gender
                             };
                             result.push(el);
                         }
@@ -35,7 +36,8 @@ module.exports.getAllPlayerData = async function (data) {
                         if(findMission){
                             el = {
                                 mythica: findMission?.mythica_ID?.creature_name,
-                                mythica_ID: findMission?.mythica_ID?.creature_id
+                                mythica_ID: findMission?.mythica_ID?.creature_id,
+                                gender: findMission?.mythica_ID?.creature_gender
                             };
                             result.push(el);
                         }
@@ -46,7 +48,8 @@ module.exports.getAllPlayerData = async function (data) {
                         if(findHunt){
                             el = {
                                 mythica: findHunt?.mythica_ID?.creature_name,
-                                mythica_ID: findHunt?.mythica_ID?.creature_id
+                                mythica_ID: findHunt?.mythica_ID?.creature_id,
+                                gender: findHunt?.mythica_ID?.creature_gender
                             };
                             result.push(el);
                         }
