@@ -8,6 +8,7 @@ const {
   generateToken,
 } = require("../../../middlewares/authMiddleware");
 const UserModel = require("../models/user.model");
+const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
 const {
   getPagination,
@@ -16,6 +17,7 @@ const {
   hashPassord,
 } = require("../../../helpers/commonApis");
 const { sendEmail } = require("../../../helpers/emailSender");
+const userHelper = require("../../../helpers/user");
 const bcrypt = require("bcrypt");
 
 
@@ -357,6 +359,33 @@ const changeUserPassword = async (req, res, next) => {
   }
 };
 
+const getUserCreatures = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Validation Error"
+      );
+    }
+    const transactions = await TransactionModel.find({user_id: userId});
+    if (!transactions) {
+      return apiResponse.notFoundResponse(
+        res,
+        "No Data found!"
+      );
+    }
+    const all_player_data = await userHelper.getAllPlayerData(transactions)
+    return res.json({
+      status: all_player_data.length > 0 ? true : false,
+      message: all_player_data.length > 0 ? "Data Found" : "No data found",
+      data: all_player_data
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 
 module.exports = {
@@ -370,5 +399,6 @@ module.exports = {
   logout,
   sendUserPasswordResetEmail,
   getResetPasswordRequestDetails,
-  changeUserPassword
+  changeUserPassword,
+  getUserCreatures
 };

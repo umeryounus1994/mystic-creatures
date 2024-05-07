@@ -31,6 +31,11 @@ router.get(
   checkUserAuth,
   userController.getUser
 );
+router.get(
+  "/player_creatures",
+  checkUserAuth,
+  userController.getUserCreatures
+);
 router.patch(
   "/:id",
   checkUserAuth,
