@@ -19,7 +19,8 @@ module.exports.getAllQuests = async function (data) {
                         qr_code: element.qr_code,
                         no_of_xp: element.no_of_xp,
                         no_of_crypes : element.no_of_crypes,
-                        mythica: element.mythica,
+                        mythica: element?.mythica_ID?.creature_name,
+                        mythica_ID: element?.mythica_ID?.creature_id,
                         level_increase: element.level_increase,
                         mythica_model: element.mythica_model,
                         status: element.status,
@@ -46,6 +47,7 @@ module.exports.getAllPlayerQuests = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var findQuest = await QuestModel.findOne({quest_id: new ObjectID(element.quest_id)})
+                    .populate('mythicaID')
                     var findQuestQuiz = await QuestQuizModel.find({quest_id: new ObjectID(element.quest_id)})
                     var el ={}
                     var el ={
@@ -57,9 +59,9 @@ module.exports.getAllPlayerQuests = async function (data) {
                         qr_code: findQuest.qr_code,
                         no_of_xp: findQuest.no_of_xp,
                         no_of_crypes : findQuest.no_of_crypes,
-                        mythica: findQuest.mythica,
+                        mythica: findQuest.mythicaID?.creature_name,
                         level_increase: findQuest.level_increase,
-                        mythica_model: findQuest.mythica_model,
+                        mythica_ID: findQuest.mythicaID?.creature_id,
                         options: findQuestQuiz,
                         quest_progress: element?.submitted_answer ? 1 : 0
                     }

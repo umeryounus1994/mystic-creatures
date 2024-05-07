@@ -64,7 +64,8 @@ const createQuestQuiz = async (req, res, next) => {
 
 const getQuests = async (req, res, next) => {
   try {
-    const quests = await QuestModel.find({});
+    const quests = await QuestModel.find({})
+    .populate('mythica_ID');
     return res.json({
       status: true,
       message: "Data Found",
@@ -148,7 +149,8 @@ const getQuestById = async (req, res, next) => {
   try {
     const id = req.params.id;
 
-    const quest = await QuestModel.findOne({_id: new ObjectId(id)});
+    const quest = await QuestModel.findOne({_id: new ObjectId(id)})
+    .populate('mythica_ID');;
     if(!quest){
       return apiResponse.ErrorResponse(
         res,
