@@ -21,7 +21,7 @@ const createTreasureHunt = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    var location = { type: 'Point', coordinates: [req.body?.hunt_longitude, req.body?.hunt_latitude] };
+    var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
     itemDetails.hunt_location = location;
     const createdItem = new TreasureHuntModel(itemDetails);
 
@@ -59,7 +59,7 @@ const createTreasureHuntQuiz = async (req, res, next) => {
         "Maximum 5 Quizez can be in one Treasure Hunt"
       );
     }
-    var location = { type: 'Point', coordinates: [req.body?.longitude, req.body?.latitude] };
+    var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     var itemDetails = {
       treasure_hunt_title: req.body?.treasure_hunt_title,
       treasure_hunt_id: req.body?.treasure_hunt_id,
@@ -111,7 +111,7 @@ const createHuntQuiz = async (req, res, next) => {
     }
     var options = [];
     req.body.forEach(element => {
-      var location = { type: 'Point', coordinates: [element?.longitude, element?.latitude] };
+      var location = { type: 'Point', coordinates: [element?.latitude, element?.longitude] };
       options.push({
         treasure_hunt_title: element.treasure_hunt_title,
         mythica: element.mythica,

@@ -13,8 +13,8 @@ module.exports.getAllMissions = async function (data, user_id, latitude, longitu
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     let endLocation = {
-                        latitude: element.mission_location.coordinates[1],
-                        longitude: element.mission_location.coordinates[0]
+                        latitude: element.mission_location.coordinates[0],
+                        longitude: element.mission_location.coordinates[1]
                     }
                     const userLocation = {
                         latitude: latitude,
@@ -178,8 +178,8 @@ module.exports.getAllUserMissions = async function (data, user_id, latitude, lon
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     let endLocation = {
-                        latitude: element.mission_id?.mission_location.coordinates[1],
-                        longitude: element.mission_id?.mission_location.coordinates[0]
+                        latitude: element.mission_id?.mission_location.coordinates[0],
+                        longitude: element.mission_id?.mission_location.coordinates[1]
                     }
                     const userLocation = {
                         latitude: latitude,

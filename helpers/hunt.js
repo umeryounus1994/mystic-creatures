@@ -13,8 +13,8 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     let endLocation = {
-                        latitude: element.hunt_location.coordinates[1],
-                        longitude: element.hunt_location.coordinates[0]
+                        latitude: element.hunt_location.coordinates[0],
+                        longitude: element.hunt_location.coordinates[1]
                     }
                     const userLocation = {
                         latitude: latitude,
@@ -187,8 +187,8 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     let endLocation = {
-                        latitude: element.treasure_hunt_id?.hunt_location.coordinates[1],
-                        longitude: element.treasure_hunt_id?.hunt_location.coordinates[0]
+                        latitude: element.treasure_hunt_id?.hunt_location.coordinates[0],
+                        longitude: element.treasure_hunt_id?.hunt_location.coordinates[1]
                     }
                     const userLocation = {
                         latitude: latitude,

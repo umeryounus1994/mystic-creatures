@@ -67,9 +67,9 @@ const createMission = async (req, res, next) => {
     //   return apiResponse.ErrorResponse(
     //     res,
     //     "Longitude is required"
-    //   );
+    //   );mission_latitude mission_longitude
     // }
-    var location = { type: 'Point', coordinates: [req.body?.mission_longitude, req.body?.mission_latitude] };
+    var location = { type: 'Point', coordinates: [req.body?.mission_latitude, req.body?.mission_longitude] };
     itemDetails.mission_location = location;
     const createdItem = new MissionModel(itemDetails);
 
@@ -108,7 +108,7 @@ const createMissionQuiz = async (req, res, next) => {
         "Maximum 3 Quizez can be in one mission"
       );
     }
-    var location = { type: 'Point', coordinates: [req.body?.longitude, req.body?.latitude] };
+    var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     var itemDetails = {
       quiz_title: req.body?.quiz_title,
       mission_id: req.body?.mission_id,
@@ -159,7 +159,7 @@ const createQuiz = async (req, res, next) => {
     }
     var options = [];
     req.body.forEach(element => {
-      var location = { type: 'Point', coordinates: [element?.longitude, element?.latitude] };
+      var location = { type: 'Point', coordinates: [element?.latitude, element?.longitude] };
       options.push({
         quiz_title: element.quiz_title,
         mythica: element.mythica,
