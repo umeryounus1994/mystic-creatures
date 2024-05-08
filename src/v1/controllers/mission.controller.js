@@ -493,7 +493,8 @@ const claimMission = async (req, res, next) => {
       if(ans == true){
         var items = {
           user_id: req.user.id,
-          mission_id: mission?._id
+          mission_id: mission?._id,
+          mythica_distinguisher: generateUniqueID()
         }
         const createdItem = new TransactionModel(items);
         createdItem.save(async (err) => {})
@@ -545,6 +546,17 @@ const userMissionProgress = async (req, res, next) => {
   }
 };
 
+function generateUniqueID() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const length = 6; // You can adjust the length as needed
+  let uniqueID = '';
+  
+  for (let i = 0; i < length; i++) {
+    uniqueID += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  return uniqueID;
+}
 
 
 // Function to check if all quizzes in a mission are answered by a user

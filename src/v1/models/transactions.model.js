@@ -21,6 +21,7 @@ const transactionsSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'TreasureHunt'
         },
+        mythica_distinguisher: { type: String },
         status: {
             type: String,
             enum: ["active", "deleted"],

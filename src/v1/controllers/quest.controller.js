@@ -226,7 +226,8 @@ const completeQuest = async (req, res, next) => {
     );
     var items = {
       user_id: req.user.id,
-      quest_id: quest?._id
+      quest_id: quest?._id,
+      mythica_distinguisher: generateUniqueID()
     }
     const createdItem = new TransactionModel(items);
 
@@ -241,6 +242,18 @@ const completeQuest = async (req, res, next) => {
     next(err);
   }
 };
+
+function generateUniqueID() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const length = 6; // You can adjust the length as needed
+  let uniqueID = '';
+  
+  for (let i = 0; i < length; i++) {
+    uniqueID += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  return uniqueID;
+}
 
 
 module.exports = {

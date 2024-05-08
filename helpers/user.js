@@ -25,7 +25,8 @@ module.exports.getAllPlayerData = async function (data) {
                             el = {
                                 mythica: findQuest?.mythica_ID?.creature_name,
                                 mythica_ID: findQuest?.mythica_ID?.creature_id,
-                                gender: findQuest?.mythica_ID?.creature_gender
+                                gender: findQuest?.mythica_ID?.creature_gender,
+                                mythica_distinguisher: element.mythica_distinguisher
                             };
                             result.push(el);
                         }
@@ -37,7 +38,8 @@ module.exports.getAllPlayerData = async function (data) {
                             el = {
                                 mythica: findMission?.mythica_ID?.creature_name,
                                 mythica_ID: findMission?.mythica_ID?.creature_id,
-                                gender: findMission?.mythica_ID?.creature_gender
+                                gender: findMission?.mythica_ID?.creature_gender,
+                                mythica_distinguisher: element.mythica_distinguisher
                             };
                             result.push(el);
                         }
@@ -49,7 +51,8 @@ module.exports.getAllPlayerData = async function (data) {
                             el = {
                                 mythica: findHunt?.mythica_ID?.creature_name,
                                 mythica_ID: findHunt?.mythica_ID?.creature_id,
-                                gender: findHunt?.mythica_ID?.creature_gender
+                                gender: findHunt?.mythica_ID?.creature_gender,
+                                mythica_distinguisher: element.mythica_distinguisher
                             };
                             result.push(el);
                         }
@@ -59,7 +62,7 @@ module.exports.getAllPlayerData = async function (data) {
             )
         })
         return Promise.all(promiseArr).then(ress => {
-            resolve(result);
+            resolve(result.sort((a, b) => moment(b.created_at, 'DD-MM-YYYY').diff(moment(a.created_at, 'DD-MM-YYYY'))))
         })
     })
 }
