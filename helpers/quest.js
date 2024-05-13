@@ -47,7 +47,7 @@ module.exports.getAllPlayerQuests = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var findQuest = await QuestModel.findOne({quest_id: new ObjectID(element.quest_id)})
-                    .populate('mythicaID')
+                    .populate('mythica_ID')
                     var findQuestQuiz = await QuestQuizModel.find({quest_id: new ObjectID(element.quest_id)})
                     var el ={}
                     var el ={
@@ -59,9 +59,9 @@ module.exports.getAllPlayerQuests = async function (data) {
                         qr_code: findQuest.qr_code,
                         no_of_xp: findQuest.no_of_xp,
                         no_of_crypes : findQuest.no_of_crypes,
-                        mythica: findQuest.mythicaID?.creature_name,
+                        mythica: findQuest.mythica_ID?.creature_name,
                         level_increase: findQuest.level_increase,
-                        mythica_ID: findQuest.mythicaID?.creature_id,
+                        mythica_ID: findQuest.mythica_ID?.creature_id,
                         options: findQuestQuiz,
                         quest_progress: element?.submitted_answer ? 1 : 0
                     }
