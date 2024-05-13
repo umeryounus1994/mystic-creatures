@@ -8,6 +8,9 @@ const {
   generateToken,
 } = require("../../../middlewares/authMiddleware");
 const UserModel = require("../models/user.model");
+const QuestModel = require("../models/quest.model");
+const MissionModel = require("../models/mission.model");
+const HuntModel = require("../models/treasure.model");
 const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
 const {
@@ -386,6 +389,30 @@ const getUserCreatures = async (req, res, next) => {
   }
 };
 
+const getAnalytics = async (req, res, next) => {
+  try {
+    const users = await UserModel.find({status: "active"});
+    const quests = await QuestModel.find({status: "active"});
+    const missions = await MissionModel.find({status: "active"});
+    const hunts = await HuntModel.find({status: "active"});
+
+    return res.json({
+      status: true,
+      data: {
+        users: users.length,
+        quests: quests.length,
+        missions: missions.length,
+        hunts: hunts.length
+      }
+    
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+
 
 
 module.exports = {
@@ -400,5 +427,6 @@ module.exports = {
   sendUserPasswordResetEmail,
   getResetPasswordRequestDetails,
   changeUserPassword,
-  getUserCreatures
+  getUserCreatures,
+  getAnalytics
 };

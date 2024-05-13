@@ -58,4 +58,6 @@ router.post(
   userController.changeUserPassword
 );
 
+router.get("/analytics", checkAdminUserAuth, userController.getAnalytics);
+
 module.exports = router;
