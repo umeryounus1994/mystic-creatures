@@ -4,11 +4,10 @@ const router = express.Router();
 const userController = require("../controllers/user.controller");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
 const { checkUserAuth } = require("../../../middlewares/authMiddleware");
+const { checkAuthOrigins } = require("../../../middlewares/authMiddlewareGenericAll");
 const {
   checkAdminUserAuth,
 } = require("../../../middlewares/authMiddlewareAdminPanel");
-const { checkAuthGuard } = require("../../../middlewares/authGuard");
-const Roles = require("../../../utils/roles");
 const {
   passwordValidation,
   validateRequest,
@@ -38,8 +37,7 @@ router.get(
 );
 router.patch(
   "/:id",
-  checkUserAuth,
-  mediaUpload.single("picture"),
+  checkAuthOrigins,
   userController.updateUser
 );
 router.post(
@@ -59,5 +57,11 @@ router.post(
 );
 
 router.get("/analytics", checkAdminUserAuth, userController.getAnalytics);
+router.get("/user_analytics", checkAdminUserAuth, userController.getUserAnalytics);
+router.delete(
+  "/:id",
+  checkAdminUserAuth,
+  userController.deleteUser
+);
 
 module.exports = router;

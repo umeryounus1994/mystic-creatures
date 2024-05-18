@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
     current_xp: { type: Number, default: 0 },  //XP required = 100 * (1.2^(currentLevel - 1))
     status: {
       type: String,
-      enum: ["active", "blocked", "pending_verification"],
+      enum: ["active", "blocked"],
       default: "active",
     },
     purchased_package: {

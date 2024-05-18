@@ -125,17 +125,8 @@ const deleteUser = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
-    if (req?.file?.location) {
-      req.body.image = req?.file?.location;
-    }
     if (req.body.password) {
       req.body.password = await hashPassord({ password: req.body.password });
-    }
-    if (req.user.id !== req.params.id) {
-      return apiResponse.ErrorResponse(
-        res,
-        "You are not allowed to update other user's data"
-      );
     }
 
     // update user profile
@@ -412,6 +403,28 @@ const getAnalytics = async (req, res, next) => {
 };
 
 
+const getUserAnalytics = async (req, res, next) => {
+  try {
+    const users = await UserModel.find();
+    const active = await UserModel.find({status: "active"});
+    const inactive = await UserModel.find({status: "blocked"});
+
+    return res.json({
+      status: true,
+      data: {
+        users: users.length,
+        active: active.length,
+        inactive: inactive.length
+      }
+    
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+
 
 
 
@@ -428,5 +441,6 @@ module.exports = {
   getResetPasswordRequestDetails,
   changeUserPassword,
   getUserCreatures,
-  getAnalytics
+  getAnalytics,
+  getUserAnalytics
 };

@@ -9,6 +9,12 @@ const QuestQuizModel = require("../models/questquiz.model");
 const UserQuestModel = require("../models/userquest.model");
 var questHelper = require("../../../helpers/quest");
 const userModel = require("../models/user.model");
+const {
+  getPagination,
+  softDelete,
+  totalItems,
+  hashPassord,
+} = require("../../../helpers/commonApis");
 
 const createQuest = async (req, res, next) => {
   try {
@@ -255,6 +261,68 @@ function generateUniqueID() {
   return uniqueID;
 }
 
+const getQuestAnalytics = async (req, res, next) => {
+  try {
+    const quests = await QuestModel.find({});
+    const active = await QuestModel.find({status: "active", deleted: false});
+    const inactive = await QuestModel.find({status: 'deleted'});
+
+    return res.json({
+      status: true,
+      data: {
+        quests: quests.length,
+        active: active.length,
+        deleted: inactive.length
+      }
+    
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteQuest = async (req, res, next) => {
+  try {
+    await softDelete({
+      req,
+      res,
+      Model: QuestModel,
+      itemName: "Quest",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateQuest = async (req, res, next) => {
+  try {
+  
+    const updatedAdmin = await QuestModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    // Something went wrong kindly try again later
+    if (!updatedAdmin) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Something went wrong, Kindly try again later"
+      );
+    }
+
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Quest Updated",
+      updatedAdmin
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 module.exports = {
   createQuest,
@@ -263,5 +331,8 @@ module.exports = {
   unlockQuestForUser,
   getPlayerQuests,
   getQuestById,
-  completeQuest
+  completeQuest,
+  deleteQuest,
+  getQuestAnalytics,
+  updateQuest
 };

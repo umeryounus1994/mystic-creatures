@@ -9,6 +9,7 @@ const {
   verifyToken,
 } = require("../../../middlewares/authMiddleware");
 const AdminModel = require("../models/admin.model");
+const AdminPasswordResetModel = require("../models/adminReset.model");
 const {
   getPagination,
   softDelete,
@@ -290,37 +291,7 @@ const updateProfile = async (req, res, next) => {
 
 const updateAdmin = async (req, res, next) => {
   try {
-    if (req?.file?.location) {
-      req.body.image = req?.file?.location;
-    }
-    if (req?.body?.password && req?.body?.password !== "") {
-      const adminUser = await AdminModel.findById(req.params.id);
-      if (!adminUser) {
-        return apiResponse.notFoundResponse(
-          res,
-          "Beklager, vi finner ikke dataen du ser etter.",
-          "Not found!"
-        );
-      }
-      const passwordRegex =
-        /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/;
-      if (!passwordRegex.test(req.body.password)) {
-        return apiResponse.badRequestResponse(
-          res,
-          "Passordvalidering mislyktes",
-          "Password Validation failed"
-        );
-      }
-      if (req.user._id.toString() !== adminUser._id.toString()) {
-        const body = `Ditt passord har blitt endret.
-          <br>Her er ny innlogginsinfo:
-          <br><br>Brukernavn: ${adminUser.email}
-          <br>Passord: ${req.body.password}`;
-        sendEmail(adminUser.email, "Støtte - Bruker oppdatert", body);
-      }
-      req.body.password = await hashPassord({ password: req.body.password });
-    }
-    // update admin profile
+  
     const updatedAdmin = await AdminModel.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -332,20 +303,14 @@ const updateAdmin = async (req, res, next) => {
     if (!updatedAdmin) {
       return apiResponse.ErrorResponse(
         res,
-        "Beklager, det oppstod en systemfeil. Vennligst prøv igjen senere.",
         "Something went wrong, Kindly try again later"
       );
     }
 
-    // remove password extra fields from user object
-    updatedAdmin.password = undefined;
-    updatedAdmin.ip_address = undefined;
-    updatedAdmin.access_token = undefined;
 
     return apiResponse.successResponseWithData(
       res,
-      "Brukerdetaljer oppdatert",
-      "User Details Updated",
+      "Profile Updated",
       updatedAdmin
     );
   } catch (err) {
@@ -353,14 +318,47 @@ const updateAdmin = async (req, res, next) => {
   }
 };
 
-
-const userPasswordReset = async (req, res, next) => {
+const sendUserPasswordResetEmail = async (req, res, next) => {
   try {
-    const { password, password_confirmation } = req.body;
-    const { id, token } = req.params;
-    const user = await AdminModel.findById(id);
+    const { email } = req.body;
+    if (email) {
+      const user = await AdminModel.findOne({ email });
+      if (user) {
+        const passwordReset = await AdminPasswordResetModel.create({
+          user_id: user?.id,
+        });
+        const emailBody = `Hey ${user.first_name},
+        <br>Follow the link below to enter a new password for your account:
+        <br><a href=${process.env.ADMIN_RESET_PASSWORD}?id=${passwordReset.id} target="_blank">${process.env.ADMIN_RESET_PASSWORD}?id=${passwordReset.id}</a>
+        <br><br>With best regards,
+        <br>Team Mystic Creatures`;
+        sendEmail(user.email, "Reset your password", emailBody);
+        // await sendPasswordResetEmail(user.email, { user, link }, res);
 
-    await verifyToken(token, process.env.JWT_SECRET_KEY);
+        return apiResponse.successResponse(
+          res,
+          "Password Reset Email Sent... Please Check Your Email"
+        );
+      }
+      return apiResponse.notFoundResponse(
+        res,
+        "Email doesn't exists"
+      );
+    }
+    return apiResponse.ErrorResponse(
+      res,
+      "Email Field is Required"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+const adminPasswordReset = async (req, res, next) => {
+  try {
+    const { password, password_confirmation, id } = req.body;
+    const user = await AdminModel.findById(id);
 
     if (password && password_confirmation) {
       if (password !== password_confirmation) {
@@ -371,7 +369,7 @@ const userPasswordReset = async (req, res, next) => {
       }
       const salt = await bcrypt.genSalt(10);
       const newHashPassword = await bcrypt.hash(password, salt);
-      await AdminModel.findByIdAndUpdate(user._id, {
+      await AdminModel.findByIdAndUpdate(id, {
         $set: { password: newHashPassword },
       });
 
@@ -405,6 +403,32 @@ const loggedUser = async (req, res, next) => {
     next(err);
   }
 };
+const getResetPasswordRequestDetails = async (req, res, next) => {
+  try {
+    const requestId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(requestId)) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Validation Error",
+        "Invalid Data"
+      );
+    }
+
+    const requestDetail = await AdminPasswordResetModel.findById(
+      requestId
+    );
+    if (!requestDetail) {
+      return apiResponse.ErrorResponse(res, "Link Expired");
+    }
+    return apiResponse.successResponseWithData(
+      res,
+      "Detail Fetched",
+      requestDetail
+    );
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 
@@ -417,6 +441,8 @@ module.exports = {
   updateProfile,
   updateAdmin,
   deleteAdmin,
-  userPasswordReset,
-  loggedUser
+  adminPasswordReset,
+  loggedUser,
+  sendUserPasswordResetEmail,
+  getResetPasswordRequestDetails
 };

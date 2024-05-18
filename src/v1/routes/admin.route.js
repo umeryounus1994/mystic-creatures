@@ -32,7 +32,6 @@ router.patch(
   "/:id",
   checkAdminUserAuth,
   checkAuthGuard(Roles.Admin),
-  mediaUpload.single("picture"),
   adminController.updateAdmin
 );
 router.delete(
@@ -66,6 +65,21 @@ router.get(
   checkAuthGuard(Roles.Admin),
   checkAdminUserAuth,
   adminController.getAdminById
+);
+
+router.post(
+  "/send-reset-password-email",
+  adminController.sendUserPasswordResetEmail
+);
+router.get(
+  "/reset-password-request-details/:id",
+  adminController.getResetPasswordRequestDetails
+);
+
+router.post(
+  "/change-password",
+  passwordValidation,
+  adminController.adminPasswordReset
 );
 
 module.exports = router;
