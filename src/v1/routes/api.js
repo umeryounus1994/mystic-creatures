@@ -8,6 +8,7 @@ const missionRoute = require("./mission.route");
 const huntRoute = require("./hunt.route");
 const skillRoute = require("./skill.route");
 const creatureRoute = require("./creature.route");
+const dropRoute = require("./drop.route");
 
 const filehandlingRoute = require("./filehandling.route");
 
@@ -19,6 +20,7 @@ app.use("/mission/", missionRoute);
 app.use("/hunt/", huntRoute);
 app.use("/skill/", skillRoute);
 app.use("/creature/", creatureRoute);
+app.use("/drop/", dropRoute);
 app.use("/fileupload/", filehandlingRoute);
 
 module.exports = app;

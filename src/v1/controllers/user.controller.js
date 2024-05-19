@@ -85,10 +85,25 @@ const getUser = async (req, res, next) => {
     user.password = undefined;
     user.access_token = undefined;
 
-    return apiResponse.successResponseWithData(
+    const transactions = await TransactionModel.find({user_id: userId});
+    var user_data = {
+      QuestsCompleted: 0,
+      HuntsCompleted: 0,
+      MissionsCompleted: 0,
+      DropsCompleted: 0
+    };
+    transactions.forEach(element => {
+      if(element?.quest_id) { user_data.QuestsCompleted+=1; }
+      if(element?.mission_id) { user_data.MissionsCompleted+=1; }
+      if(element?.hunt_id) { user_data.HuntsCompleted+=1; }
+      if(element?.drop_id) { user_data.DropsCompleted+=1; }
+    });
+
+    return apiResponse.successResponseWithDataStats(
       res,
       "User Details Fetched",
-      user
+      user,
+      user_data
     );
   } catch (err) {
     next(err);

@@ -14,6 +14,15 @@ exports.successResponseWithData = (res, message, data) => {
   };
   return res.status(200).json(resData);
 };
+exports.successResponseWithDataStats = (res, message, data, stats) => {
+  const resData = {
+    success: true,
+    message,
+    data,
+    stats
+  };
+  return res.status(200).json(resData);
+};
 
 exports.successResponseWithPagination = (res, page, total, perPage, data) => {
   const resData = {

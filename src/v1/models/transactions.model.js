@@ -21,6 +21,10 @@ const transactionsSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'TreasureHunt'
         },
+        drop_id: {
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'Drop'
+        },
         mythica_distinguisher: { type: String },
         status: {
             type: String,

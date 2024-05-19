@@ -63,5 +63,4 @@ router.delete(
   checkAdminUserAuth,
   userController.deleteUser
 );
-
 module.exports = router;
