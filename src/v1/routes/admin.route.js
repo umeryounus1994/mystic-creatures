@@ -24,45 +24,38 @@ router.post("/login", adminController.loginAdmin);
 router.patch(
   "/update_profile/:id",
   checkAdminUserAuth,
-  checkAuthGuard(Roles.Admin, Roles.Manager),
   mediaUpload.single("picture"),
   adminController.updateProfile
 );
 router.patch(
   "/:id",
   checkAdminUserAuth,
-  checkAuthGuard(Roles.Admin),
   adminController.updateAdmin
 );
 router.delete(
   "/:id",
   checkAdminUserAuth,
-  checkAuthGuard(Roles.Admin),
   adminController.deleteAdmin
 );
 
 router.get(
   "/get_all",
   checkAdminUserAuth,
-  checkAuthGuard(Roles.Admin),
   adminController.getAdmins
 );
 
 router.get(
   "/loggeduser",
   checkAdminUserAuth,
-  checkAuthGuard(Roles.Admin),
   adminController.loggedUser
 );
 router.get(
   "/",
-  checkAuthGuard(Roles.Admin, Roles.Manager),
   checkAdminUserAuth,
   adminController.getAdmin
 );
 router.get(
   "/get_by_id/:id",
-  checkAuthGuard(Roles.Admin),
   checkAdminUserAuth,
   adminController.getAdminById
 );
@@ -80,6 +73,11 @@ router.post(
   "/change-password",
   passwordValidation,
   adminController.adminPasswordReset
+);
+router.get(
+  "/get_mythicas",
+  checkAdminUserAuth,
+  adminController.getMythicas
 );
 
 module.exports = router;

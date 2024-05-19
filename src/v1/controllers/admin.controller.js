@@ -9,6 +9,7 @@ const {
   verifyToken,
 } = require("../../../middlewares/authMiddleware");
 const AdminModel = require("../models/admin.model");
+const CreatureModel = require("../models/creature.model");
 const AdminPasswordResetModel = require("../models/adminReset.model");
 const {
   getPagination,
@@ -430,6 +431,33 @@ const getResetPasswordRequestDetails = async (req, res, next) => {
   }
 };
 
+const getMythicas = async (req, res, next) => {
+  try {
+    const mythicas = await CreatureModel.find({})
+    .populate([
+        {
+            path: 'creature_skill1', select: { skill_name: 1, skill_element: 1, skill_damage_value: 1 }
+        },
+        {
+            path: 'creature_skill2', select: { skill_name: 1, skill_element: 1, skill_damage_value: 1 }
+        },
+        {
+          path: 'creature_skill3', select: { skill_name: 1, skill_element: 1, skill_damage_value: 1 }
+        },
+        {
+        path: 'creature_skill4', select: { skill_name: 1, skill_element: 1, skill_damage_value: 1 }
+        }
+      ]);
+      return apiResponse.successResponseWithData(
+        res,
+        "Detail Fetched",
+        mythicas
+      );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 
 module.exports = {
@@ -444,5 +472,6 @@ module.exports = {
   adminPasswordReset,
   loggedUser,
   sendUserPasswordResetEmail,
-  getResetPasswordRequestDetails
+  getResetPasswordRequestDetails,
+  getMythicas
 };
