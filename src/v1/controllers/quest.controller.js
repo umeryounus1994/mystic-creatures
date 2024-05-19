@@ -323,6 +323,72 @@ const updateQuest = async (req, res, next) => {
   }
 };
 
+const top10Players = async (req, res, next) => {
+  try {
+    const counts = await TransactionModel.aggregate([
+      {
+        $group: {
+          _id: { user_id: "$user_id", mission_id: "$quest_id" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      }
+    ]);
+    const top10Threshold = counts[9]?.count || 0;
+    const topPlayers = await TransactionModel.aggregate([
+      {
+        $match: {
+          quest_id: { $exists: true, $ne: null } // Filter records that have a mission_id
+        }
+      },
+      {
+        $group: {
+          _id: "$user_id", // Group by user_id only
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $match: { count: { $gte: top10Threshold } }
+      },
+      {
+        $sort: { count: -1 }
+      },
+      {
+        $lookup: {
+          from: 'users', // The collection name for the User model
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      {
+        $unwind: "$user"
+      },
+      {
+        $project: {
+          _id: 0,
+          count: 1,
+          username: "$user.username", // Include only the username field from the user,
+          icon: ""
+        }
+      },
+      {
+        $limit: 10 // Ensure we limit to 10 results in case of ties at the threshold
+      }
+    ]);
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Data Found",
+      topPlayers
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 module.exports = {
   createQuest,
@@ -334,5 +400,6 @@ module.exports = {
   completeQuest,
   deleteQuest,
   getQuestAnalytics,
-  updateQuest
+  updateQuest,
+  top10Players
 };

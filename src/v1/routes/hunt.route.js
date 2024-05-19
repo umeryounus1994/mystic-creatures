@@ -40,5 +40,6 @@ router.get("/unlock_hunt/:id", checkUserAuth, treasureHuntController.startTreasu
 router.get("/submit_hunt_quiz_answer/:id", checkUserAuth, treasureHuntController.submitHuntQuizAnswer);
 router.get("/claim_hunt/:id", checkUserAuth, treasureHuntController.claimHunt);
 router.get("/user_hunt_progress/:id", checkUserAuth, treasureHuntController.userHuntProgress);
+router.get("/top_10", checkUserAuth, treasureHuntController.top10Players);
 
 module.exports = router;

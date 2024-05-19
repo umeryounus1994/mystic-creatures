@@ -37,5 +37,6 @@ router.patch(
   checkAuthOrigins,
   questController.updateQuest
 );
+router.get("/top_10", checkUserAuth, questController.top10Players);
 
 module.exports = router;
