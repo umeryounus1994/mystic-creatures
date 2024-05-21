@@ -67,10 +67,10 @@ const getUserDrops = async (req, res, next) => {
     const drops = await DropModel.find({status: 'active'})
     .populate([
       {
-          path: 'mythica_ID', select: { creature_name: 1 }
+          path: 'mythica_ID', select: { creature_name: 1, creature_id: 1 }
       },
       {
-          path: 'mythica_reward', select: { creature_name: 1 }
+          path: 'mythica_reward', select: { creature_name: 1, creature_id: 1 }
       }
     ]);
     const all_drops = await dropHelper.getAllDrops(drops,req.user.id,latitude,longitude)
