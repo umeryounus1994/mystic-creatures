@@ -18,6 +18,11 @@ router.post(
   missionController.createMission
 );
 router.post(
+  "/createMissionAdmin",
+  checkAdminUserAuth,
+  missionController.createMissionAdmin
+);
+router.post(
   "/createMissionQuiz",
   checkAdminUserAuth,
   missionController.createMissionQuiz

@@ -11,6 +11,77 @@ const UserMissionModel = require("../models/usermission.model");
 var missionHelper = require("../../../helpers/mission");
 const userModel = require("../models/user.model");
 
+
+const createMissionAdmin = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    var location = { type: 'Point', coordinates: [req.body?.mission_latitude, req.body?.mission_longitude] };
+    var missiondata = {
+      mission_title: req.body?.mission_title,
+      no_of_xp: req.body?.no_of_xp,
+      no_of_crypes: req.body?.no_of_crypes,
+      level_increase: req.body?.level_increase,
+      mythica_ID: req.body?.mythica_ID,
+      mission_start_date: req.body?.mission_start_date,
+      mission_end_date: req.body?.mission_end_date,
+      mission_location: location
+    };
+    const createdItem = new MissionModel(missiondata);
+
+    createdItem.save(async (err) => {
+      if (err) {
+        console.log(err)
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      req.body.questions.forEach(q => {
+        var quiz_location = { type: 'Point', coordinates: [q?.latitude, q?.longitude] };
+        var itemDetails = {
+          quiz_title: q?.quiz_title,
+          mission_id: createdItem?._id,
+          mythica: q?.mythica,
+          location: quiz_location
+        };
+        console.log(itemDetails)
+        const createdItemQuiz = new MissionQuizModel(itemDetails);
+        createdItemQuiz.save(async (err) => {
+          if (err) {
+          }});
+        var options = [];
+        q?.options.forEach(element => {
+          options.push({
+            answer: element.option,
+            correct_option: element.correct,
+            mission_id: createdItem?._id,
+            mission_quiz_id: createdItemQuiz?._id
+          });
+        });
+        MissionQuizOptionModel.insertMany(options);
+      })
+      await MissionModel.findByIdAndUpdate(
+        createdItem?._id,
+        { status: 'active' },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponseWithData(
+        res,
+        "Created successfully",
+        createdItem
+      );
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const createMission = async (req, res, next) => {
   try {
     let { ...itemDetails } = req.body;
@@ -21,54 +92,6 @@ const createMission = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    // if(req.body?.mission_title == "" || req.body?.mission_title == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "Mission Title is required"
-    //   );
-    // }
-    // if(req.body?.no_of_xp == "" || req.body?.no_of_xp == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "No of XP is required"
-    //   );
-    // }
-    // if(req.body?.no_of_crypes == "" || req.body?.no_of_crypes == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "No of Crypes is required"
-    //   );
-    // }
-    // if(req.body?.level_increase == "" || req.body?.level_increase == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "Level Increase is required"
-    //   );
-    // }
-    // if(req.body?.mission_start_date == "" || req.body?.mission_start_date == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "Start Date is required"
-    //   );
-    // }
-    // if(req.body?.mission_end_date == "" || req.body?.mission_end_date == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "End Date is required"
-    //   );
-    // }
-    // if(req.body?.mission_latitude == "" || req.body?.mission_latitude == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "Latitude is required"
-    //   );
-    // }
-    // if(req.body?.mission_longitude == "" || req.body?.mission_longitude == undefined){
-    //   return apiResponse.ErrorResponse(
-    //     res,
-    //     "Longitude is required"
-    //   );mission_latitude mission_longitude
-    // }
     var location = { type: 'Point', coordinates: [req.body?.mission_latitude, req.body?.mission_longitude] };
     itemDetails.mission_location = location;
     const createdItem = new MissionModel(itemDetails);
@@ -734,5 +757,6 @@ module.exports = {
   userMissionProgress,
   getAllUserMissions,
   getAdminMissions,
-  top10Players
+  top10Players,
+  createMissionAdmin
 };
