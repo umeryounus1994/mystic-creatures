@@ -27,7 +27,7 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                                 {
                                     path: 'mythica', select: {
                                         creature_name: 1, creature_element: 1, creature_rarity: 1,
-                                        creature_weight: 1, creature_height: 1
+                                        creature_weight: 1, creature_height: 1, creature_id: 1
                                     }
                                 }])
                         var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
@@ -89,7 +89,7 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
                             {
                                 path: 'mythica', select: {
                                     creature_name: 1, creature_element: 1, creature_rarity: 1,
-                                    creature_weight: 1, creature_height: 1
+                                    creature_weight: 1, creature_height: 1, creature_id: 1
                                 }
                             }])
                     var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
@@ -140,7 +140,7 @@ module.exports.getSingleHunt = async function (data, latitude, longitude) {
             {
                 path: 'mythica', select: {
                     creature_name: 1, creature_element: 1, creature_rarity: 1,
-                    creature_weight: 1, creature_height: 1
+                    creature_weight: 1, creature_height: 1, creature_id: 1
                 }
             }])
     var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {
@@ -201,7 +201,7 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
                                 {
                                     path: 'mythica', select: {
                                         creature_name: 1, creature_element: 1, creature_rarity: 1,
-                                        creature_weight: 1, creature_height: 1
+                                        creature_weight: 1, creature_height: 1, creature_id: 1
                                     }
                                 }])
                         var quizPromises = findTreasureHuntQuiz.map(async (quiz) => {

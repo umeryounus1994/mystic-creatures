@@ -27,7 +27,7 @@ module.exports.getAllMissions = async function (data, user_id, latitude, longitu
                                 {
                                     path: 'mythica', select: {
                                         creature_name: 1, creature_element: 1, creature_rarity: 1,
-                                        creature_weight: 1, creature_height: 1
+                                        creature_weight: 1, creature_height: 1, creature_id: 1
                                     }
                                 }])
                         var quizPromises = findMissionQuiz.map(async (quiz) => {
@@ -86,7 +86,7 @@ module.exports.getAllAdminMissions = async function (data) {
                             {
                                 path: 'mythica', select: {
                                     creature_name: 1, creature_element: 1, creature_rarity: 1,
-                                    creature_weight: 1, creature_height: 1
+                                    creature_weight: 1, creature_height: 1, creature_id: 1
                                 }
                             }])
                     var quizPromises = findMissionQuiz.map(async (quiz) => {
@@ -133,7 +133,7 @@ module.exports.getSingleMission = async function (data) {
             {
                 path: 'mythica', select: {
                     creature_name: 1, creature_element: 1, creature_rarity: 1,
-                    creature_weight: 1, creature_height: 1
+                    creature_weight: 1, creature_height: 1, creature_id: 1
                 }
             }])
     var quizPromises = findMissionQuiz.map(async (quiz) => {
@@ -192,7 +192,7 @@ module.exports.getAllUserMissions = async function (data, user_id, latitude, lon
                                 {
                                     path: 'mythica', select: {
                                         creature_name: 1, creature_element: 1, creature_rarity: 1,
-                                        creature_weight: 1, creature_height: 1
+                                        creature_weight: 1, creature_height: 1, creature_id: 1
                                     }
                                 }])
                         var quizPromises = findMissionQuiz.map(async (quiz) => {
