@@ -16,6 +16,12 @@ router.post(
   checkAdminUserAuth,
   creatureController.addCreature
 );
+
+router.patch(
+  "/:id",
+  checkAdminUserAuth,
+  creatureController.updateCreature
+);
 router.get("/get_all", checkAuthOrigins, creatureController.listCreatures);
 
 module.exports = router;

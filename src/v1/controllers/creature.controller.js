@@ -72,8 +72,37 @@ const listCreatures = async (req, res, next) => {
   }
 };
 
+const updateCreature = async (req, res, next) => {
+  try {
+
+    const updatedMythica = await CreatureModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    // Something went wrong kindly try again later
+    if (!updatedMythica) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Something went wrong, Kindly try again later"
+      );
+    }
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Mythica Details Updated",
+      updatedMythica
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 module.exports = {
     addCreature,
-    listCreatures
+    listCreatures,
+    updateCreature
 };
