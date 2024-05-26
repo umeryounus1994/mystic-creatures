@@ -13,6 +13,11 @@ const {
 } = require("../../../middlewares/authMiddlewareGenericAll");
 
 router.post(
+  "/createTreasureHuntAdmin",
+  checkAdminUserAuth,
+  treasureHuntController.createTreasureHuntAdmin
+);
+router.post(
   "/createTreasureHunt",
   checkAdminUserAuth,
   treasureHuntController.createTreasureHunt

@@ -11,6 +11,79 @@ const UserTreasureHuntModel = require("../models/usertreasurehunt.model");
 var huntHelper = require("../../../helpers/hunt");
 const userModel = require("../models/user.model");
 
+
+const createTreasureHuntAdmin = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
+    var huntdata = {
+      treasure_hunt_title: req.body?.treasure_hunt_title,
+      no_of_xp: req.body?.no_of_xp,
+      no_of_crypes: req.body?.no_of_crypes,
+      level_increase: req.body?.level_increase,
+      mythica_ID: req.body?.mythica_ID,
+      treasure_hunt_start_date: req.body?.treasure_hunt_start_date,
+      treasure_hunt_end_date: req.body?.treasure_hunt_end_date,
+      hunt_location: location,
+      premium_hunt: req.body?.premium_hunt,
+      hunt_price: req.body?.hunt_price
+    };
+    const createdItem = new TreasureHuntModel(huntdata);
+
+    createdItem.save(async (err) => {
+      if (err) {
+        console.log(err)
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      req.body.questions.forEach(q => {
+        var quiz_location = { type: 'Point', coordinates: [q?.latitude, q?.longitude] };
+        var itemDetails = {
+          treasure_hunt_title: q?.treasure_hunt_title,
+          treasure_hunt_id: createdItem?._id,
+          mythica: q?.mythica,
+          location: quiz_location
+        };
+        const createdItemQuiz = new TreasureHuntQuizModel(itemDetails);
+        createdItemQuiz.save(async (err) => {
+          if (err) {
+          }});
+        var options = [];
+        q?.options.forEach(element => {
+          options.push({
+            answer: element.option,
+            correct_option: element.correct,
+            treasure_hunt_id: createdItem?._id,
+            treasure_hunt_quiz_id: createdItemQuiz?._id
+          });
+        });
+        TreasureHuntQuizOptionModel.insertMany(options);
+      })
+      await TreasureHuntModel.findByIdAndUpdate(
+        createdItem?._id,
+        { status: 'active' },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponseWithData(
+        res,
+        "Created successfully",
+        createdItem
+      );
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 const createTreasureHunt = async (req, res, next) => {
   try {
     const { ...itemDetails } = req.body;
@@ -711,5 +784,6 @@ module.exports = {
     createHuntQuiz,
     createHuntOptions,
     getAdminTreasureHunts,
-    top10Players
+    top10Players,
+    createTreasureHuntAdmin
 };
