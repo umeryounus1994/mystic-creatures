@@ -8,6 +8,7 @@ const TransactionModel = require("../models/transactions.model");
 const TreasureHuntQuizModel = require("../models/treasurequiz.model");
 const TreasureHuntQuizOptionModel = require("../models/treasurequizoption.model");
 const UserTreasureHuntModel = require("../models/usertreasurehunt.model");
+const HuntPurchaseModel = require("../models/huntpurchases.model");
 var huntHelper = require("../../../helpers/hunt");
 const userModel = require("../models/user.model");
 
@@ -32,7 +33,7 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       treasure_hunt_end_date: req.body?.treasure_hunt_end_date,
       hunt_location: location,
       premium_hunt: req.body?.premium_hunt,
-      hunt_price: req.body?.hunt_price
+      hunt_package: req.body?.hunt_package
     };
     const createdItem = new TreasureHuntModel(huntdata);
 
@@ -654,6 +655,41 @@ const userHuntProgress = async (req, res, next) => {
   }
 };
 
+const purchaseHunt = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunt) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Not found!"
+      );
+    }
+
+    const userHunt = await HuntPurchaseModel.findOne({ user_id: new ObjectId(req.user.id), hunt_id: new ObjectId(id) });
+    if (userHunt) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have already purchase this treasure hunt"
+      );
+    }
+    var items = {
+      user_id: req.user.id,
+      hunt_id: id,
+      package: hunt?.hunt_package
+    }
+    const createdItem = new HuntPurchaseModel(items);
+    createdItem.save(async (err) => {})
+    return apiResponse.successResponse(
+      res,
+      "Hunt purchased"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 function generateUniqueID() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -785,5 +821,6 @@ module.exports = {
     createHuntOptions,
     getAdminTreasureHunts,
     top10Players,
-    createTreasureHuntAdmin
+    createTreasureHuntAdmin,
+    purchaseHunt
 };

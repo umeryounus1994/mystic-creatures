@@ -32,6 +32,16 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    package_type: {
+      type: String,
+      enum: ["weekly", "monthly", "yearly"],
+    },
+    package_start_date: {
+      type: Date
+    },
+    package_end_date: {
+      type: Date
+    },
   },
   {
     timestamps: {

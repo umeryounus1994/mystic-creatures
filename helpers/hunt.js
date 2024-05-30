@@ -4,6 +4,7 @@ const haversine = require('haversine');
 const TreasureHuntQuizModel = require("../src/v1/models/treasurequiz.model");
 const TreasureHuntQuizOptionModel = require("../src/v1/models/treasurequizoption.model");
 const UserTreasureHuntModel = require("../src/v1/models/usertreasurehunt.model");
+const HuntPurchaseModel = require("../src/v1/models/huntpurchases.model");
 
 module.exports.getAllTreasureHunt = async function (data, user_id, latitude, longitude) {
     const promiseArr = [];
@@ -46,6 +47,7 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                         const filteredArray = quizzesWithOptions.filter(element => element != null);
                         const userHunt = await UserTreasureHuntModel.findOne({ treasure_hunt_id: new ObjectID(element?._id), user_id: new ObjectID(user_id) });
                         const checkProgress = await checkQuizStatus(element?._id, user_id)
+                        const userPurchaseHunt = await HuntPurchaseModel.findOne({ user_id: new ObjectID(user_id), hunt_id: new ObjectID(element?._id) });
                         var el = {
                             id: element._id,
                             treasure_hunt_title: element.treasure_hunt_title,
@@ -56,11 +58,12 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                             mythica_ID: element.mythica_ID?.creature_id,
                             status: element.status,
                             premium_hunt: element?.premium_hunt,
-                            hunt_price: element?.hunt_price,
+                            hunt_package: element?.hunt_package,
                             treasure_hunt_image: element.treasure_hunt_image,
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                             treasure_hunt_status: userHunt ? userHunt?.status : 'open',
-                            hunt_progress: checkProgress?.answered
+                            hunt_progress: checkProgress?.answered,
+                            hunt_purchase: userPurchaseHunt ? true : false
 
                         }
 
@@ -114,7 +117,7 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
                         no_of_crypes: element.no_of_crypes,
                         level_increase: element.level_increase,
                         premium_hunt: element?.premium_hunt,
-                        hunt_price: element?.hunt_price,
+                        hunt_package: element?.hunt_package,
                         mythica: element.mythica_ID?.creature_name,
                         mythica_ID: element.mythica_ID?.creature_id,
                         status: element.status,
@@ -167,7 +170,7 @@ module.exports.getSingleHunt = async function (data, latitude, longitude) {
         no_of_crypes: data.no_of_crypes,
         level_increase: data.level_increase,
         premium_hunt: data?.premium_hunt,
-        hunt_price: data?.hunt_price,
+        hunt_package: data?.hunt_package,
         mythica: data.mythica_ID?.creature_name,
         mythica_ID: data.mythica_ID?.creature_id,
         status: data.status,
@@ -219,6 +222,7 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
                         var quizzesWithOptions = await Promise.all(quizPromises);
                         const checkProgress = await checkQuizStatus(element?.treasure_hunt_id, user_id)
                         const filteredArray = quizzesWithOptions.filter(element => element != null);
+                        const userPurchaseHunt = await HuntPurchaseModel.findOne({ user_id: new ObjectID(user_id), hunt_id: new ObjectID(element?.treasure_hunt_id) });
                         var el = {
                             id: element.treasure_hunt_id._id,
                             treasure_hunt_title: element?.treasure_hunt_id?.treasure_hunt_title,
@@ -229,10 +233,11 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
                             mythica_ID: element?.treasure_hunt_id.mythica_ID?.creature_id,
                             status: element.status,
                             premium_hunt: element?.treasure_hunt_id.premium_hunt,
-                            hunt_price: element?.treasure_hunt_id.hunt_price,
+                            hunt_package: element?.treasure_hunt_id.hunt_package,
                             treasure_hunt_image: element?.treasure_hunt_id.treasure_hunt_image,
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                             hunt_progress: checkProgress?.answered,
+                            hunt_purchase: userPurchaseHunt ? true : false
                         }
 
                         result.push(el)

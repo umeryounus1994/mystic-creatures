@@ -438,6 +438,55 @@ const getUserAnalytics = async (req, res, next) => {
   }
 };
 
+const purhasePackage = async (req, res, next) => {
+  try {
+    const package = req.params.type;
+    if(!package || package == null || package == undefined){
+      return apiResponse.ErrorResponse(
+        res,
+        "Package is required"
+      );
+    }
+    var start_date;
+    var end_date;
+    const today = new Date();
+    if(package == "weekly"){
+      start_date = new Date(today);
+      end_date = new Date(today);
+      end_date.setDate(end_date.getDate() + 7);
+    }
+    if(package == "monthly"){
+      start_date = new Date(today);
+      end_date = new Date(today);
+      end_date.setMonth(end_date.getMonth() + 1);
+    }
+    if(package == "yearly"){
+      start_date = new Date(today);
+      end_date = new Date(today);
+      end_date.setFullYear(end_date.getFullYear() + 7);
+    }
+    await UserModel.findByIdAndUpdate(
+      req.user.id,
+      {
+        purchased_package: true,
+        package_type: package,
+        package_start_date: start_date,
+        package_end_date: end_date
+      },
+      {
+        new: true,
+      }
+    );
+
+    return apiResponse.successResponse(
+      res,
+      "Package purchased"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 
 
@@ -457,5 +506,6 @@ module.exports = {
   changeUserPassword,
   getUserCreatures,
   getAnalytics,
-  getUserAnalytics
+  getUserAnalytics,
+  purhasePackage
 };

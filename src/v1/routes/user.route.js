@@ -35,6 +35,11 @@ router.get(
   checkUserAuth,
   userController.getUserCreatures
 );
+router.get(
+  "/purchase_subscription/:type",
+  checkUserAuth,
+  userController.purhasePackage
+);
 router.patch(
   "/:id",
   checkAuthOrigins,
@@ -63,4 +68,5 @@ router.delete(
   checkAdminUserAuth,
   userController.deleteUser
 );
+
 module.exports = router;
