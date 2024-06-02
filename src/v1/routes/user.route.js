@@ -18,6 +18,23 @@ router.post(
   mediaUpload.single("picture"),
   userController.createUser
 );
+
+router.post(
+  "/upload",
+  mediaUpload.fields([{
+    name: 'questionPicture', maxCount: 1
+  }, {
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  },{
+    name: 'option4', maxCount: 1
+  }]),
+  userController.testupload
+);
+
 router.get("/get_all", checkAdminUserAuth, userController.getUsers);
 router.post("/login", userController.loginUser);
 router.get(

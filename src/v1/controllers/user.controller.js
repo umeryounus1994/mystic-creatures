@@ -487,6 +487,18 @@ const purhasePackage = async (req, res, next) => {
   }
 };
 
+const testupload = async (req, res, next) => {
+  try {
+    if(req?.files?.questionPicture && req.files.questionPicture.length > 0){}
+    if(req?.files?.option1 && req.files.option1.length > 0){}
+    if(req?.files?.option2 && req.files.option2.length > 0){}
+    if(req?.files?.option3 && req.files.option3.length > 0){}
+    if(req?.files?.option4 && req.files.option4.length > 0){}
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 
 
@@ -507,5 +519,6 @@ module.exports = {
   getUserCreatures,
   getAnalytics,
   getUserAnalytics,
-  purhasePackage
+  purhasePackage,
+  testupload
 };
