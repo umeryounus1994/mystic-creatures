@@ -25,6 +25,10 @@ const transactionsSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'Drop'
         },
+        picture_mystery_id: {
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'PictureMystery'
+        },
         mythica_distinguisher: { type: String },
         status: {
             type: String,
