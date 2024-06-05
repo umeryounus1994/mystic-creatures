@@ -28,6 +28,7 @@ const createPictureMystery = async (req, res, next) => {
             "Question Picture is required"
           );
     }
+    var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     const data = {
         picture_mystery_question: req.body?.picture_mystery_question,
         picture_mystery_question_url: req?.files?.picture_mystery_question_url && req.files.picture_mystery_question_url.length > 0 ?
@@ -35,7 +36,8 @@ const createPictureMystery = async (req, res, next) => {
         no_of_xp: req.body?.no_of_xp,
         no_of_crypes: req.body?.no_of_crypes,
         level_increase: req.body?.level_increase,
-        mythica_ID: req.body?.mythica_ID
+        mythica_ID: req.body?.mythica_ID,
+        mystery_location: location
     };
     const createdItem = new PictureMysteryModel(data);
 
@@ -50,7 +52,7 @@ const createPictureMystery = async (req, res, next) => {
       if(req?.files?.option1 && req.files.option1.length > 0){
         let d = {
             answer_url: req.files.option1[0].location,
-            correct_option: req.body.option1,
+            correct_option: req.body.correct == 'option1' ? true : false,
             picture_mystery_id: createdItem?._id
         }
         quizes.push(d);
@@ -58,7 +60,7 @@ const createPictureMystery = async (req, res, next) => {
       if(req?.files?.option2 && req.files.option2.length > 0){
         let d = {
             answer_url: req.files.option2[0].location,
-            correct_option: req.body.option2,
+            correct_option: req.body.correct == 'option2' ? true : false,
             picture_mystery_id: createdItem?._id
         }
         quizes.push(d);
@@ -66,7 +68,7 @@ const createPictureMystery = async (req, res, next) => {
       if(req?.files?.option3 && req.files.option3.length > 0){
         let d = {
             answer_url: req.files.option3[0].location,
-            correct_option: req.body.option3,
+            correct_option: req.body.correct == 'option3' ? true : false,
             picture_mystery_id: createdItem?._id
         }
         quizes.push(d);
@@ -74,7 +76,7 @@ const createPictureMystery = async (req, res, next) => {
       if(req?.files?.option4 && req.files.option4.length > 0){
         let d = {
             answer_url: req.files.option4[0].location,
-            correct_option: req.body.option4,
+            correct_option: req.body.correct == 'option4' ? true : false,
             picture_mystery_id: createdItem?._id
         }
         quizes.push(d);
@@ -97,12 +99,101 @@ const createPictureMystery = async (req, res, next) => {
 
 const getPictureMystery = async (req, res, next) => {
   try {
-    const quests = await PictureMysteryModel.find({})
-    .populate('mythica_ID');
+    if (req.body.latitude == undefined || req.body.longitude == undefined) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Lat, Long is required"
+      );
+    }
+    const latitude = req.body.latitude;
+    const longitude = req.body.longitude;
+    const mysteries = await PictureMysteryModel.find({status: 'active'})
+    .populate("mythica_ID");
+    const all_mysteries = await mysteryHelper.getAllPictureMystery(mysteries,latitude,longitude)
+    return res.json({
+      status: all_mysteries.length > 0 ? true : false,
+      message: all_mysteries.length > 0 ? "Data Found" : "No mysteries found",
+      data: all_mysteries
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getPictureMysteryAdmin = async (req, res, next) => {
+  try {
+    const mysteries = await PictureMysteryModel.find({status: 'active'})
+    .populate("mythica_ID");
+    const all_mysteries = await mysteryHelper.getAllPictureMysteryAdmin(mysteries)
+    return res.json({
+      status: all_mysteries.length > 0 ? true : false,
+      message: all_mysteries.length > 0 ? "Data Found" : "No mysteries found",
+      data: all_mysteries
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getAllUserMysteries = async (req, res, next) => {
+  try {
+    const status = req.params.status;
+    let mysts = null;
+    
+    if (req.body.latitude == undefined || req.body.longitude == undefined) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Lat, Long is required"
+      );
+    }
+    const latitude = req.body.latitude;
+    const longitude = req.body.longitude;
+    if(status == "all"){
+      mysts = await UserPictureMysteryModel.find({user_id: new ObjectId(req.user.id)})
+      .populate("picture_mystery_id");
+    } else {
+      mysts = await UserPictureMysteryModel.find({user_id: new ObjectId(req.user.id),status: status})
+      .populate("picture_mystery_id");
+    }
+    if(mysts.length < 1){
+      return apiResponse.ErrorResponse(
+        res,
+        "No user mysteries found"
+      );
+    }
     return res.json({
       status: true,
       message: "Data Found",
-      data: await mysteryHelper.getAllPictureMystery(quests)
+      data: await mysteryHelper.getAllUserMysteries(mysts, latitude,longitude)
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getMysteryById = async (req, res, next) => {
+  try {
+    if (req.body.latitude == undefined || req.body.longitude == undefined) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Lat, Long is required"
+      );
+    }
+    const latitude = req.body.latitude;
+    const longitude = req.body.longitude;
+    const id = req.params.id;
+
+    const mission = await PictureMysteryModel.findOne({ _id: new ObjectId(id) });
+    if (!mission) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Mystery not found"
+      );
+    }
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await mysteryHelper.getSingleMystery(mission, latitude, longitude)
     })
   } catch (err) {
     next(err);
@@ -120,7 +211,7 @@ const unlockPictureMysteryForUser = async (req, res, next) => {
       );
     }
     const userMystery = await UserPictureMysteryModel.findOne({user_id: new ObjectId(req.user.id), picture_mystery_id: new ObjectId(id)});
-    if(userQuest){
+    if(userMystery){
       return apiResponse.ErrorResponse(
         res,
         "Picture Mystery already unlocked for this user"
@@ -158,47 +249,6 @@ const unlockPictureMysteryForUser = async (req, res, next) => {
 };
 
 
-const getPlayerPictureMystery = async (req, res, next) => {
-  try {
-    const status = req.params.status;
-    const user_id = req.user.id;
-    let mysteries = null;
-    if(status == "all"){
-        mysteries = await UserPictureMysteryModel.find({user_id: new ObjectId(user_id)});
-    } else {
-        mysteries = await UserPictureMysteryModel.find({user_id: new ObjectId(user_id),status: status});
-    }
-    return res.json({
-      status: true,
-      message: "Data Found",
-      data: await mysteryHelper.getPlayerPictureMystery(mysteries)
-    })
-  } catch (err) {
-    next(err);
-  }
-};
-
-const getPictureMysteryById = async (req, res, next) => {
-  try {
-    const id = req.params.id;
-
-    const mystery = await PictureMysteryModel.findOne({_id: new ObjectId(id)})
-    .populate('mythica_ID');;
-    if(!quest){
-      return apiResponse.ErrorResponse(
-        res,
-        "Quest not found"
-      );
-    }
-    return res.json({
-      status: true,
-      message: "Data Found",
-      data: mystery
-    })
-  } catch (err) {
-    next(err);
-  }
-};
 
 const completePictureMystery = async (req, res, next) => {
   try {
@@ -229,13 +279,19 @@ const completePictureMystery = async (req, res, next) => {
     if(!userMystery){
       return apiResponse.ErrorResponse(
         res,
-        "Please add quest to user first"
+        "Please add mystery to user first"
       );
     }
     if(userMystery?.status == 'completed'){
       return apiResponse.ErrorResponse(
         res,
-        "Quest already completed"
+        "Mystery already completed"
+      );
+    }
+    if(userMystery?.status == 'claimed'){
+      return apiResponse.ErrorResponse(
+        res,
+        "Mystery already claimed"
       );
     }
     await UserPictureMysteryModel.findOneAndUpdate(
@@ -269,7 +325,7 @@ const completePictureMystery = async (req, res, next) => {
     })
     return apiResponse.successResponse(
       res,
-      "Quest completed"
+      "Mystery completed"
     );
   } catch (err) {
     next(err);
@@ -374,9 +430,10 @@ module.exports = {
 createPictureMystery,
   getPictureMystery,
   unlockPictureMysteryForUser,
-  getPlayerPictureMystery,
-  getPictureMysteryById,
   completePictureMystery,
   deletePictureMystery,
-  top10Players
+  top10Players,
+  getAllUserMysteries,
+  getMysteryById,
+  getPictureMysteryAdmin
 };

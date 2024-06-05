@@ -26,10 +26,11 @@ router.post(
   }]),
   pictureController.createPictureMystery
 );
-router.get("/getPictureMystery", pictureController.getPictureMystery);
+router.get("/get_all_admin", checkAdminUserAuth, pictureController.getPictureMysteryAdmin);
+router.post("/get_all", checkUserAuth, pictureController.getPictureMystery);
+router.post("/get_all_user_mysteries/:status", checkUserAuth, pictureController.getAllUserMysteries);
+router.get("/get_mystery_by_id/:id", checkUserAuth, pictureController.getMysteryById);
 router.get("/unlock_picture_mystery/:id", checkUserAuth, pictureController.unlockPictureMysteryForUser);
-router.get("/get_player_mysteries/:status", checkUserAuth, pictureController.getPlayerPictureMystery);
-router.get("/get_mystery_by_id/:id", checkUserAuth, pictureController.getPictureMysteryById);
 router.post("/complete_mystery/:id", checkUserAuth, pictureController.completePictureMystery);
 
 router.delete(
