@@ -61,7 +61,7 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                             hunt_package: element?.hunt_package,
                             treasure_hunt_image: element.treasure_hunt_image,
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
-                            treasure_hunt_status: userHunt ? userHunt?.status : 'open',
+                            treasure_hunt_status: userHunt ? userHunt?.status : (userPurchaseHunt ? 'purchased' : 'open'),
                             hunt_progress: checkProgress?.answered,
                             hunt_purchase: userPurchaseHunt ? true : false
 
