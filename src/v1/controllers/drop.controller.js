@@ -188,7 +188,7 @@ const top10Players = async (req, res, next) => {
           _id: 0,
           count: 1,
           username: "$user.username", // Include only the username field from the user,
-          icon: ""
+          icon: "$user.image"
         }
       },
       {
