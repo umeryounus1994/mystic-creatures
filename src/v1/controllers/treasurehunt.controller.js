@@ -45,14 +45,19 @@ const createTreasureHuntAdmin = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
-      req.body.questions.forEach(q => {
+      var i = 1;
+      let questions = JSON.parse(req.body.questions);
+      questions.forEach(q => {
+        const fileKey = `option${i}`;
         var quiz_location = { type: 'Point', coordinates: [q?.latitude, q?.longitude] };
         var itemDetails = {
           treasure_hunt_title: q?.treasure_hunt_title,
           treasure_hunt_id: createdItem?._id,
           mythica: q?.mythica,
-          location: quiz_location
+          location: quiz_location,
+          quiz_file: req.files[fileKey] ? req.files[fileKey][0].location : ""
         };
+        i++;
         const createdItemQuiz = new TreasureHuntQuizModel(itemDetails);
         createdItemQuiz.save(async (err) => {
           if (err) {

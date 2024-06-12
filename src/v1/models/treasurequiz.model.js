@@ -17,6 +17,7 @@ const pointSchema = new mongoose.Schema({
 
 const huntQuizSchema = new mongoose.Schema({
     treasure_hunt_title: { type: String },
+    quiz_file: { type: String },
     treasure_hunt_id: {
         type: String,
         type: mongoose.Schema.Types.ObjectId, ref: 'TreasureHunt'

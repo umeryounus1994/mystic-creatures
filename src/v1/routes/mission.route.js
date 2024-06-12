@@ -2,6 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 const missionController = require("../controllers/mission.controller");
+const mediaUpload = require("../../../middlewares/upload-aws-image");
 const {
   checkAdminUserAuth,
 } = require("../../../middlewares/authMiddlewareAdminPanel");
@@ -20,6 +21,13 @@ router.post(
 router.post(
   "/createMissionAdmin",
   checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  }]),
   missionController.createMissionAdmin
 );
 router.post(

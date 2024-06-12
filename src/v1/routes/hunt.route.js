@@ -5,6 +5,7 @@ const treasureHuntController = require("../controllers/treasurehunt.controller")
 const {
   checkAdminUserAuth,
 } = require("../../../middlewares/authMiddlewareAdminPanel");
+const mediaUpload = require("../../../middlewares/upload-aws-image");
 const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
@@ -15,6 +16,17 @@ const {
 router.post(
   "/createTreasureHuntAdmin",
   checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  },{
+    name: 'option4', maxCount: 1
+  },{
+    name: 'option5', maxCount: 1
+  }]),
   treasureHuntController.createTreasureHuntAdmin
 );
 router.post(

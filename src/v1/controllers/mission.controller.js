@@ -21,6 +21,7 @@ const createMissionAdmin = async (req, res, next) => {
         "Invalid Data"
       );
     }
+   
     var location = { type: 'Point', coordinates: [req.body?.mission_latitude, req.body?.mission_longitude] };
     var missiondata = {
       mission_title: req.body?.mission_title,
@@ -42,15 +43,19 @@ const createMissionAdmin = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
-      req.body.questions.forEach(q => {
+      var i = 1;
+      let questions = JSON.parse(req.body.questions);
+      questions.forEach(q => {
+        const fileKey = `option${i}`;
         var quiz_location = { type: 'Point', coordinates: [q?.latitude, q?.longitude] };
         var itemDetails = {
           quiz_title: q?.quiz_title,
           mission_id: createdItem?._id,
           mythica: q?.mythica,
-          location: quiz_location
+          location: quiz_location,
+          quiz_file: req.files[fileKey] ? req.files[fileKey][0].location : ""
         };
-        console.log(itemDetails)
+        i++;
         const createdItemQuiz = new MissionQuizModel(itemDetails);
         createdItemQuiz.save(async (err) => {
           if (err) {
