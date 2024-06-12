@@ -19,7 +19,7 @@ router.post(
   userController.createUser
 );
 
-router.get("/get_all", checkAdminUserAuth, userController.getUsers);
+router.get("/get_all", checkAuthOrigins, userController.getUsers);
 router.post("/login", userController.loginUser);
 router.get(
   "/logout",

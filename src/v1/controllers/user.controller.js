@@ -113,13 +113,13 @@ const getUser = async (req, res, next) => {
 
 const getUsers = async (req, res, next) => {
   try {
-    const term = req.query.search;
-    return await getPagination({
-      req,
-      res,
-      model: UserModel,
-      findOptions: {},
-    });
+    const users = await UserModel.find({});
+    const all_player_data = await userHelper.getAllUsers(users)
+    return res.json({
+      status: all_player_data.length > 0 ? true : false,
+      message: all_player_data.length > 0 ? "Data Found" : "No data found",
+      data: all_player_data
+    })
   } catch (err) {
     next(err);
   }

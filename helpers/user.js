@@ -66,3 +66,25 @@ module.exports.getAllPlayerData = async function (data) {
         })
     })
 }
+
+module.exports.getAllUsers = async function (data) {
+    const promiseArr = [];
+    var result = [];
+    return new Promise((resolve, reject) => {
+        data.forEach(element => {
+            promiseArr.push(
+                new Promise(async (resolvve, rejectt) => {
+                    var el = {
+                        username: element?.username,
+                        email: element?.email
+                    }
+                    result.push(el);
+                    resolvve(result);
+                })
+            )
+        })
+        return Promise.all(promiseArr).then(ress => {
+            resolve(result.sort((a, b) => moment(b.created_at, 'DD-MM-YYYY').diff(moment(a.created_at, 'DD-MM-YYYY'))))
+        })
+    })
+}
