@@ -75,6 +75,7 @@ module.exports.getAllUsers = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var el = {
+                        id: element?._id,
                         username: element?.username,
                         email: element?.email
                     }
