@@ -14,6 +14,11 @@ router.post(
   checkAdminUserAuth,
   skillController.addSkill
 );
+router.post(
+  "/edit",
+  checkAdminUserAuth,
+  skillController.editSkill
+);
 router.get("/get_all", skillController.listSkills);
 
 module.exports = router;

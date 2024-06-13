@@ -40,6 +40,44 @@ const addSkill = async (req, res, next) => {
   }
 };
 
+const editSkill = async (req, res, next) => {
+  try {
+    if(req.body.skill_name == "" || req.body.skill_name == undefined){
+        return apiResponse.ErrorResponse(
+            res,
+            "Skill Name is required"
+          );
+    }
+    if(req.body.skill_element == "" || req.body.skill_element == undefined){
+        return apiResponse.ErrorResponse(
+            res,
+            "Skill Element is required"
+          );
+    }
+    if(req.body.skill_id == "" || req.body.skill_id == undefined){
+      return apiResponse.ErrorResponse(
+          res,
+          "Skill ID is required"
+        );
+  }
+  await SkillModel.findByIdAndUpdate(
+    req.body.skill_id,
+      { 
+        skill_name: req.body?.skill_name,
+        skill_element: req.body?.skill_element,
+        skill_damage_value: req.body?.skill_damage_value,
+      },
+    { upsert: true, new: true }
+  );
+  return apiResponse.successResponse(
+    res,
+    "updated successfully"
+  );
+  } catch (err) {
+    next(err);
+  }
+};
+
 const listSkills = async (req, res, next) => {
   try {
     const skills = await SkillModel.find({});
@@ -56,5 +94,6 @@ const listSkills = async (req, res, next) => {
 
 module.exports = {
     addSkill,
-    listSkills
+    listSkills,
+    editSkill
 };

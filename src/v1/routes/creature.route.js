@@ -16,6 +16,11 @@ router.post(
   checkAdminUserAuth,
   creatureController.addCreature
 );
+router.post(
+  "/edit",
+  checkAdminUserAuth,
+  creatureController.editCreature
+);
 
 router.patch(
   "/:id",
