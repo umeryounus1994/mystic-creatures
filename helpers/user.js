@@ -3,6 +3,7 @@ var moment = require('moment');
 const QuestModel = require("../src/v1/models/quest.model");
 const MissionModel = require("../src/v1/models/mission.model");
 const HuntModel = require("../src/v1/models/treasure.model");
+const DropModel = require("../src/v1/models/drop.model");
 
 
 
@@ -52,6 +53,19 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica: findHunt?.mythica_ID?.creature_name,
                                 mythica_ID: findHunt?.mythica_ID?.creature_id,
                                 gender: findHunt?.mythica_ID?.creature_gender,
+                                mythica_distinguisher: element.mythica_distinguisher
+                            };
+                            result.push(el);
+                        }
+                    }
+                    if(element?.drop_id){
+                        var findDrop = await DropModel.findOne({_id: new ObjectID(element.drop_id)})
+                        .populate('mythica_ID');
+                        if(findDrop){
+                            el = {
+                                mythica: findDrop?.mythica_ID?.creature_name,
+                                mythica_ID: findDrop?.mythica_ID?.creature_id,
+                                gender: findDrop?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher
                             };
                             result.push(el);
