@@ -10,6 +10,7 @@ const skillRoute = require("./skill.route");
 const creatureRoute = require("./creature.route");
 const dropRoute = require("./drop.route");
 const friendRoute = require("./friend.route");
+const groupRoute = require("./group.route");
 const pictureRoute = require("./picturemystery.route");
 
 const filehandlingRoute = require("./filehandling.route");
@@ -24,6 +25,7 @@ app.use("/skill/", skillRoute);
 app.use("/creature/", creatureRoute);
 app.use("/drop/", dropRoute);
 app.use("/friend/", friendRoute);
+app.use("/group/", groupRoute);
 app.use("/pictureMystery/", pictureRoute);
 app.use("/fileupload/", filehandlingRoute);
 

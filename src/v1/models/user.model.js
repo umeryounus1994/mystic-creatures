@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema(
     package_end_date: {
       type: Date
     },
+    package_status: {
+      type: String,
+      enum: ["active", "expired"]
+    },
   },
   {
     timestamps: {

@@ -14,7 +14,6 @@ const HuntModel = require("../models/treasure.model");
 const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
 const {
-  getPagination,
   softDelete,
   totalItems,
   hashPassord,
@@ -22,6 +21,7 @@ const {
 const { sendEmail } = require("../../../helpers/emailSender");
 const userHelper = require("../../../helpers/user");
 const bcrypt = require("bcrypt");
+const moment = require('moment');
 
 
 const createUser = async (req, res, next) => {
@@ -84,6 +84,16 @@ const getUser = async (req, res, next) => {
     // remove extra fields from response
     user.password = undefined;
     user.access_token = undefined;
+    if(user.purchased_package == true){
+      const givenDate = moment(user.package_end_date);
+      const currentDate = moment();
+      
+      if (currentDate.isBefore(givenDate)) {
+        user.package_status = "active";
+      } else {
+        user.package_status = "expired";
+      }
+    }
 
     const transactions = await TransactionModel.find({user_id: userId});
     var user_data = {

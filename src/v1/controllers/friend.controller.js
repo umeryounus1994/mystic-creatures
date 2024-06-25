@@ -43,20 +43,20 @@ const getFriends = async (req, res, next) => {
         friends = await FriendModel.find({user_id: new ObjectId(req.user.id)})
         .populate([
             {
-                path: 'user_id', select: { user_name: 1, image: 1 }
+                path: 'user_id', select: { username: 1, image: 1 }
             },
             {
-                path: 'friend_id', select: { user_name: 1, image: 1 }
+                path: 'friend_id', select: { username: 1, image: 1 }
             }
           ]);
     } else {
         friends = await FriendModel.find({user_id: new ObjectId(req.user.id), status: status})
         .populate([
             {
-                path: 'user_id', select: { user_name: 1, image: 1 }
+                path: 'user_id', select: { username: 1, image: 1 }
             },
             {
-                path: 'friend_id', select: { user_name: 1, image: 1 }
+                path: 'friend_id', select: { username: 1, image: 1 }
             }
           ]);
     }
