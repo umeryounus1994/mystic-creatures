@@ -3,6 +3,7 @@
 const { ObjectId } = require("mongodb");
 const apiResponse = require("../../../helpers/apiResponse");
 const FriendModel = require("../models/friends.model");
+const friendHelper = require("../../../helpers/friend");
 
 const addFriend = async (req, res, next) => {
   try {
@@ -65,7 +66,7 @@ const getFriends = async (req, res, next) => {
     return res.json({
       status: true,
       message: "Data Found",
-      data: friends
+      data: await friendHelper.getAllFriends(friends)
     })
   } catch (err) {
     next(err);
