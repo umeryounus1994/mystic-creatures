@@ -192,53 +192,38 @@ const deleteGroup = async (req, res, next) => {
   };
 
 
-// const changeStatus = async (req, res, next) => {
-//   try {
-//     const id = req.params.id;
-//     const status = req.params.status;
+const leaveGroup = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    var checkGroup = await GroupModel.findOne({_id: new ObjectId(id)})
+    if(!checkGroup) {
+          return apiResponse.ErrorResponse(
+          res,
+          "Group not found"
+          )
+    }
+    var checkGroupUser = await GroupUserModel.findOne({group_id: new ObjectId(id), friend_id: new ObjectId(req.user.id)})
+    if(!checkGroupUser) {
+          return apiResponse.ErrorResponse(
+          res,
+          "Group user not found"
+          )
+    }
+    await GroupUserModel.deleteOne({ _id: new ObjectId(checkGroupUser?._id) })
 
-//     const friend = await FriendModel.findOne({ _id: new ObjectId(id) });
-//     if (!friend) {
-//       return apiResponse.notFoundResponse(
-//         res,
-//         "Add Friend first"
-//       );
-//     }
-//     if(friend?.status == "accepted"){
-//         return apiResponse.ErrorResponse(
-//             res,
-//             "Request already accepted"
-//           );
-//     }
-//     if(friend?.status == "rejected"){
-//         return apiResponse.ErrorResponse(
-//             res,
-//             "Request already rejected"
-//           );
-//     }
-//     if(friend?.status == "deleted"){
-//         return apiResponse.ErrorResponse(
-//             res,
-//             "Friend already deleted"
-//           );
-//     }
+    return apiResponse.successResponse(
+      res,
+      "Friend deleted from group"
+    );
 
-//       await FriendModel.findOneAndUpdate(
-//         { _id: new ObjectId(id) },
-//         {
-//           status: status
-//         },
-//         { upsert: true, new: true }
-//       );
-
-//       return apiResponse.successResponse(
-//         res,
-//         "Request " + status
-//       );
-//   } catch (err) {
-//     next(err);
-//   }
-// };
+      return apiResponse.successResponse(
+        res,
+        "Request " + status
+      );
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 module.exports = {
@@ -247,6 +232,7 @@ module.exports = {
     getGroups,
     getGroupFriends,
     deleteGroup,
-    deleteFriendFromGroup
+    deleteFriendFromGroup,
+    leaveGroup
     // changeStatus,
 };
