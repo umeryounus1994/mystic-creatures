@@ -91,7 +91,7 @@ module.exports.getAllUsers = async function (data) {
                     var el = {
                         id: element?._id,
                         username: element?.username,
-                        email: element?.email
+                        image: element?.image
                     }
                     result.push(el);
                     resolvve(result);

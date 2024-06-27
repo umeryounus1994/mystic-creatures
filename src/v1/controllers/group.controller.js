@@ -227,10 +227,6 @@ const leaveGroup = async (req, res, next) => {
       "Friend deleted from group"
     );
 
-      return apiResponse.successResponse(
-        res,
-        "Request " + status
-      );
   } catch (err) {
     next(err);
   }
