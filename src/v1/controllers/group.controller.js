@@ -114,7 +114,7 @@ const addFriendToGroup = async (req, res, next) => {
 
 const getGroups = async (req, res, next) => {
   try {
-    let groupusers = await GroupUserModel.find({ friend_id: req.user.id }).populate('friend_id', 'username')
+    let groupusers = await GroupUserModel.find({ friend_id: new ObjectId(req.user.id) }).populate('friend_id', 'username')
     .populate([
       {
           path: 'group_id', select: {
