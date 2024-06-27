@@ -22,6 +22,7 @@ const createTreasureHuntAdmin = async (req, res, next) => {
         "Invalid Data"
       );
     }
+    console.log(req.body?.hunt_package)
     var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
     var huntdata = {
       treasure_hunt_title: req.body?.treasure_hunt_title,
@@ -33,7 +34,7 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       treasure_hunt_end_date: req.body?.treasure_hunt_end_date,
       hunt_location: location,
       premium_hunt: req.body?.premium_hunt,
-      hunt_package: req.body?.hunt_package
+      hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined
     };
     const createdItem = new TreasureHuntModel(huntdata);
 
