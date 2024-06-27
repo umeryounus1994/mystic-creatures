@@ -61,12 +61,11 @@ const getFriends = async (req, res, next) => {
             }
           ]);
     }
-    
 
     return res.json({
       status: true,
       message: "Data Found",
-      data: await friendHelper.getAllFriends(friends)
+      data: await friendHelper.getAllFriends(friends, req.user.id)
     })
   } catch (err) {
     next(err);
