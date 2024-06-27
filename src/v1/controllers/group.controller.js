@@ -56,6 +56,46 @@ const createGroup = async (req, res, next) => {
       next(err);
     }
   };
+
+
+const editGroup = async (req, res, next) => {
+    try {
+      var id = req.params.id;
+      var checkGroup = await GroupModel.findOne({_id: new ObjectId(id)})
+      if(!checkGroup) {
+          return apiResponse.ErrorResponse(
+              res,
+              "Group not found"
+        )
+      }
+      if(checkGroup.group_creater != req.user.id){
+        return apiResponse.ErrorResponse(
+          res,
+          "only creator can edit group"
+         )
+      }
+      if(req?.body?.group_name == ''){
+          return apiResponse.ErrorResponse(
+            res,
+            "Group name is required"
+      )};
+      await GroupModel.findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        {
+          group_name: req.body?.group_name,
+          group_icon: req.body?.group_icon
+
+        },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponse(
+        res,
+        "Group edit successful"
+      );
+    } catch (err) {
+      next(err);
+    }
+  };
 const addFriendToGroup = async (req, res, next) => {
   try {
     if(req?.body?.friend_id == req.user.id){
@@ -254,6 +294,7 @@ module.exports = {
     getGroupFriends,
     deleteGroup,
     deleteFriendFromGroup,
-    leaveGroup
+    leaveGroup,
+    editGroup
     // changeStatus,
 };
