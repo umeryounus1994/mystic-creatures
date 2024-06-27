@@ -4,6 +4,7 @@ const { ObjectId } = require("mongodb");
 const apiResponse = require("../../../helpers/apiResponse");
 const GroupModel = require("../models/group.model");
 const GroupUserModel = require("../models/groupusers.model");
+const groupHelper = require("../../../helpers/group");
 
 
 const createGroup = async (req, res, next) => {
@@ -39,6 +40,10 @@ const createGroup = async (req, res, next) => {
                     group_id: createdItem?._id,
                   });
             }
+        });
+        options.push({
+          friend_id: req.user.id,
+          group_id: createdItem?._id,
         });
         GroupUserModel.insertMany(options);
         return apiResponse.successResponse(
@@ -108,11 +113,17 @@ const addFriendToGroup = async (req, res, next) => {
 
 const getGroups = async (req, res, next) => {
   try {
-    let groups = await GroupModel.find({group_creater: new ObjectId(req.user.id), status: 'active'})
+    let groupusers = await GroupUserModel.find({ friend_id: req.user.id }).populate('friend_id', 'username')
+    .populate([
+      {
+          path: 'group_id', select: {
+            group_name: 1, group_icon: 1
+          }
+      }])
     return res.json({
       status: true,
       message: "Data Found",
-      data: groups
+      data: await groupHelper.getAllMyGroups(groupusers)
     })
   } catch (err) {
     next(err);

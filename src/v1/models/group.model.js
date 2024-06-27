@@ -8,6 +8,9 @@ const groupsSchema = new mongoose.Schema(
         group_name: {
             type: String
         },
+        group_icon: {
+            type: String
+        },
         group_creater: {
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'User'
