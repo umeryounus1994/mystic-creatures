@@ -27,6 +27,8 @@ router.post(
     name: 'option2', maxCount: 1
   },{
     name: 'option3', maxCount: 1
+  }, {
+    name: 'reward', maxCount: 1
   }]),
   missionController.createMissionAdmin
 );

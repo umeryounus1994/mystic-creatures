@@ -26,6 +26,7 @@ module.exports.getAllDrops = async function (data, user_id, latitude, longitude)
                             drop_name: element.drop_name,
                             location: element.location,
                             drop_description: element.drop_description,
+                            reward_file: element.reward_file,
                             mythica_ID_name: element.mythica_ID?.creature_name,
                             mythica_ID: element.mythica_ID?.creature_id,
                             mythica_reward_name: element.mythica_reward?.creature_name,

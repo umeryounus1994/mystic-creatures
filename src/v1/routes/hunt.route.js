@@ -26,6 +26,8 @@ router.post(
     name: 'option4', maxCount: 1
   },{
     name: 'option5', maxCount: 1
+  }, {
+    name: 'reward', maxCount: 1
   }]),
   treasureHuntController.createTreasureHuntAdmin
 );

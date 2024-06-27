@@ -34,7 +34,8 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       treasure_hunt_end_date: req.body?.treasure_hunt_end_date,
       hunt_location: location,
       premium_hunt: req.body?.premium_hunt,
-      hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined
+      hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : ""
     };
     const createdItem = new TreasureHuntModel(huntdata);
 

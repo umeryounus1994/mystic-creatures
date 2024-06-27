@@ -31,7 +31,8 @@ const createMissionAdmin = async (req, res, next) => {
       mythica_ID: req.body?.mythica_ID,
       mission_start_date: req.body?.mission_start_date,
       mission_end_date: req.body?.mission_end_date,
-      mission_location: location
+      mission_location: location,
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : ""
     };
     const createdItem = new MissionModel(missiondata);
 

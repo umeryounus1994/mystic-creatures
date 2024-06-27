@@ -8,11 +8,14 @@ const {
 const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
-const { checkAuthOrigins } = require("../../../middlewares/authMiddlewareGenericAll");
+const mediaUpload = require("../../../middlewares/upload-aws-image");
 
 router.post(
   "/createDrop",
   checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'reward', maxCount: 1
+  }]),
   dropController.createDrop
 );
 

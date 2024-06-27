@@ -17,7 +17,6 @@ module.exports.getAllPlayerData = async function (data) {
                     var xps = 0;
                     let crypes = 0;
                     let level = 0;
-                    let mythicas = [];
                     var el ={}
                     if(element?.quest_id){
                         var findQuest = await QuestModel.findOne({_id: new ObjectID(element.quest_id)})
@@ -27,7 +26,8 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica: findQuest?.mythica_ID?.creature_name,
                                 mythica_ID: findQuest?.mythica_ID?.creature_id,
                                 gender: findQuest?.mythica_ID?.creature_gender,
-                                mythica_distinguisher: element.mythica_distinguisher
+                                mythica_distinguisher: element.mythica_distinguisher,
+                                reward_file: findQuest?.reward_file ? findQuest?.reward_file : "N/A"
                             };
                             result.push(el);
                         }
@@ -40,7 +40,8 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica: findMission?.mythica_ID?.creature_name,
                                 mythica_ID: findMission?.mythica_ID?.creature_id,
                                 gender: findMission?.mythica_ID?.creature_gender,
-                                mythica_distinguisher: element.mythica_distinguisher
+                                mythica_distinguisher: element.mythica_distinguisher,
+                                reward_file: findMission?.reward_file ? findMission?.reward_file : "N/A"
                             };
                             result.push(el);
                         }
@@ -53,7 +54,8 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica: findHunt?.mythica_ID?.creature_name,
                                 mythica_ID: findHunt?.mythica_ID?.creature_id,
                                 gender: findHunt?.mythica_ID?.creature_gender,
-                                mythica_distinguisher: element.mythica_distinguisher
+                                mythica_distinguisher: element.mythica_distinguisher,
+                                reward_file: findHunt?.reward_file ? findHunt?.reward_file : "N/A"
                             };
                             result.push(el);
                         }
@@ -66,7 +68,8 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica: findDrop?.mythica_ID?.creature_name,
                                 mythica_ID: findDrop?.mythica_ID?.creature_id,
                                 gender: findDrop?.mythica_ID?.creature_gender,
-                                mythica_distinguisher: element.mythica_distinguisher
+                                mythica_distinguisher: element.mythica_distinguisher,
+                                reward_file: findDrop?.reward_file ? findDrop?.reward_file : "N/A"
                             };
                             result.push(el);
                         }

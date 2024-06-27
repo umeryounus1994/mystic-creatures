@@ -21,6 +21,7 @@ const missionSchema = new mongoose.Schema(
         no_of_xp: { type: Number, default: 0 },
         no_of_crypes: { type: Number, default: 0 },
         level_increase: { type: Number, default: 0 },
+        reward_file: {type: String},
         mission_location: {
             type: pointSchema,
             required: true,

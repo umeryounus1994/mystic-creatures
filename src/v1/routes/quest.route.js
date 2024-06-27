@@ -9,10 +9,14 @@ const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
 const { checkAuthOrigins } = require("../../../middlewares/authMiddlewareGenericAll");
+const mediaUpload = require("../../../middlewares/upload-aws-image");
 
 router.post(
   "/createQuest",
   checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'reward', maxCount: 1
+  }]),
   questController.createQuest
 );
 router.post(

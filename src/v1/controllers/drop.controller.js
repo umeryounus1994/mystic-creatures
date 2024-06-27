@@ -13,6 +13,7 @@ const createDrop = async (req, res, next) => {
 
     var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     itemDetails.location = location;
+    itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
     const createdItem = new DropModel(itemDetails);
 
     createdItem.save(async (err) => {

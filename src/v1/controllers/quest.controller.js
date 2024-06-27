@@ -10,10 +10,7 @@ const UserQuestModel = require("../models/userquest.model");
 var questHelper = require("../../../helpers/quest");
 const userModel = require("../models/user.model");
 const {
-  getPagination,
   softDelete,
-  totalItems,
-  hashPassord,
 } = require("../../../helpers/commonApis");
 
 const createQuest = async (req, res, next) => {
@@ -26,6 +23,7 @@ const createQuest = async (req, res, next) => {
         "Invalid Data"
       );
     }
+    itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
     const createdItem = new QuestModel(itemDetails);
 
     createdItem.save(async (err) => {
