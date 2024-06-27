@@ -21,7 +21,7 @@ router.get("/get_all", checkUserAuth, groupController.getGroups);
 router.get("/get_all_friends/:id", checkUserAuth, groupController.getGroupFriends);
 router.get("/delete-group/:id", checkUserAuth, groupController.deleteGroup);
 router.post("/delete-friend", checkUserAuth, groupController.deleteFriendFromGroup);
-router.post("/leave-group", checkUserAuth, groupController.leaveGroup);
+router.get("/leave-group/:id", checkUserAuth, groupController.leaveGroup);
 //router.get("/change-status/:id/:status", checkUserAuth, groupController.changeStatus);
 
 module.exports = router;

@@ -21,7 +21,8 @@ const createGroup = async (req, res, next) => {
     )};
       var group = {
           group_name: req?.body?.group_name,
-          group_creater: req.user?.id
+          group_creater: req.user?.id,
+          group_icon: req?.body?.group_icon
       }
       const createdItem = new GroupModel(group);
   
@@ -213,6 +214,7 @@ const leaveGroup = async (req, res, next) => {
           "Group not found"
           )
     }
+
     var checkGroupUser = await GroupUserModel.findOne({group_id: new ObjectId(id), friend_id: new ObjectId(req.user.id)})
     if(!checkGroupUser) {
           return apiResponse.ErrorResponse(
@@ -220,8 +222,20 @@ const leaveGroup = async (req, res, next) => {
           "Group user not found"
           )
     }
-    await GroupUserModel.deleteOne({ _id: new ObjectId(checkGroupUser?._id) })
+    var checkGroupUserall = await GroupUserModel.find({group_id: new ObjectId(id), friend_id: { $ne: new ObjectId(req.user.id) }})
 
+    await GroupUserModel.deleteOne({ _id: new ObjectId(checkGroupUser?._id) })
+    if(checkGroup.group_creater == req.user.id){
+      if(checkGroupUserall.length > 0){
+        await GroupModel.findOneAndUpdate(
+          { _id: new ObjectId(id) },
+          {
+            group_creater: new ObjectId(checkGroupUserall[0]?.friend_id)
+          },
+          { upsert: true, new: true }
+        );
+      }
+    }
     return apiResponse.successResponse(
       res,
       "Friend deleted from group"
