@@ -59,5 +59,6 @@ router.get("/claim_hunt/:id", checkUserAuth, treasureHuntController.claimHunt);
 router.get("/user_hunt_progress/:id", checkUserAuth, treasureHuntController.userHuntProgress);
 router.get("/top_10", checkUserAuth, treasureHuntController.top10Players);
 router.get("/purchase_hunt/:id", checkUserAuth, treasureHuntController.purchaseHunt);
+router.get("/remove_hunt/:id", checkUserAuth, treasureHuntController.removeHunt);
 
 module.exports = router;

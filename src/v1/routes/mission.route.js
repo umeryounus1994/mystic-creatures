@@ -54,5 +54,6 @@ router.get("/submit_mission_quiz_answer/:id", checkUserAuth, missionController.s
 router.get("/claim_mission/:id", checkUserAuth, missionController.claimMission);
 router.get("/user_mission_progress/:id", checkUserAuth, missionController.userMissionProgress);
 router.get("/top_10", checkUserAuth, missionController.top10Players);
+router.get("/remove_mission/:id", checkUserAuth, missionController.removeMission);
 
 module.exports = router;

@@ -640,6 +640,42 @@ const top10Players = async (req, res, next) => {
   }
 };
 
+const removeMission = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const mission = await MissionModel.findOne({ _id: new ObjectId(id) });
+    if (!mission) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Mission Not found!"
+      );
+    }
+
+    const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id) });
+    if (!userMission) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have to unlock this mission first"
+      );
+    }
+   if(userMission?.status == "cliamed"){
+    return apiResponse.ErrorResponse(
+      res,
+      "Mission already claimed."
+    );
+   }
+   await UserMissionModel.deleteOne({ mission_id: new ObjectId(userMission?._id) })
+   return apiResponse.successResponse(
+    res,
+    "Mission status has been changed."
+  );
+    
+  } catch (err) {
+    next(err);
+  }
+};
+
 function generateUniqueID() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const length = 6; // You can adjust the length as needed
@@ -763,5 +799,6 @@ module.exports = {
   getAllUserMissions,
   getAdminMissions,
   top10Players,
-  createMissionAdmin
+  createMissionAdmin,
+  removeMission
 };

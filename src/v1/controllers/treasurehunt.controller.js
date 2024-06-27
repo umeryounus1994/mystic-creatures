@@ -694,6 +694,41 @@ const purchaseHunt = async (req, res, next) => {
     next(err);
   }
 };
+const removeHunt = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunt) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Hunt Not found!"
+      );
+    }
+
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id) });
+    if (!userHunt) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have to unlock this hunt first"
+      );
+    }
+   if(userHunt?.status == "cliamed"){
+    return apiResponse.ErrorResponse(
+      res,
+      "Hunt already claimed."
+    );
+   }
+   await UserTreasureHuntModel.deleteOne({ treasure_hunt_id: new ObjectId(userHunt?._id) })
+   return apiResponse.successResponse(
+    res,
+    "Hunt status has been changed."
+  );
+    
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 function generateUniqueID() {
@@ -827,5 +862,6 @@ module.exports = {
     getAdminTreasureHunts,
     top10Players,
     createTreasureHuntAdmin,
-    purchaseHunt
+    purchaseHunt,
+    removeHunt
 };
