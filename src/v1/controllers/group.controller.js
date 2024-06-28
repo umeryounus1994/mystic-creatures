@@ -46,7 +46,7 @@ const createGroup = async (req, res, next) => {
           friend_id: req.user.id,
           group_id: createdItem?._id,
         });
-        GroupUserModel.insertMany(options);
+        await GroupUserModel.insertMany(options);
         return apiResponse.successResponse(
           res,
           "Group Created successfully"
@@ -79,6 +79,12 @@ const editGroup = async (req, res, next) => {
             res,
             "Group name is required"
       )};
+      if(req?.body?.group_users.length < 1){
+        return apiResponse.ErrorResponse(
+          res,
+          "Group users is required"
+    )
+      }
       await GroupModel.findOneAndUpdate(
         { _id: new ObjectId(id) },
         {
@@ -88,6 +94,21 @@ const editGroup = async (req, res, next) => {
         },
         { upsert: true, new: true }
       );
+      await GroupUserModel.deleteMany({ group_id: new ObjectId(id)})
+      var options = [];
+        req?.body?.group_users.forEach(element => {
+            if(element != req.user.id){
+                options.push({
+                    friend_id: element,
+                    group_id: id,
+                  });
+            }
+        });
+        options.push({
+          friend_id: req.user.id,
+          group_id: id,
+        });
+      await GroupUserModel.insertMany(options);
       return apiResponse.successResponse(
         res,
         "Group edit successful"
@@ -207,6 +228,7 @@ const deleteGroup = async (req, res, next) => {
         },
         { upsert: true, new: true }
       );
+      await GroupUserModel.deleteMany({ group_id: new ObjectId(id)})
       return apiResponse.successResponse(
         res,
         "Group deleted"
