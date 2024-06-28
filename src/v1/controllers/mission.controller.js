@@ -666,7 +666,7 @@ const removeMission = async (req, res, next) => {
       "Mission already claimed."
     );
    }
-   await UserMissionModel.deleteOne({ mission_id: new ObjectId(userMission?._id) })
+   await UserMissionModel.deleteOne({ _id: new ObjectId(userMission?._id) })
    return apiResponse.successResponse(
     res,
     "Mission status has been changed."

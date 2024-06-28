@@ -721,7 +721,7 @@ const removeHunt = async (req, res, next) => {
       "Hunt already claimed."
     );
    }
-   await UserTreasureHuntModel.deleteOne({ treasure_hunt_id: new ObjectId(userHunt?._id) })
+   await UserTreasureHuntModel.deleteOne({ _id: new ObjectId(userHunt?._id) })
    return apiResponse.successResponse(
     res,
     "Hunt status has been changed."
