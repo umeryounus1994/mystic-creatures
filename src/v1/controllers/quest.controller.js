@@ -209,39 +209,47 @@ const completeQuest = async (req, res, next) => {
         "Quest already completed"
       );
     }
-    await UserQuestModel.findOneAndUpdate(
-      { quest_id: id, user_id: req.user.id },
-      {
-        submitted_answer: user_answer,
-        status: 'claimed'
-      },
-      { upsert: true, new: true }
-    );
-    const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
-    let current_xp = parseInt(user.current_xp) + parseInt(quest?.no_of_xp);
-    let current_level = parseInt(user.current_level) + parseInt(quest?.level_increase);
-    await userModel.findOneAndUpdate(
-      { _id: req.user.id },
-      {
-        current_xp: current_xp,
-        current_level: current_level
-      },
-      { upsert: true, new: true }
-    );
-    var items = {
-      user_id: req.user.id,
-      quest_id: quest?._id,
-      mythica_distinguisher: generateUniqueID()
+    const findCorrectOption = await QuestQuizModel.findOne({ quest_id: new ObjectId(id), correct_option: true });
+    if(findCorrectOption?._id == user_answer){
+      await UserQuestModel.findOneAndUpdate(
+        { quest_id: id, user_id: req.user.id },
+        {
+          submitted_answer: user_answer,
+          status: 'claimed'
+        },
+        { upsert: true, new: true }
+      );
+      const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
+      let current_xp = parseInt(user.current_xp) + parseInt(quest?.no_of_xp);
+      let current_level = parseInt(user.current_level) + parseInt(quest?.level_increase);
+      await userModel.findOneAndUpdate(
+        { _id: req.user.id },
+        {
+          current_xp: current_xp,
+          current_level: current_level
+        },
+        { upsert: true, new: true }
+      );
+      var items = {
+        user_id: req.user.id,
+        quest_id: quest?._id,
+        mythica_distinguisher: generateUniqueID()
+      }
+      const createdItem = new TransactionModel(items);
+  
+      createdItem.save(async (err) => {})
+      return apiResponse.successResponse(
+        res,
+        "Quest completed"
+      );
+    } else {
+      return apiResponse.successResponse(
+        res,
+        "You gave wrong answer. Quest Claim not successful"
+      );
     }
-    const createdItem = new TransactionModel(items);
+ 
 
-    createdItem.save(async (err) => {
-
-    })
-    return apiResponse.successResponse(
-      res,
-      "Quest completed"
-    );
   } catch (err) {
     next(err);
   }

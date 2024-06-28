@@ -3,6 +3,7 @@
 const { ObjectId } = require("mongodb");
 const apiResponse = require("../../../helpers/apiResponse");
 const DropModel = require("../models/drop.model");
+const DropQuizModel = require("../models/dropquiz.model");
 const UserDropModel = require("../models/userdrop.model");
 var dropHelper = require("../../../helpers/drop");
 const TransactionModel = require("../models/transactions.model");
@@ -29,6 +30,21 @@ const createDrop = async (req, res, next) => {
         createdItem
       );
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const createDropQuiz = async (req, res, next) => {
+  try {
+    DropQuizModel.insertMany(req.body)
+      .then(function () {
+
+        return apiResponse.successResponseWithData(
+          res,
+          "Created successfully"
+        );
+      });
   } catch (err) {
     next(err);
   }
@@ -88,7 +104,7 @@ const getUserDrops = async (req, res, next) => {
 const claimDrop = async (req, res, next) => {
   try {
     const id = req.params.id;
-
+    const user_answer = req.body.user_answer;
     const drop = await DropModel.findOne({ _id: new ObjectId(id) });
     if (!drop) {
       return apiResponse.notFoundResponse(
@@ -104,10 +120,12 @@ const claimDrop = async (req, res, next) => {
         "Drop Already claimed"
       );
     }
-
+    const findCorrectOption = await DropQuizModel.findOne({ drop_id: new ObjectId(id), correct_option: true });
+    if(findCorrectOption?._id == user_answer){
       await UserDropModel.findOneAndUpdate(
         { drop_id: id, user_id: req.user.id },
         {
+          submitted_answer: user_answer,
           status: 'claimed'
         },
         { upsert: true, new: true }
@@ -119,11 +137,19 @@ const claimDrop = async (req, res, next) => {
         }
         const createdItem = new TransactionModel(items);
         createdItem.save(async (err) => {})
-
+        return apiResponse.successResponse(
+          res,
+          "Drop Claimed"
+        );
+    } else {
       return apiResponse.successResponse(
         res,
-        "Drop Claimed"
+        "You gave wrong answer. Drop Claim not successful"
       );
+    }
+
+
+
   } catch (err) {
     next(err);
   }
@@ -213,5 +239,6 @@ module.exports = {
   getDrops,
   getUserDrops,
   claimDrop,
-  top10Players
+  top10Players,
+  createDropQuiz
 };

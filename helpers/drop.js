@@ -2,6 +2,7 @@ const ObjectID = require('mongodb').ObjectId;
 var moment = require('moment');
 const haversine = require('haversine');
 const UserDropModel = require("../src/v1/models/userdrop.model");
+const DropQuizModel = require("../src/v1/models/dropquiz.model");
 
 module.exports.getAllDrops = async function (data, user_id, latitude, longitude) {
     const promiseArr = [];
@@ -21,6 +22,7 @@ module.exports.getAllDrops = async function (data, user_id, latitude, longitude)
                     const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
                     if (locationDistance < 10) {
                         const userDrops = await UserDropModel.findOne({ drop_id: new ObjectID(element?._id), user_id: new ObjectID(user_id) });
+                        var findDropQuiz = await DropQuizModel.find({drop_id: new ObjectID(element._id)})
                         var el = {
                             id: element._id,
                             drop_name: element.drop_name,
@@ -32,7 +34,8 @@ module.exports.getAllDrops = async function (data, user_id, latitude, longitude)
                             mythica_reward_name: element.mythica_reward?.creature_name,
                             mythica_reward_ID: element.mythica_reward?.creature_id,
                             status: element.status,
-                            drop_status: userDrops ? userDrops?.status : 'open'
+                            drop_status: userDrops ? userDrops?.status : 'open',
+                            quiz_options: findDropQuiz
                         }
 
                         result.push(el)

@@ -18,10 +18,15 @@ router.post(
   }]),
   dropController.createDrop
 );
+router.post(
+  "/createDropQuiz",
+  checkAdminUserAuth,
+  dropController.createDropQuiz
+);
 
 router.get("/get_all", dropController.getDrops);
 router.post("/get_all_user_drops", checkUserAuth,dropController.getUserDrops);
-router.get("/claim_drop/:id", checkUserAuth, dropController.claimDrop);
+router.post("/claim_drop/:id", checkUserAuth, dropController.claimDrop);
 router.get("/top_10", checkUserAuth, dropController.top10Players);
 
 module.exports = router;
