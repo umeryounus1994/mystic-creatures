@@ -15,6 +15,7 @@ module.exports.getAllMyGroups = async function (groupusers) {
             var group_members = [];
             groups.forEach(el => {
                 var gp = {
+                    member_id: el?.friend_id?._id,
                     member_username: el?.friend_id?.username,
                     member_image: el?.friend_id?.image
                 }
