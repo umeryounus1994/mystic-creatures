@@ -51,7 +51,7 @@ const getFriends = async (req, res, next) => {
             }
           ]);
     } else {
-        friends = await FriendModel.find({$or: [{'user_id': new ObjectId(req.user.id)}, {'friend_id': new ObjectId(req.user.id)}]})
+        friends = await FriendModel.find({$or: [{'user_id': new ObjectId(req.user.id)}, {'friend_id': new ObjectId(req.user.id)}], status: status})
         .populate([
             {
                 path: 'user_id', select: { username: 1, image: 1 }
