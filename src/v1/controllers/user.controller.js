@@ -124,7 +124,7 @@ const getUser = async (req, res, next) => {
 const getUsers = async (req, res, next) => {
   try {
     const users = await UserModel.find({});
-    const all_player_data = await userHelper.getAllUsers(users)
+    const all_player_data = await userHelper.getAllUsers(users, req.user.id)
     return res.json({
       status: all_player_data.length > 0 ? true : false,
       message: all_player_data.length > 0 ? "Data Found" : "No data found",

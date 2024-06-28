@@ -4,7 +4,7 @@ const QuestModel = require("../src/v1/models/quest.model");
 const MissionModel = require("../src/v1/models/mission.model");
 const HuntModel = require("../src/v1/models/treasure.model");
 const DropModel = require("../src/v1/models/drop.model");
-
+const FriendModel = require("../src/v1/models/friends.model");
 
 
 module.exports.getAllPlayerData = async function (data) {
@@ -84,17 +84,19 @@ module.exports.getAllPlayerData = async function (data) {
     })
 }
 
-module.exports.getAllUsers = async function (data) {
+module.exports.getAllUsers = async function (data, userId) {
     const promiseArr = [];
     var result = [];
     return new Promise((resolve, reject) => {
         data.forEach(element => {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
+                    var checkFriend = await FriendModel.findOne({user_id: new ObjectID(userId), friend_id: new ObjectID(element?._id)});
                     var el = {
                         id: element?._id,
                         username: element?.username,
-                        image: element?.image
+                        image: element?.image,
+                        isFriend: checkFriend != null ? true : false
                     }
                     result.push(el);
                     resolvve(result);

@@ -12,25 +12,47 @@ const addFriend = async (req, res, next) => {
           res,
           "You can not add yourself as a friend"
     )};
-    var friend = {
-        user_id: req?.user?.id,
-        friend_id: req.body?.friend_id
-    }
-    const createdItem = new FriendModel(friend);
-
-    createdItem.save(async (err) => {
-      if (err) {
-        return apiResponse.ErrorResponse(
-          res,
-          "System went wrong, Kindly try again later"
-        );
-      }
-      return apiResponse.successResponseWithData(
+    var checkFriend = await FriendModel.findOne({user_id: new ObjectId(req.user.id), friend_id: new ObjectId(req?.body?.friend_id)});
+    if(checkFriend?.status == "requested" || checkFriend?.status == "accepted"){
+      return apiResponse.ErrorResponse(
         res,
-        "Request Sent",
-        createdItem
+        "You can not send this request."
+  )
+    }
+    if(checkFriend?.status == "rejected" || checkFriend?.status == "deleted"){
+      await FriendModel.findOneAndUpdate(
+        { _id: new ObjectId(checkFriend?._id) },
+        {
+          status: "requested"
+        },
+        { upsert: true, new: true }
       );
-    });
+      return apiResponse.successResponse(
+        res,
+        "Request Sent"
+      );
+    }
+      if(!checkFriend){
+        var friend = {
+          user_id: req?.user?.id,
+          friend_id: req.body?.friend_id
+      }
+      const createdItem = new FriendModel(friend);
+  
+      createdItem.save(async (err) => {
+        if (err) {
+          return apiResponse.ErrorResponse(
+            res,
+            "System went wrong, Kindly try again later"
+          );
+        }
+        return apiResponse.successResponse(
+          res,
+          "Request Sent"
+        );
+      });
+      }
+
   } catch (err) {
     next(err);
   }
@@ -85,7 +107,7 @@ const changeStatus = async (req, res, next) => {
         "Add Friend first"
       );
     }
-    if(friend?.friend_id != req.user.id){
+    if(friend?.user_id != req.user.id){
       return apiResponse.ErrorResponse(
         res,
         "You can not " + status + " this request"
