@@ -85,6 +85,12 @@ const changeStatus = async (req, res, next) => {
         "Add Friend first"
       );
     }
+    if(friend?.friend_id != req.user.id){
+      return apiResponse.ErrorResponse(
+        res,
+        "You can not " + status + " this request"
+      );
+    }
     if(friend?.status == "accepted"){
         return apiResponse.ErrorResponse(
             res,
