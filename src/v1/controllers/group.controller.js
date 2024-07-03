@@ -179,7 +179,7 @@ const getGroups = async (req, res, next) => {
     .populate([
       {
           path: 'group_id', select: {
-            group_name: 1, group_icon: 1
+            group_name: 1, group_icon: 1, group_creater: 1
           }
       }])
     return res.json({

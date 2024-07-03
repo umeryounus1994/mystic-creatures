@@ -1,6 +1,6 @@
 const ObjectID = require('mongodb').ObjectId;
 const GroupUserModel = require("../src/v1/models/groupusers.model");
-
+const UserModel = require("../src/v1/models/user.model");
 
 module.exports.getAllMyGroups = async function (groupusers) {
     try{
@@ -12,6 +12,7 @@ module.exports.getAllMyGroups = async function (groupusers) {
                         select: { username: 1, image: 1 }
                     }
                 ]);
+                let group_admin = await UserModel.findOne({ _id: new ObjectID(element?.group_id?.group_creater) });
             var group_members = [];
             groups.forEach(el => {
                 var gp = {
@@ -25,6 +26,8 @@ module.exports.getAllMyGroups = async function (groupusers) {
                 group_id: element?.group_id?._id,
                 group_name: element?.group_id?.group_name,
                 group_icon: element?.group_id?.group_icon,
+                group_admin: element?.group_id?.group_creater,
+                group_admin_name: group_admin?.username,
                 members: group_members
             };
         });
