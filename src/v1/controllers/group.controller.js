@@ -58,58 +58,7 @@ const createGroup = async (req, res, next) => {
   };
 
 
-  const editGroup = async (req, res, next) => {
-    try {
-      var id = req.params.id;
-
-      var checkGroup = await GroupModel.findOne({_id: new ObjectId(id)})
-      if(!checkGroup) {
-          return apiResponse.ErrorResponse(
-              res,
-              "Group not found"
-        )
-      }
-      if(checkGroup.group_creater != req.user.id){
-        return apiResponse.ErrorResponse(
-          res,
-          "only creator can edit group"
-         )
-      }
-      await GroupModel.findOneAndUpdate(
-        { _id: new ObjectId(id) },
-        {
-          group_name: req.body?.group_name,
-          group_icon: req.body?.group_icon
-        },
-        { upsert: true, new: true }
-      );
-      if(req.body?.group_users){
-       var parsedJson = JSON.parse(req.body.group_users);
-        await GroupUserModel.remove({ group_id: new ObjectId(id) })
-        var options = [];
-        parsedJson.forEach(element => {
-            if(element != req.user.id){
-                options.push({
-                    friend_id: element,
-                    group_id: id,
-                  });
-            }
-        });
-        options.push({
-          friend_id: req.user.id,
-          group_id: id,
-        });
-        GroupUserModel.insertMany(options);
-      }
-
-      return apiResponse.successResponse(
-        res,
-        "Group edit successful"
-      );
-    } catch (err) {
-      next(err);
-    }
-  };
+  
 const addFriendToGroup = async (req, res, next) => {
   try {
     if(req?.body?.friend_id == req.user.id){

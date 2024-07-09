@@ -11,11 +11,11 @@ router.post(
   checkUserAuth,
   groupController.createGroup
 );
-router.post(
-  "/edit-group/:id",
-  checkUserAuth,
-  groupController.editGroup
-);
+// router.post(
+//   "/edit-group/:id",
+//   checkUserAuth,
+//   groupController.editGroup
+// );
 router.post(
     "/add-friend",
     checkUserAuth,
