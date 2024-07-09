@@ -58,9 +58,10 @@ const createGroup = async (req, res, next) => {
   };
 
 
-const editGroup = async (req, res, next) => {
+  const editGroup = async (req, res, next) => {
     try {
       var id = req.params.id;
+
       var checkGroup = await GroupModel.findOne({_id: new ObjectId(id)})
       if(!checkGroup) {
           return apiResponse.ErrorResponse(
@@ -74,29 +75,19 @@ const editGroup = async (req, res, next) => {
           "only creator can edit group"
          )
       }
-      if(req?.body?.group_name == ''){
-          return apiResponse.ErrorResponse(
-            res,
-            "Group name is required"
-      )};
-      if(req?.body?.group_users.length < 1){
-        return apiResponse.ErrorResponse(
-          res,
-          "Group users is required"
-    )
-      }
       await GroupModel.findOneAndUpdate(
         { _id: new ObjectId(id) },
         {
           group_name: req.body?.group_name,
           group_icon: req.body?.group_icon
-
         },
         { upsert: true, new: true }
       );
-      await GroupUserModel.deleteMany({ group_id: new ObjectId(id)})
-      var options = [];
-        req?.body?.group_users.forEach(element => {
+      if(req.body?.group_users){
+       var parsedJson = JSON.parse(req.body.group_users);
+        await GroupUserModel.remove({ group_id: new ObjectId(id) })
+        var options = [];
+        parsedJson.forEach(element => {
             if(element != req.user.id){
                 options.push({
                     friend_id: element,
@@ -108,7 +99,9 @@ const editGroup = async (req, res, next) => {
           friend_id: req.user.id,
           group_id: id,
         });
-      await GroupUserModel.insertMany(options);
+        GroupUserModel.insertMany(options);
+      }
+
       return apiResponse.successResponse(
         res,
         "Group edit successful"
