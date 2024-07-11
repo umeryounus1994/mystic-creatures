@@ -132,7 +132,7 @@ const claimDrop = async (req, res, next) => {
       );
         var items = {
           user_id: req.user.id,
-          drop_id: drop?._id,
+          drop_id: id,
           mythica_distinguisher: generateUniqueID()
         }
         const createdItem = new TransactionModel(items);

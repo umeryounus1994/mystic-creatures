@@ -11,6 +11,8 @@ const UserModel = require("../models/user.model");
 const QuestModel = require("../models/quest.model");
 const MissionModel = require("../models/mission.model");
 const HuntModel = require("../models/treasure.model");
+const DropModel = require("../models/drop.model");
+const PictureMysteryModel = require("../models/picturemysteries.model");
 const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
 const {
@@ -95,20 +97,35 @@ const getUser = async (req, res, next) => {
       }
     }
 
-    const transactions = await TransactionModel.find({user_id: userId});
+    var populateQuery = [{path:'quest_id', select:'no_of_xp'}, {path:'mission_id', select:'no_of_xp'},{path:'hunt_id', select:'no_of_xp'},{path:'drop_id', select:'no_of_xp'},
+    {path:'picture_mystery_id', select:'no_of_xp'}];
+    const transactions = await TransactionModel.find({user_id: userId}).populate(populateQuery);
     var user_data = {
       QuestsCompleted: 0,
       HuntsCompleted: 0,
       MissionsCompleted: 0,
-      DropsCompleted: 0
+      DropsCompleted: 0,
+      PictureMysteryCompleted: 0,
+      total_xp: 0
     };
+    let total_xp = 0;
     transactions.forEach(element => {
-      if(element?.quest_id) { user_data.QuestsCompleted+=1; }
-      if(element?.mission_id) { user_data.MissionsCompleted+=1; }
-      if(element?.hunt_id) { user_data.HuntsCompleted+=1; }
-      if(element?.drop_id) { user_data.DropsCompleted+=1; }
+      if(element?.quest_id) { user_data.QuestsCompleted+=1; 
+        user_data.total_xp+=element?.quest_id?.no_of_xp || 0; 
+      }
+      if(element?.mission_id) { user_data.MissionsCompleted+=1; 
+        user_data.total_xp+=element?.mission_id?.no_of_xp || 0; 
+      }
+      if(element?.hunt_id) { user_data.HuntsCompleted+=1; 
+        user_data.total_xp+=element?.hunt_id?.no_of_xp || 0; 
+      }
+      if(element?.drop_id) { user_data.DropsCompleted+=1; 
+        user_data.total_xp+=element?.drop_id?.no_of_xp || 0; 
+      }
+      if(element?.picture_mystery_id) { user_data.PictureMysteryCompleted+=1; 
+        user_data.total_xp+=element?.picture_mystery_id?.no_of_xp || 0;  
+      }
     });
-
     return apiResponse.successResponseWithDataStats(
       res,
       "User Details Fetched",

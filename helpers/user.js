@@ -4,6 +4,7 @@ const QuestModel = require("../src/v1/models/quest.model");
 const MissionModel = require("../src/v1/models/mission.model");
 const HuntModel = require("../src/v1/models/treasure.model");
 const DropModel = require("../src/v1/models/drop.model");
+const PictureMysteryModel = require("../src/v1/models/picturemysteries.model");
 const FriendModel = require("../src/v1/models/friends.model");
 
 
@@ -27,7 +28,8 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica_ID: findQuest?.mythica_ID?.creature_id,
                                 gender: findQuest?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
-                                reward_file: findQuest?.reward_file ? findQuest?.reward_file : "N/A"
+                                reward_file: findQuest?.reward_file ? findQuest?.reward_file : "N/A",
+                                total_xp : xps + findQuest?.no_of_xp
                             };
                             result.push(el);
                         }
@@ -41,7 +43,8 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica_ID: findMission?.mythica_ID?.creature_id,
                                 gender: findMission?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
-                                reward_file: findMission?.reward_file ? findMission?.reward_file : "N/A"
+                                reward_file: findMission?.reward_file ? findMission?.reward_file : "N/A",
+                                total_xp : xps + findMission?.no_of_xp
                             };
                             result.push(el);
                         }
@@ -55,7 +58,8 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica_ID: findHunt?.mythica_ID?.creature_id,
                                 gender: findHunt?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
-                                reward_file: findHunt?.reward_file ? findHunt?.reward_file : "N/A"
+                                reward_file: findHunt?.reward_file ? findHunt?.reward_file : "N/A",
+                                total_xp : xps + findHunt?.no_of_xp
                             };
                             result.push(el);
                         }
@@ -69,7 +73,23 @@ module.exports.getAllPlayerData = async function (data) {
                                 mythica_ID: findDrop?.mythica_ID?.creature_id,
                                 gender: findDrop?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
-                                reward_file: findDrop?.reward_file ? findDrop?.reward_file : "N/A"
+                                reward_file: findDrop?.reward_file ? findDrop?.reward_file : "N/A",
+                                total_xp : xps + findDrop?.no_of_xp
+                            };
+                            result.push(el);
+                        }
+                    }
+                    if(element?.picture_mystery_id){
+                        var findPictureMystery = await PictureMysteryModel.findOne({_id: new ObjectID(element.picture_mystery_id)})
+                        .populate('mythica_ID');
+                        if(findDrop){
+                            el = {
+                                mythica: findPictureMystery?.mythica_ID?.creature_name,
+                                mythica_ID: findPictureMystery?.mythica_ID?.creature_id,
+                                gender: findPictureMystery?.mythica_ID?.creature_gender,
+                                mythica_distinguisher: element.mythica_distinguisher,
+                                reward_file: findPictureMystery?.reward_file ? findPictureMystery?.reward_file : "N/A",
+                                total_xp : xps + findPictureMystery?.no_of_xp
                             };
                             result.push(el);
                         }
