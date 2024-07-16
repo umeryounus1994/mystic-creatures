@@ -47,6 +47,12 @@ const createUser = async (req, res, next) => {
             "Email already in use"
           );
         }
+        if (err?.keyValue?.username != null && err?.code === 11000) {
+          return apiResponse.ErrorResponse(
+            res,
+            "Username already in use"
+          );
+        }
         return apiResponse.ErrorResponse(
           res,
           "System went wrong, Kindly try again later"
