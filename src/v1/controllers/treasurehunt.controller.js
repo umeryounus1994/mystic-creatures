@@ -721,7 +721,7 @@ const removeHunt = async (req, res, next) => {
       "Hunt already claimed."
     );
    }
-   await TreasureHuntModel.findByIdAndUpdate(
+   await UserTreasureHuntModel.findByIdAndUpdate(
     userHunt?._id,
     { quiz_answers: [], status: 'open' },
     { upsert: true, new: true }
