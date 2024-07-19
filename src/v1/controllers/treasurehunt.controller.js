@@ -723,7 +723,7 @@ const removeHunt = async (req, res, next) => {
    }
    await TreasureHuntModel.findByIdAndUpdate(
     userHunt?._id,
-    { quiz_answers: [] },
+    { quiz_answers: [], status: 'open' },
     { upsert: true, new: true }
   );
    return apiResponse.successResponse(
