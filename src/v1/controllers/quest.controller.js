@@ -90,6 +90,7 @@ const unlockQuestForUser = async (req, res, next) => {
         "Not found!"
       );
     }
+    const questQuiz = await QuestQuizModel.find({quest_id: new ObjectId(quest?._id)});
     const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(quest?._id)});
     if(userQuest){
       return apiResponse.ErrorResponse(
@@ -117,10 +118,14 @@ const unlockQuestForUser = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
+      const responsedata = {
+        quest,
+        data: questQuiz
+      }
       return apiResponse.successResponseWithData(
         res,
         "Created successfully",
-        createdItem
+        responsedata
       );
     });
   } catch (err) {
