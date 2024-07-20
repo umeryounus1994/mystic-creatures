@@ -47,7 +47,7 @@ module.exports.getAllPlayerQuests = async function (data) {
         data.forEach(element => {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
-                    var findQuest = await QuestModel.findOne({quest_id: new ObjectID(element.quest_id)})
+                    var findQuest = await QuestModel.findOne({_id: new ObjectID(element.quest_id)})
                     .populate('mythica_ID')
                     var findQuestQuiz = await QuestQuizModel.find({quest_id: new ObjectID(element.quest_id)})
                     var el ={}
