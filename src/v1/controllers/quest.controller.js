@@ -83,13 +83,20 @@ const getQuests = async (req, res, next) => {
 const unlockQuestForUser = async (req, res, next) => {
   try {
     const qr_code = req.body.qr_code;
-    const quest = await QuestModel.findOne({ qr_code: qr_code });
+    const quest = await QuestModel.findOne({ qr_code: qr_code })
+    .populate([
+      {
+          path: 'mythica_ID', select: {
+              creature_id: 1
+          }
+      }])
     if (!quest) {
       return apiResponse.notFoundResponse(
         res,
         "Not found!"
       );
     }
+
     const questQuiz = await QuestQuizModel.find({quest_id: new ObjectId(quest?._id)});
     const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(quest?._id)});
     if(userQuest){
@@ -118,8 +125,23 @@ const unlockQuestForUser = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
+      const questd = {
+        _id: quest?._id,
+        quest_question: quest?.quest_question,
+        quest_title: quest?.quest_title,
+        qr_code: quest?.qr_code,
+        no_of_xp: quest?.no_of_xp,
+        no_of_crypes: quest?.no_of_crypes,
+        reward_file: quest?.reward_file,
+        mythica_ID: quest?.mythica_ID?.creature_id,
+        quest_image: quest?.quest_image,
+        status: quest?.status,
+        deleted: quest?.deleted,
+        created_at: quest?.created_at,
+        updated_at: quest?.updated_at,
+      }
       const responsedata = {
-        quest,
+        quest: questd,
         data: questQuiz
       }
       return apiResponse.successResponseWithData(
