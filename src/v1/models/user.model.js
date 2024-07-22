@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     image: { type: String, default: "" },
     access_token: { type: String, default: "" },
-    current_level: { type: Number, default: 0 },
+    current_level: { type: Number, default: 1 },
     current_xp: { type: Number, default: 0 },  //XP required = 100 * (1.2^(currentLevel - 1))
     status: {
       type: String,

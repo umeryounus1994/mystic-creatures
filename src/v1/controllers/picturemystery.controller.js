@@ -303,16 +303,16 @@ const completePictureMystery = async (req, res, next) => {
       { upsert: true, new: true }
     );
     const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
-    let current_xp = parseInt(user.current_xp) + parseInt(mystery?.no_of_xp);
-    let current_level = parseInt(user.current_level) + parseInt(mystery?.level_increase);
-    await userModel.findOneAndUpdate(
-      { _id: req.user.id },
-      {
-        current_xp: current_xp,
-        current_level: current_level
-      },
-      { upsert: true, new: true }
-    );
+    // let current_xp = parseInt(user.current_xp) + parseInt(mystery?.no_of_xp);
+    // let current_level = parseInt(user.current_level) + parseInt(mystery?.level_increase);
+    // await userModel.findOneAndUpdate(
+    //   { _id: req.user.id },
+    //   {
+    //     current_xp: current_xp,
+    //     current_level: current_level
+    //   },
+    //   { upsert: true, new: true }
+    // );
     var items = {
       user_id: req.user.id,
       picture_mystery_id: mystery?._id,

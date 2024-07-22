@@ -468,16 +468,16 @@ const submitHuntQuizAnswer = async (req, res, next) => {
         { upsert: true, new: true }
       );
       const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
-      let current_xp = parseInt(user.current_xp) + parseInt(hunt?.no_of_xp);
-      let current_level = parseInt(user.current_level) + parseInt(hunt?.level_increase);
-      await userModel.findOneAndUpdate(
-        { _id: req.user.id },
-        {
-          current_xp: current_xp,
-          current_level: current_level
-        },
-        { upsert: true, new: true }
-      );
+      // let current_xp = parseInt(user.current_xp) + parseInt(hunt?.no_of_xp);
+      // let current_level = parseInt(user.current_level) + parseInt(hunt?.level_increase);
+      // await userModel.findOneAndUpdate(
+      //   { _id: req.user.id },
+      //   {
+      //     current_xp: current_xp,
+      //     current_level: current_level
+      //   },
+      //   { upsert: true, new: true }
+      // );
       return apiResponse.successResponse(
         res,
         "Treasure Hunt Completed"
@@ -530,16 +530,16 @@ const claimHunt = async (req, res, next) => {
         { upsert: true, new: true }
       );
       const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
-      let current_xp = parseInt(user.current_xp) + parseInt(hunt?.no_of_xp);
-      let current_level = parseInt(user.current_level) + parseInt(hunt?.level_increase);
-      await userModel.findOneAndUpdate(
-        { _id: req.user.id },
-        {
-          current_xp: current_xp,
-          current_level: current_level
-        },
-        { upsert: true, new: true }
-      );
+      // let current_xp = parseInt(user.current_xp) + parseInt(hunt?.no_of_xp);
+      // let current_level = parseInt(user.current_level) + parseInt(hunt?.level_increase);
+      // await userModel.findOneAndUpdate(
+      //   { _id: req.user.id },
+      //   {
+      //     current_xp: current_xp,
+      //     current_level: current_level
+      //   },
+      //   { upsert: true, new: true }
+      // );
       const ans = await areAllQuizzesCorrectlyAnswered(req.user.id, id);
       if(ans == true){
         var items = {

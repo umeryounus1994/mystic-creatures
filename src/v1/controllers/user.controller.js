@@ -11,7 +11,7 @@ const UserModel = require("../models/user.model");
 const QuestModel = require("../models/quest.model");
 const MissionModel = require("../models/mission.model");
 const HuntModel = require("../models/treasure.model");
-const DropModel = require("../models/drop.model");
+const LevelModel = require("../models/level.model");
 const PictureMysteryModel = require("../models/picturemysteries.model");
 const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
@@ -61,6 +61,14 @@ const createUser = async (req, res, next) => {
       createdItem.password = undefined;
       createdItem.current_level = undefined;
       createdItem.current_xp = 0;
+
+      const level = {
+        user_id: createdItem?._id,
+        level: 1
+      }
+      const item = new LevelModel(level);
+      createdItem.save();
+
       return apiResponse.successResponseWithData(
         res,
         "Created successfully",
@@ -102,19 +110,29 @@ const getUser = async (req, res, next) => {
         user.package_status = "expired";
       }
     }
+    const level = {
+      user_id: "6607caa2cc99262dd236ae40",
+      level: 1
+    }
+    const item = new LevelModel(level);
+    item.save();
 
     var populateQuery = [{path:'quest_id', select:'no_of_xp'}, {path:'mission_id', select:'no_of_xp'},{path:'hunt_id', select:'no_of_xp'},{path:'drop_id', select:'no_of_xp'},
     {path:'picture_mystery_id', select:'no_of_xp'}];
     const transactions = await TransactionModel.find({user_id: userId}).populate(populateQuery);
+    const lastLevel = await LevelModel.findOne({ user_id: userId }).sort({ created_at: -1 })
+    const xp_needed = 100 + (lastLevel?.level * 0.2 * 100)
     var user_data = {
       QuestsCompleted: 0,
       HuntsCompleted: 0,
       MissionsCompleted: 0,
       DropsCompleted: 0,
       PictureMysteryCompleted: 0,
-      total_xp: 0
+      total_xp: 0,
+      current_xp: 0,
+      current_level: 1,
+      xp_needed
     };
-    let total_xp = 0;
     transactions.forEach(element => {
       if(element?.quest_id) { user_data.QuestsCompleted+=1; 
         user_data.total_xp+=element?.quest_id?.no_of_xp || 0; 
@@ -519,6 +537,20 @@ const purhasePackage = async (req, res, next) => {
     next(err);
   }
 };
+
+async function getLastLevel(userId) {
+  try {
+      // Find the levels for the given user_id, sorted by created_at in descending order, and limit to 1
+      const lastLevel = await LevelModel.findOne({ user_id: userId })
+                                        .sort({ created_at: -1 }) // or sort by 'level' if that's your criteria
+                                        .exec();
+
+      return lastLevel;
+  } catch (error) {
+      console.error('Error fetching the last level:', error);
+      throw error;
+  }
+}
 
 
 
