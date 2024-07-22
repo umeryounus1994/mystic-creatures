@@ -67,7 +67,7 @@ const createUser = async (req, res, next) => {
         level: 1
       }
       const item = new LevelModel(level);
-      createdItem.save();
+      item.save();
 
       return apiResponse.successResponseWithData(
         res,
@@ -100,6 +100,8 @@ const getUser = async (req, res, next) => {
     // remove extra fields from response
     user.password = undefined;
     user.access_token = undefined;
+    user.current_level = undefined;
+    user.current_xp = undefined;
     if(user.purchased_package == true){
       const givenDate = moment(user.package_end_date);
       const currentDate = moment();
@@ -110,18 +112,12 @@ const getUser = async (req, res, next) => {
         user.package_status = "expired";
       }
     }
-    const level = {
-      user_id: "6607caa2cc99262dd236ae40",
-      level: 1
-    }
-    const item = new LevelModel(level);
-    item.save();
 
     var populateQuery = [{path:'quest_id', select:'no_of_xp'}, {path:'mission_id', select:'no_of_xp'},{path:'hunt_id', select:'no_of_xp'},{path:'drop_id', select:'no_of_xp'},
     {path:'picture_mystery_id', select:'no_of_xp'}];
     const transactions = await TransactionModel.find({user_id: userId}).populate(populateQuery);
-    const lastLevel = await LevelModel.findOne({ user_id: userId }).sort({ created_at: -1 })
-    const xp_needed = 100 + (lastLevel?.level * 0.2 * 100)
+     const lastLevel = await LevelModel.findOne({ user_id: userId }).sort({ created_at: -1 })
+    // const xp_needed = 100 + (lastLevel?.level * 0.2 * 100)
     var user_data = {
       QuestsCompleted: 0,
       HuntsCompleted: 0,
@@ -130,26 +126,55 @@ const getUser = async (req, res, next) => {
       PictureMysteryCompleted: 0,
       total_xp: 0,
       current_xp: 0,
-      current_level: 1,
-      xp_needed
+      current_level: lastLevel?.level,
+      xp_needed: 0
     };
+    let dummyTotalXp =0;
     transactions.forEach(element => {
       if(element?.quest_id) { user_data.QuestsCompleted+=1; 
         user_data.total_xp+=element?.quest_id?.no_of_xp || 0; 
+        dummyTotalXp+=element?.quest_id?.no_of_xp || 0; 
       }
       if(element?.mission_id) { user_data.MissionsCompleted+=1; 
         user_data.total_xp+=element?.mission_id?.no_of_xp || 0; 
+        dummyTotalXp+=element?.mission_id?.no_of_xp || 0; 
       }
       if(element?.hunt_id) { user_data.HuntsCompleted+=1; 
         user_data.total_xp+=element?.hunt_id?.no_of_xp || 0; 
+        dummyTotalXp+=element?.hunt_id?.no_of_xp || 0; 
       }
       if(element?.drop_id) { user_data.DropsCompleted+=1; 
         user_data.total_xp+=element?.drop_id?.no_of_xp || 0; 
+        dummyTotalXp+=element?.drop_id?.no_of_xp || 0; 
       }
       if(element?.picture_mystery_id) { user_data.PictureMysteryCompleted+=1; 
         user_data.total_xp+=element?.picture_mystery_id?.no_of_xp || 0;  
+        dummyTotalXp+=element?.picture_mystery_id?.no_of_xp || 0; 
       }
     });
+ // Update current level and XP needed for the next level
+    let xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
+    while (user_data.total_xp >= xpThreshold) {
+      user_data.total_xp -= xpThreshold;
+      user_data.current_level += 1;
+      xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
+    }
+
+    // Set the current XP and XP needed for the next level
+    user_data.current_xp = dummyTotalXp - xpThreshold;
+    user_data.xp_needed = xpThreshold;
+    user_data.total_xp = dummyTotalXp;
+    user_data.current_level = user_data.current_level;
+  
+    
+    if (user_data.current_level > lastLevel?.level) {
+      const level = {
+        user_id: req.user.id,
+        level: user_data.current_level
+      }
+      const item = new LevelModel(level);
+      await item.save();
+    }
     return apiResponse.successResponseWithDataStats(
       res,
       "User Details Fetched",
