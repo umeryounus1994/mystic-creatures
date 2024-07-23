@@ -21,7 +21,7 @@ module.exports.getAllMissions = async function (data, user_id, latitude, longitu
                         longitude: longitude
                     }
                     const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 10) {
+                    if (locationDistance < 2) {
                         var findMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectID(element._id) })
                             .populate([
                                 {
@@ -189,7 +189,7 @@ module.exports.getAllUserMissions = async function (data, user_id, latitude, lon
                         longitude: longitude
                     }
                     const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 10) {
+                    if (locationDistance < 2) {
                         var findMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectID(element.mission_id) })
                             .populate([
                                 {
