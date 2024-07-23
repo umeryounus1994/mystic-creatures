@@ -128,3 +128,27 @@ module.exports.getAllUsers = async function (data, userId) {
         })
     })
 }
+
+module.exports.getAllUsersAdmin = async function (data) {
+    const promiseArr = [];
+    var result = [];
+    return new Promise((resolve, reject) => {
+        data.forEach(element => {
+            promiseArr.push(
+                new Promise(async (resolvve, rejectt) => {
+                    var el = {
+                        id: element?._id,
+                        username: element?.username,
+                        image: element?.image,
+                        status: element?.status
+                    }
+                    result.push(el);
+                    resolvve(result);
+                })
+            )
+        })
+        return Promise.all(promiseArr).then(ress => {
+            resolve(result.sort((a, b) => moment(b.created_at, 'DD-MM-YYYY').diff(moment(a.created_at, 'DD-MM-YYYY'))))
+        })
+    })
+}

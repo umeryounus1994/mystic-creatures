@@ -201,6 +201,19 @@ const getUsers = async (req, res, next) => {
   }
 };
 
+const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await UserModel.find({});
+    const all_player_data = await userHelper.getAllUsersAdmin(users)
+    return res.json({
+      status: all_player_data.length > 0 ? true : false,
+      message: all_player_data.length > 0 ? "Data Found" : "No data found",
+      data: all_player_data
+    })
+  } catch (err) {
+    next(err);
+  }
+};
 const deleteUser = async (req, res, next) => {
   try {
     await softDelete({
@@ -598,5 +611,6 @@ module.exports = {
   getUserCreatures,
   getAnalytics,
   getUserAnalytics,
-  purhasePackage
+  purhasePackage,
+  getAllUsers
 };

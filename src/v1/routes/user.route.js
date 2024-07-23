@@ -20,6 +20,7 @@ router.post(
 );
 
 router.get("/get_all", checkAuthOrigins, userController.getUsers);
+router.get("/get_all_admin", checkAuthOrigins, userController.getAllUsers);
 router.post("/login", userController.loginUser);
 router.get(
   "/logout",

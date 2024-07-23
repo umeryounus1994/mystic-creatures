@@ -21,13 +21,13 @@ const checkAdminUserAuth = async (req, res, next) => {
       if (!data) {
         return apiResponse.unauthorizedResponse(
           res,
-          "Unauthorized User"
+          "Unauthorized User1"
         );
       }
       if (data.access_token !== token) {
         return apiResponse.unauthorizedResponse(
           res,
-          "Unauthorized User"
+          "Unauthorized User2"
         );
       }
       req.user = data;
@@ -35,14 +35,14 @@ const checkAdminUserAuth = async (req, res, next) => {
     } catch (error) {
       return apiResponse.unauthorizedResponse(
         res,
-        "Unauthorized User"
+        "Unauthorized User3"
       );
     }
   }
   if (!token) {
     return apiResponse.unauthorizedResponse(
       res,
-      "Unauthorized User"
+      "Unauthorized User4"
     );
   }
 };
