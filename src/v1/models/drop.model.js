@@ -20,6 +20,7 @@ const dropSchema = new mongoose.Schema(
         drop_name: { type: String },
         drop_description: { type: String },
         reward_file: {type: String},
+        no_of_xp: {type: String},
         mythica_ID: {
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'Creature'

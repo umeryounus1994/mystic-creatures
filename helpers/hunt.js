@@ -21,8 +21,8 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                         latitude: latitude,
                         longitude: longitude
                     }
-                    const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 2) {
+                    const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
+                    if (locationDistance < 500) {
                         var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element._id) })
                             .populate([
                                 {
@@ -200,8 +200,8 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
                         latitude: latitude,
                         longitude: longitude
                     }
-                    const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 2) {
+                    const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
+                    if (locationDistance < 500) {
                         var findTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectID(element.treasure_hunt_id) })
                             .populate([
                                 {

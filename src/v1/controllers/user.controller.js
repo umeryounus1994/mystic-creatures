@@ -153,18 +153,33 @@ const getUser = async (req, res, next) => {
       }
     });
  // Update current level and XP needed for the next level
-    let xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
+    // let xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
+    // let dummyCurrentXP = user_data.total_xp;
+    // while (user_data.total_xp >= xpThreshold) {
+    //   dummyCurrentXP -= xpThreshold;
+    //   user_data.current_level += 1;
+    //   xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
+    // }
+    // user_data.current_xp = dummyTotalXp - xpThreshold;
+    // user_data.xp_needed = xpThreshold;
+    // user_data.total_xp = dummyTotalXp;
+    // user_data.current_level = user_data.current_level;
+    // Update current level and XP needed for the next level
+    const xpForLevel = (level) => 100 + (level * 0.2 * 100);
+    let xpThreshold = xpForLevel(user_data.current_level);
+
     while (user_data.total_xp >= xpThreshold) {
       user_data.total_xp -= xpThreshold;
       user_data.current_level += 1;
-      xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
+      xpThreshold = xpForLevel(user_data.current_level);
     }
 
     // Set the current XP and XP needed for the next level
-    user_data.current_xp = dummyTotalXp - xpThreshold;
+    user_data.current_xp = user_data.total_xp;
     user_data.xp_needed = xpThreshold;
+
+    // Ensure total_xp reflects the actual total XP earned
     user_data.total_xp = dummyTotalXp;
-    user_data.current_level = user_data.current_level;
   
     
     if (user_data.current_level > lastLevel?.level) {
@@ -575,21 +590,6 @@ const purhasePackage = async (req, res, next) => {
     next(err);
   }
 };
-
-async function getLastLevel(userId) {
-  try {
-      // Find the levels for the given user_id, sorted by created_at in descending order, and limit to 1
-      const lastLevel = await LevelModel.findOne({ user_id: userId })
-                                        .sort({ created_at: -1 }) // or sort by 'level' if that's your criteria
-                                        .exec();
-
-      return lastLevel;
-  } catch (error) {
-      console.error('Error fetching the last level:', error);
-      throw error;
-  }
-}
-
 
 
 

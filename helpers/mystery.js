@@ -18,8 +18,8 @@ module.exports.getAllPictureMystery = async function (data, latitude, longitude)
                         latitude: latitude,
                         longitude: longitude
                     }
-                    const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 2) {
+                    const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
+                    if (locationDistance < 500) {
                         var findQuestQuiz = await PictureMysteryQuizModel.find({picture_mystery_id: new ObjectID(element._id)})
                         var el ={}
                         var el ={
@@ -65,8 +65,8 @@ module.exports.getAllUserMysteries = async function (data, latitude, longitude) 
                         latitude: latitude,
                         longitude: longitude
                     }
-                    const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 2) {
+                    const locationDistance = haversine(userLocation, endLocation, { unit: 'meter' })
+                    if (locationDistance < 500) {
                         var findQuestQuiz = await PictureMysteryQuizModel.find({picture_mystery_id: new ObjectID(element._id)})
                         var el ={}
                         var el ={
