@@ -24,10 +24,25 @@ router.post(
   checkAdminUserAuth,
   questController.createQuestQuiz
 );
+
+
+router.post(
+  "/updateQuest/:id",
+  checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'reward', maxCount: 1
+  }]),
+  questController.updateQuestData
+);
+router.post(
+  "/updateQuestQuiz/:id",
+  checkAdminUserAuth,
+  questController.updateQuestQuiz
+);
 router.get("/get_all", questController.getQuests);
 router.post("/unlock_quest", checkUserAuth, questController.unlockQuestForUser);
 router.get("/get_player_quest/:status", checkUserAuth, questController.getPlayerQuests);
-router.get("/get_quest_by_id/:id", checkUserAuth, questController.getQuestById);
+router.get("/get_quest_by_id/:id", checkAuthOrigins, questController.getQuestById);
 router.post("/complete_quest/:id", checkUserAuth, questController.completeQuest);
 
 router.get("/quest_analytics", checkAdminUserAuth, questController.getQuestAnalytics);

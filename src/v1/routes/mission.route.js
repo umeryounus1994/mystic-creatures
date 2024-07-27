@@ -32,6 +32,23 @@ router.post(
   }]),
   missionController.createMissionAdmin
 );
+
+
+router.post(
+  "/updateMissionAdmin/:id",
+  checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  }, {
+    name: 'reward', maxCount: 1
+  }]),
+  missionController.updateMissionAdmin
+);
+
 router.post(
   "/createMissionQuiz",
   checkAdminUserAuth,
@@ -50,12 +67,18 @@ router.post(
 router.get("/get_all_admin", checkAdminUserAuth,missionController.getAdminMissions);
 router.post("/get_all", checkAuthOrigins,missionController.getMissions);
 router.post("/get_all_user_missions/:status", checkUserAuth, missionController.getAllUserMissions);
-router.get("/get_mission_by_id/:id", checkUserAuth, missionController.getMissionById);
+router.get("/get_mission_by_id/:id", checkAuthOrigins, missionController.getMissionById);
 router.get("/unlock_mission/:id", checkUserAuth, missionController.startMission);
 router.get("/submit_mission_quiz_answer/:id", checkUserAuth, missionController.submitMissionQuizAnswer);
 router.get("/claim_mission/:id", checkUserAuth, missionController.claimMission);
 router.get("/user_mission_progress/:id", checkUserAuth, missionController.userMissionProgress);
 router.get("/top_10", checkUserAuth, missionController.top10Players);
 router.get("/remove_mission/:id", checkUserAuth, missionController.removeMission);
+
+router.patch(
+  "/:id",
+  checkAuthOrigins,
+  missionController.updateMission
+);
 
 module.exports = router;

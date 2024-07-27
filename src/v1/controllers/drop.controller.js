@@ -52,7 +52,7 @@ const createDropQuiz = async (req, res, next) => {
 
 const getDrops = async (req, res, next) => {
   try {
-    const drops = await DropModel.find({})
+    const drops = await DropModel.find({status: 'active'})
     .populate([
       {
           path: 'mythica_ID', select: { creature_name: 1 }

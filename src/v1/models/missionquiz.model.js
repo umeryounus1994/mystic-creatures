@@ -16,6 +16,7 @@ const pointSchema = new mongoose.Schema({
   });
 
 const missionQuizSchema = new mongoose.Schema({
+  quiz_sort: { type: Number },
     quiz_title: { type: String },
     quiz_file: { type: String },
     mission_id: {

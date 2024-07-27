@@ -44,6 +44,42 @@ const createQuest = async (req, res, next) => {
   }
 };
 
+const updateQuestData = async (req, res, next) => {
+  try {
+    const { ...itemDetails } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    const updatedAdmin = await QuestModel.findByIdAndUpdate(
+      req.params.id,
+      itemDetails,
+      {
+        new: true,
+      }
+    );
+       // Something went wrong kindly try again later
+       if (!updatedAdmin) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Something went wrong, Kindly try again later"
+        );
+      }
+  
+  
+      return apiResponse.successResponse(
+        res,
+        "Quest Updated"
+      );
+  } catch (err) {
+    next(err);
+  }
+};
+
 const createQuestQuiz = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -66,9 +102,31 @@ const createQuestQuiz = async (req, res, next) => {
   }
 };
 
+const updateQuestQuiz = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    await QuestQuizModel.deleteMany({quest_id: new ObjectId(req.params.id)});
+    QuestQuizModel.insertMany(req.body)
+      .then(function () {
+        return apiResponse.successResponseWithData(
+          res,
+          "Update successfully"
+        );
+      });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getQuests = async (req, res, next) => {
   try {
-    const quests = await QuestModel.find({})
+    const quests = await QuestModel.find({status: 'active'})
     .populate('mythica_ID');
     return res.json({
       status: true,
@@ -162,7 +220,7 @@ const getPlayerQuests = async (req, res, next) => {
     const user_id = req.user.id;
     let quests = null;
     if(status == "all"){
-      quests = await UserQuestModel.find({user_id: new ObjectId(user_id)});
+      quests = await UserQuestModel.find({user_id: new ObjectId(user_id), status: 'active'});
     } else {
       quests = await UserQuestModel.find({user_id: new ObjectId(user_id),status: status});
     }
@@ -181,7 +239,9 @@ const getQuestById = async (req, res, next) => {
     const id = req.params.id;
 
     const quest = await QuestModel.findOne({_id: new ObjectId(id)})
-    .populate('mythica_ID');;
+    .populate('mythica_ID');
+    const questQuiz = await QuestQuizModel.find({quest_id: new ObjectId(id)});
+
     if(!quest){
       return apiResponse.ErrorResponse(
         res,
@@ -191,7 +251,7 @@ const getQuestById = async (req, res, next) => {
     return res.json({
       status: true,
       message: "Data Found",
-      data: quest
+      data: {quest, questQuiz}
     })
   } catch (err) {
     next(err);
@@ -434,5 +494,7 @@ module.exports = {
   deleteQuest,
   getQuestAnalytics,
   updateQuest,
-  top10Players
+  top10Players,
+  updateQuestData,
+  updateQuestQuiz
 };

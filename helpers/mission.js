@@ -162,11 +162,14 @@ module.exports.getSingleMission = async function (data) {
         no_of_crypes: data.no_of_crypes,
         level_increase: data.level_increase,
         reward_file: data.reward_file,
+        mythicaID: data?.mythica_ID?._id,
+        location: data?.mission_location,
         mythica: data.mythica_ID?.creature_name,
         mythica_ID: data?.mythica_ID?.creature_id,
         status: data.status,
-        mission_image: data.mission_image,
-        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
+        mission_start_date: data.mission_start_date,
+        mission_end_date: data.mission_end_date,
+        quiz: filteredArray.length > 0 ? filteredArray : [],
     }
 
     return el;

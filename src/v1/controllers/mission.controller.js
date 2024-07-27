@@ -21,7 +21,9 @@ const createMissionAdmin = async (req, res, next) => {
         "Invalid Data"
       );
     }
-   
+    let questions = JSON.parse(req.body.questions);
+
+
     var location = { type: 'Point', coordinates: [req.body?.mission_latitude, req.body?.mission_longitude] };
     var missiondata = {
       mission_title: req.body?.mission_title,
@@ -45,7 +47,7 @@ const createMissionAdmin = async (req, res, next) => {
         );
       }
       var i = 1;
-      let questions = JSON.parse(req.body.questions);
+      
       questions.forEach(q => {
         const fileKey = `option${i}`;
         var quiz_location = { type: 'Point', coordinates: [q?.latitude, q?.longitude] };
@@ -54,6 +56,7 @@ const createMissionAdmin = async (req, res, next) => {
           mission_id: createdItem?._id,
           mythica: q?.mythica,
           location: quiz_location,
+          quiz_sort: q?.sort,
           quiz_file: req.files[fileKey] ? req.files[fileKey][0].location : ""
         };
         i++;
@@ -83,6 +86,82 @@ const createMissionAdmin = async (req, res, next) => {
         createdItem
       );
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+const updateMissionAdmin = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+   
+    var location = { type: 'Point', coordinates: [req.body?.mission_latitude, req.body?.mission_longitude] };
+    var missiondata = {
+      mission_title: req.body?.mission_title,
+      no_of_xp: req.body?.no_of_xp,
+      no_of_crypes: req.body?.no_of_crypes,
+      level_increase: req.body?.level_increase,
+      mythica_ID: req.body?.mythica_ID,
+      mission_start_date: req.body?.mission_start_date,
+      mission_end_date: req.body?.mission_end_date,
+      mission_location: location,
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.rewardFile
+    };
+    await MissionModel.findByIdAndUpdate(
+      req.params.id,
+      missiondata,
+      {
+        new: true,
+      }
+    );
+    await MissionQuizModel.deleteMany({mission_id: new ObjectId(req.params.id)});
+    await MissionQuizOptionModel.deleteMany({mission_id: new ObjectId(req.params.id)});
+    var i = 1;
+    let questions = JSON.parse(req.body.questions);
+    let sorted = questions.sort((a, b) => a.sort - b.sort);
+    sorted.forEach(q => {
+      const fileKey = `option${i}`;
+      var quiz_location = { type: 'Point', coordinates: [q?.latitude, q?.longitude] };
+      var itemDetails = {
+        quiz_title: q?.quiz_title,
+        mission_id: req.params.id,
+        mythica: q?.mythica,
+        location: quiz_location,
+        quiz_sort: q?.sort,
+        quiz_file: req.files[fileKey] ? req.files[fileKey][0].location : q?.quiz_file
+      };
+      i++;
+      const createdItemQuiz = new MissionQuizModel(itemDetails);
+      createdItemQuiz.save(async (err) => {
+        if (err) {
+        }});
+      var options = [];
+      q?.options.forEach(element => {
+        options.push({
+          answer: element.option,
+          correct_option: element.correct,
+          mission_id: req.params.id,
+          mission_quiz_id: createdItemQuiz?._id
+        });
+      });
+      MissionQuizOptionModel.insertMany(options);
+    })
+    await MissionModel.findByIdAndUpdate(
+      req.params.id,
+      { status: 'active' },
+      { upsert: true, new: true }
+    );
+    return apiResponse.successResponse(
+      res,
+      "Updated successfully"
+    );  
   } catch (err) {
     next(err);
   }
@@ -269,7 +348,7 @@ const getMissions = async (req, res, next) => {
 
 const getAdminMissions = async (req, res, next) => {
   try {
-    const missions = await MissionModel.find({})
+    const missions = await MissionModel.find({status: 'active'})
     .populate("mythica_ID");
     return res.json({
       status: true,
@@ -295,7 +374,7 @@ const getAllUserMissions = async (req, res, next) => {
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
     if(status == "all"){
-      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id)})
+      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id),status: 'active'})
       .populate("mission_id");
     } else {
       missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id),status: status})
@@ -319,17 +398,17 @@ const getAllUserMissions = async (req, res, next) => {
 
 const getMissionById = async (req, res, next) => {
   try {
-    if (req.body.latitude == undefined || req.body.longitude == undefined) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Lat, Long is required"
-      );
-    }
-    const latitude = req.body.latitude;
-    const longitude = req.body.longitude;
+    // if (req.body.latitude == undefined || req.body.longitude == undefined) {
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Lat, Long is required"
+    //   );
+    // }
+    // const latitude = req.body.latitude;
+    // const longitude = req.body.longitude;
     const id = req.params.id;
 
-    const mission = await MissionModel.findOne({ _id: new ObjectId(id) });
+    const mission = await MissionModel.findOne({ _id: new ObjectId(id) }).populate('mythica_ID');
     if (!mission) {
       return apiResponse.ErrorResponse(
         res,
@@ -339,7 +418,7 @@ const getMissionById = async (req, res, next) => {
     return res.json({
       status: true,
       message: "Data Found",
-      data: await missionHelper.getSingleMission(mission, latitude, longitude)
+      data: await missionHelper.getSingleMission(mission)
     })
   } catch (err) {
     next(err);
@@ -788,6 +867,34 @@ async function areAllQuizzesCorrectlyAnswered(user_id, mission_id) {
   });
 }
 
+const updateMission = async (req, res, next) => {
+  try {
+  
+    const updatedAdmin = await MissionModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    // Something went wrong kindly try again later
+    if (!updatedAdmin) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Something went wrong, Kindly try again later"
+      );
+    }
+
+
+    return apiResponse.successResponse(
+      res,
+      "Mission Updated"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 
 module.exports = {
@@ -805,5 +912,7 @@ module.exports = {
   getAdminMissions,
   top10Players,
   createMissionAdmin,
-  removeMission
+  removeMission,
+  updateMission,
+  updateMissionAdmin
 };
