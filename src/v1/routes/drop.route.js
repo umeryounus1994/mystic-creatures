@@ -8,6 +8,10 @@ const {
 const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
+
+const {
+  checkAuthOrigins,
+} = require("../../../middlewares/authMiddlewareGenericAll");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
 
 router.post(
@@ -28,5 +32,11 @@ router.get("/get_all", dropController.getDrops);
 router.post("/get_all_user_drops", checkUserAuth,dropController.getUserDrops);
 router.post("/claim_drop/:id", checkUserAuth, dropController.claimDrop);
 router.get("/top_10", checkUserAuth, dropController.top10Players);
+
+router.patch(
+  "/:id",
+  checkAuthOrigins,
+  dropController.updateDrop
+);
 
 module.exports = router;

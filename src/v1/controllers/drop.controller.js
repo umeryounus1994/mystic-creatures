@@ -232,6 +232,33 @@ const top10Players = async (req, res, next) => {
     next(err);
   }
 };
+const updateDrop = async (req, res, next) => {
+  try {
+  
+    const updatedAdmin = await DropModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    // Something went wrong kindly try again later
+    if (!updatedAdmin) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Something went wrong, Kindly try again later"
+      );
+    }
+
+
+    return apiResponse.successResponse(
+      res,
+      "Drop Updated"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 module.exports = {
@@ -240,5 +267,6 @@ module.exports = {
   getUserDrops,
   claimDrop,
   top10Players,
-  createDropQuiz
+  createDropQuiz,
+  updateDrop
 };
