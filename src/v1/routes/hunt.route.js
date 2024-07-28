@@ -32,6 +32,24 @@ router.post(
   treasureHuntController.createTreasureHuntAdmin
 );
 router.post(
+  "/updateTreasureHuntAdmin/:id",
+  checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  },{
+    name: 'option4', maxCount: 1
+  },{
+    name: 'option5', maxCount: 1
+  }, {
+    name: 'reward', maxCount: 1
+  }]),
+  treasureHuntController.updateTreasureHuntAdmin
+);
+router.post(
   "/createTreasureHunt",
   checkAdminUserAuth,
   treasureHuntController.createTreasureHunt
@@ -54,7 +72,7 @@ router.post(
 router.get("/get_all_admin", checkAdminUserAuth, treasureHuntController.getAdminTreasureHunts);
 router.post("/get_all", checkAuthOrigins, treasureHuntController.getTreasureHunts);
 router.post("/get_all_user_hunts/:status", checkUserAuth, treasureHuntController.getAllUserHunts);
-router.get("/get_hunt_by_id/:id", checkUserAuth, treasureHuntController.getHuntById);
+router.get("/get_hunt_by_id/:id", checkAuthOrigins, treasureHuntController.getHuntById);
 router.get("/unlock_hunt/:id", checkUserAuth, treasureHuntController.startTreasureHunt);
 router.get("/submit_hunt_quiz_answer/:id", checkUserAuth, treasureHuntController.submitHuntQuizAnswer);
 router.get("/claim_hunt/:id", checkUserAuth, treasureHuntController.claimHunt);
@@ -62,5 +80,11 @@ router.get("/user_hunt_progress/:id", checkUserAuth, treasureHuntController.user
 router.get("/top_10", checkUserAuth, treasureHuntController.top10Players);
 router.get("/purchase_hunt/:id", checkUserAuth, treasureHuntController.purchaseHunt);
 router.get("/remove_hunt/:id", checkUserAuth, treasureHuntController.removeHunt);
+
+router.patch(
+  "/:id",
+  checkAuthOrigins,
+  treasureHuntController.updateHunt
+);
 
 module.exports = router;

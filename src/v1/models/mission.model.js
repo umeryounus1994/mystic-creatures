@@ -31,8 +31,8 @@ const missionSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId, ref: 'Creature'
          },
         mission_image: {type: String, default: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg'},
-        mission_start_date: {type: Date},
-        mission_end_date: {type: Date},
+        mission_start_date: {type: String},
+        mission_end_date: {type: String},
         status: {
             type: String,
             enum: ["draft","active", "deleted"],

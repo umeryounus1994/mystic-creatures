@@ -22,7 +22,6 @@ const createTreasureHuntAdmin = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    console.log(req.body?.hunt_package)
     var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
     var huntdata = {
       treasure_hunt_title: req.body?.treasure_hunt_title,
@@ -57,6 +56,7 @@ const createTreasureHuntAdmin = async (req, res, next) => {
           treasure_hunt_id: createdItem?._id,
           mythica: q?.mythica,
           location: quiz_location,
+          quiz_sort: q?.sort,
           quiz_file: req.files[fileKey] ? req.files[fileKey][0].location : ""
         };
         i++;
@@ -86,6 +86,82 @@ const createTreasureHuntAdmin = async (req, res, next) => {
         createdItem
       );
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateTreasureHuntAdmin = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
+    var huntdata = {
+      treasure_hunt_title: req.body?.treasure_hunt_title,
+      no_of_xp: req.body?.no_of_xp,
+      no_of_crypes: req.body?.no_of_crypes,
+      level_increase: req.body?.level_increase,
+      mythica_ID: req.body?.mythica_ID,
+      treasure_hunt_start_date: req.body?.treasure_hunt_start_date,
+      treasure_hunt_end_date: req.body?.treasure_hunt_end_date,
+      hunt_location: location,
+      premium_hunt: req.body?.premium_hunt,
+      hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.reward_file
+    };
+    await TreasureHuntModel.findByIdAndUpdate(
+      req.params.id,
+      huntdata,
+      {
+        new: true,
+      }
+    );
+    await TreasureHuntQuizModel.deleteMany({treasure_hunt_id: new ObjectId(req.params.id)});
+    await TreasureHuntQuizOptionModel.deleteMany({treasure_hunt_id: new ObjectId(req.params.id)});
+
+    var i = 1;
+    let questions = JSON.parse(req.body.questions);
+    questions.forEach(q => {
+      const fileKey = `option${i}`;
+      var quiz_location = { type: 'Point', coordinates: [q?.latitude, q?.longitude] };
+      var itemDetails = {
+        treasure_hunt_title: q?.treasure_hunt_title,
+        treasure_hunt_id: req.params.id,
+        mythica: q?.mythica,
+        location: quiz_location,
+        quiz_sort: q?.sort,
+        quiz_file: req.files[fileKey] ? req.files[fileKey][0].location : q?.quiz_file
+      };
+      i++;
+      const createdItemQuiz = new TreasureHuntQuizModel(itemDetails);
+      createdItemQuiz.save(async (err) => {
+        if (err) {
+        }});
+      var options = [];
+      q?.options.forEach(element => {
+        options.push({
+          answer: element.option,
+          correct_option: element.correct,
+          treasure_hunt_id: req.params.id,
+          treasure_hunt_quiz_id: createdItemQuiz?._id
+        });
+      });
+      TreasureHuntQuizOptionModel.insertMany(options);
+    })
+    await TreasureHuntModel.findByIdAndUpdate(
+      req.params.id,
+      { status: 'active' },
+      { upsert: true, new: true }
+    );
+    return apiResponse.successResponse(
+      res,
+      "Created successfully"
+    );
   } catch (err) {
     next(err);
   }
@@ -329,14 +405,6 @@ const getAllUserHunts = async (req, res, next) => {
 
 const getHuntById = async (req, res, next) => {
   try {
-    if (req.body.latitude == undefined || req.body.longitude == undefined) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Lat, Long is required"
-      );
-    }
-    const latitude = req.body.latitude;
-    const longitude = req.body.longitude;
     const id = req.params.id;
 
     const hunts = await TreasureHuntModel.findOne({ _id: new ObjectId(id) })
@@ -350,7 +418,7 @@ const getHuntById = async (req, res, next) => {
     return res.json({
       status: true,
       message: "Data Found",
-      data: await huntHelper.getSingleHunt(hunts, latitude, longitude)
+      data: await huntHelper.getSingleHunt(hunts)
     })
   } catch (err) {
     next(err);
@@ -736,6 +804,34 @@ const removeHunt = async (req, res, next) => {
   }
 };
 
+const updateHunt = async (req, res, next) => {
+  try {
+  
+    const updatedAdmin = await TreasureHuntModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    // Something went wrong kindly try again later
+    if (!updatedAdmin) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Something went wrong, Kindly try again later"
+      );
+    }
+
+
+    return apiResponse.successResponse(
+      res,
+      "Hunt Updated"
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 function generateUniqueID() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -869,5 +965,7 @@ module.exports = {
     top10Players,
     createTreasureHuntAdmin,
     purchaseHunt,
-    removeHunt
+    removeHunt,
+    updateHunt,
+    updateTreasureHuntAdmin
 };

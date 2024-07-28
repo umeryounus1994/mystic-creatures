@@ -32,8 +32,8 @@ const treasureSchema = new mongoose.Schema(
             required: true,
         },
         treasure_hunt_image: {type: String, default: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg'},
-        treasure_hunt_start_date: {type: Date},
-        treasure_hunt_end_date: {type: Date},
+        treasure_hunt_start_date: {type: String},
+        treasure_hunt_end_date: {type: String},
         status: {
             type: String,
             enum: ["draft","active", "deleted"],

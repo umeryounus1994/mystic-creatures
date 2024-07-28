@@ -174,11 +174,15 @@ module.exports.getSingleHunt = async function (data, latitude, longitude) {
         premium_hunt: data?.premium_hunt,
         hunt_package: data?.hunt_package,
         reward_file: data?.reward_file,
+        mythicaID: data?.mythica_ID?._id,
+        location: data?.hunt_location,
         mythica: data.mythica_ID?.creature_name,
         mythica_ID: data.mythica_ID?.creature_id,
         status: data.status,
         treasure_hunt_image: data.treasure_hunt_image,
-        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
+        treasure_hunt_start_date: data.treasure_hunt_start_date,
+        treasure_hunt_end_date: data.treasure_hunt_end_date,
+        quiz: filteredArray.length > 0 ? filteredArray : [],
     }
 
     return el;

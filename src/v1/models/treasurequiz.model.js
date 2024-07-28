@@ -16,6 +16,7 @@ const pointSchema = new mongoose.Schema({
   });
 
 const huntQuizSchema = new mongoose.Schema({
+  quiz_sort: { type: Number },
     treasure_hunt_title: { type: String },
     quiz_file: { type: String },
     treasure_hunt_id: {
