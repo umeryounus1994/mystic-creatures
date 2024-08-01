@@ -7,6 +7,7 @@ const DropQuizModel = require("../models/dropquiz.model");
 const UserDropModel = require("../models/userdrop.model");
 var dropHelper = require("../../../helpers/drop");
 const TransactionModel = require("../models/transactions.model");
+const logger = require('../../../middlewares/logger');
 
 const createDrop = async (req, res, next) => {
   try {
@@ -31,6 +32,7 @@ const createDrop = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -46,6 +48,7 @@ const createDropQuiz = async (req, res, next) => {
         );
       });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -67,6 +70,7 @@ const getDrops = async (req, res, next) => {
       data: drops
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -97,6 +101,7 @@ const getUserDrops = async (req, res, next) => {
       data: all_drops
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -151,6 +156,7 @@ const claimDrop = async (req, res, next) => {
 
 
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -229,6 +235,7 @@ const top10Players = async (req, res, next) => {
       topPlayers
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -256,6 +263,7 @@ const updateDrop = async (req, res, next) => {
       "Drop Updated"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };

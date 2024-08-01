@@ -11,6 +11,7 @@ const UserTreasureHuntModel = require("../models/usertreasurehunt.model");
 const HuntPurchaseModel = require("../models/huntpurchases.model");
 var huntHelper = require("../../../helpers/hunt");
 const userModel = require("../models/user.model");
+const logger = require('../../../middlewares/logger');
 
 
 const createTreasureHuntAdmin = async (req, res, next) => {
@@ -87,6 +88,7 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -163,6 +165,7 @@ const updateTreasureHuntAdmin = async (req, res, next) => {
       "Created successfully"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -196,6 +199,7 @@ const createTreasureHunt = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -253,6 +257,7 @@ const createTreasureHuntQuiz = async (req, res, next) => {
     });
 
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -287,6 +292,7 @@ const createHuntQuiz = async (req, res, next) => {
         );
       });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -327,6 +333,7 @@ const createHuntOptions = async (req, res, next) => {
     });
 
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -350,6 +357,7 @@ const getTreasureHunts = async (req, res, next) => {
       data: await huntHelper.getAllTreasureHunt(hunts, req.user.id, latitude, longitude)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -364,6 +372,7 @@ const getAdminTreasureHunts = async (req, res, next) => {
       data: await huntHelper.getAllAdminTreasureHunt(hunts)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -399,6 +408,7 @@ const getAllUserHunts = async (req, res, next) => {
       data: await huntHelper.getAllUserTreasureHunt(hunt, req.user.id, latitude, longitude)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -421,6 +431,7 @@ const getHuntById = async (req, res, next) => {
       data: await huntHelper.getSingleHunt(hunts)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -469,6 +480,7 @@ const startTreasureHunt = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -557,6 +569,7 @@ const submitHuntQuizAnswer = async (req, res, next) => {
       "Treasure Hunt submitted"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -630,6 +643,7 @@ const claimHunt = async (req, res, next) => {
       "Treasure Hunt submitted"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -695,6 +709,7 @@ const top10Players = async (req, res, next) => {
       topPlayers
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -726,6 +741,7 @@ const userHuntProgress = async (req, res, next) => {
       { hunt, current_progress: checkAnswered.answered, user_hunt_status: userHunt?.status }
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -761,6 +777,7 @@ const purchaseHunt = async (req, res, next) => {
       "Hunt purchased"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -800,6 +817,7 @@ const removeHunt = async (req, res, next) => {
   );
     
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -828,6 +846,7 @@ const updateHunt = async (req, res, next) => {
       "Hunt Updated"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };

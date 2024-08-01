@@ -3,7 +3,7 @@
 const { ObjectId } = require("mongodb");
 const apiResponse = require("../../../helpers/apiResponse");
 const CreatureModel = require("../models/creature.model");
-
+const logger = require('../../../middlewares/logger');
 
 const addCreature = async (req, res, next) => {
   try {
@@ -42,6 +42,7 @@ const addCreature = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -96,6 +97,7 @@ const editCreature = async (req, res, next) => {
     "updated successfully"
   );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -122,6 +124,7 @@ const listCreatures = async (req, res, next) => {
       data: creatures
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -150,6 +153,7 @@ const updateCreature = async (req, res, next) => {
       updatedMythica
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };

@@ -12,6 +12,7 @@ const userModel = require("../models/user.model");
 const {
   softDelete,
 } = require("../../../helpers/commonApis");
+const logger = require('../../../middlewares/logger');
 
 const createQuest = async (req, res, next) => {
   try {
@@ -40,6 +41,7 @@ const createQuest = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -76,6 +78,7 @@ const updateQuestData = async (req, res, next) => {
         "Quest Updated"
       );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -98,6 +101,7 @@ const createQuestQuiz = async (req, res, next) => {
         );
       });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -120,6 +124,7 @@ const updateQuestQuiz = async (req, res, next) => {
         );
       });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -134,6 +139,7 @@ const getQuests = async (req, res, next) => {
       data: await questHelper.getAllQuests(quests)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -209,6 +215,7 @@ const unlockQuestForUser = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -230,6 +237,7 @@ const getPlayerQuests = async (req, res, next) => {
       data: await questHelper.getAllPlayerQuests(quests)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -254,6 +262,7 @@ const getQuestById = async (req, res, next) => {
       data: {quest, questQuiz}
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -338,6 +347,7 @@ const completeQuest = async (req, res, next) => {
  
 
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -370,6 +380,7 @@ const getQuestAnalytics = async (req, res, next) => {
     
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -383,6 +394,7 @@ const deleteQuest = async (req, res, next) => {
       itemName: "Quest",
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -412,6 +424,7 @@ const updateQuest = async (req, res, next) => {
       updatedAdmin
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -478,6 +491,7 @@ const top10Players = async (req, res, next) => {
       topPlayers
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };

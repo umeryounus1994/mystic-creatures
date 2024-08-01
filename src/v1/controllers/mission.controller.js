@@ -10,6 +10,7 @@ const MissionQuizOptionModel = require("../models/missionquizoption.model");
 const UserMissionModel = require("../models/usermission.model");
 var missionHelper = require("../../../helpers/mission");
 const userModel = require("../models/user.model");
+const logger = require('../../../middlewares/logger');
 
 
 const createMissionAdmin = async (req, res, next) => {
@@ -87,6 +88,7 @@ const createMissionAdmin = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -163,6 +165,7 @@ const updateMissionAdmin = async (req, res, next) => {
       "Updated successfully"
     );  
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -196,6 +199,7 @@ const createMission = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -252,6 +256,7 @@ const createMissionQuiz = async (req, res, next) => {
     });
 
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -285,6 +290,7 @@ const createQuiz = async (req, res, next) => {
         );
       });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -318,6 +324,7 @@ const createQuizOptions = async (req, res, next) => {
     });
 
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -342,6 +349,7 @@ const getMissions = async (req, res, next) => {
       data: all_missions
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -356,6 +364,7 @@ const getAdminMissions = async (req, res, next) => {
       data: await missionHelper.getAllAdminMissions(missions)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -392,6 +401,7 @@ const getAllUserMissions = async (req, res, next) => {
       data: await missionHelper.getAllUserMissions(missions, req.user.id, latitude,longitude)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -421,6 +431,7 @@ const getMissionById = async (req, res, next) => {
       data: await missionHelper.getSingleMission(mission)
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -469,6 +480,7 @@ const startMission = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -546,6 +558,7 @@ const submitMissionQuizAnswer = async (req, res, next) => {
       "Mission option submitted"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -619,6 +632,7 @@ const claimMission = async (req, res, next) => {
       "Mission option submitted"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -650,6 +664,7 @@ const userMissionProgress = async (req, res, next) => {
       { mission, current_progress: checkAnswered.answered, user_mission_status: userMission?.status }
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -716,6 +731,7 @@ const top10Players = async (req, res, next) => {
       topPlayers
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -756,6 +772,7 @@ const removeMission = async (req, res, next) => {
   );
     
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -891,6 +908,7 @@ const updateMission = async (req, res, next) => {
       "Mission Updated"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };

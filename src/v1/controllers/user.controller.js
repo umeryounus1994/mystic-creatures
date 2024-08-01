@@ -24,6 +24,7 @@ const { sendEmail } = require("../../../helpers/emailSender");
 const userHelper = require("../../../helpers/user");
 const bcrypt = require("bcrypt");
 const moment = require('moment');
+const logger = require('../../../middlewares/logger');
 
 
 const createUser = async (req, res, next) => {
@@ -76,6 +77,7 @@ const createUser = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -197,6 +199,7 @@ const getUser = async (req, res, next) => {
       user_data
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -212,6 +215,7 @@ const getUsers = async (req, res, next) => {
       data: all_player_data
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -226,6 +230,7 @@ const getAllUsers = async (req, res, next) => {
       data: all_player_data
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -238,6 +243,7 @@ const deleteUser = async (req, res, next) => {
       itemName: "User",
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -274,6 +280,7 @@ const updateUser = async (req, res, next) => {
       updatedUser
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -313,6 +320,7 @@ const totalUsers = async (req, res, next) => {
       itemName: "OrganisationUser",
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -367,6 +375,7 @@ const loginUser = async (req, res, next) => {
       }
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -404,6 +413,7 @@ const sendUserPasswordResetEmail = async (req, res, next) => {
       "Email Field is Required"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -431,6 +441,7 @@ const getResetPasswordRequestDetails = async (req, res, next) => {
       requestDetail
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -468,6 +479,7 @@ const changeUserPassword = async (req, res, next) => {
       "Password reset succesfully"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -517,6 +529,7 @@ const getAnalytics = async (req, res, next) => {
     
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -538,6 +551,7 @@ const getUserAnalytics = async (req, res, next) => {
     
     })
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -587,6 +601,7 @@ const purhasePackage = async (req, res, next) => {
       "Package purchased"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };

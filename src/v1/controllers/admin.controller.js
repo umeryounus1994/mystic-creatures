@@ -18,6 +18,7 @@ const {
   getItemWithPopulate,
 } = require("../../../helpers/commonApis");
 const { sendEmail } = require("../../../helpers/emailSender");
+const logger = require('../../../middlewares/logger');
 
 const loginAdmin = async (req, res, next) => {
   try {
@@ -71,6 +72,7 @@ const loginAdmin = async (req, res, next) => {
       }
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -112,6 +114,7 @@ const createAdmin = async (req, res, next) => {
       );
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -147,6 +150,7 @@ const getAdmin = async (req, res, next) => {
       user
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -183,6 +187,7 @@ const getAdminById = async (req, res, next) => {
       user
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -202,6 +207,7 @@ const getAdmins = async (req, res, next) => {
       },
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -215,6 +221,7 @@ const deleteAdmin = async (req, res, next) => {
       itemName: "Admin",
     });
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -286,6 +293,7 @@ const updateProfile = async (req, res, next) => {
       updatedAdmin
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -315,6 +323,7 @@ const updateAdmin = async (req, res, next) => {
       updatedAdmin
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -351,6 +360,7 @@ const sendUserPasswordResetEmail = async (req, res, next) => {
       "Email Field is Required"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -384,6 +394,7 @@ const adminPasswordReset = async (req, res, next) => {
       "All Fields are Required"
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -401,6 +412,7 @@ const loggedUser = async (req, res, next) => {
       return apiResponse.ErrorResponse(res, "Ugyldig token", "Invalid Token");
     }
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -427,6 +439,7 @@ const getResetPasswordRequestDetails = async (req, res, next) => {
       requestDetail
     );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
@@ -454,6 +467,7 @@ const getMythicas = async (req, res, next) => {
         mythicas
       );
   } catch (err) {
+    logger.error(err);
     next(err);
   }
 };
