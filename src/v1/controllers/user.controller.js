@@ -366,7 +366,7 @@ const loginUser = async (req, res, next) => {
 
     user.password = undefined;
     res.set("Authorization", `Bearer ${token}`);
-
+    logger.info('user login success');
     return apiResponse.successResponseWithData(
       res,
       `Welcome ${user.username}, Authenticated Successfully`,

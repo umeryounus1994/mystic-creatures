@@ -1,1 +1,2 @@
 [ERROR] TypeError: user.checkPasswor is not a function
+[INFO] user login success

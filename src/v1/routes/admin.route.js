@@ -16,7 +16,6 @@ const router = express.Router();
 
 router.post(
   "/signup",
-  checkAdminUserAuth,
   mediaUpload.single("picture"),
   adminController.createAdmin
 );
