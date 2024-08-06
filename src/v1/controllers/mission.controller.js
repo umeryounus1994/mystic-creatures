@@ -446,18 +446,25 @@ const startMission = async (req, res, next) => {
         "Not found!"
       );
     }
-    const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id) });
-    if (userMission) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Mission already unlocked for this user"
-      );
-    }
+    const userMission = await UserMissionModel.findOne({ user_id: new ObjectId(req.user.id), mission_id: new ObjectId(id), status: 'open' });
     const findDraftMission = await UserMissionModel.find({ user_id: new ObjectId(req.user.id), status: 'inprogress' });
     if (findDraftMission.length > 0) {
       return apiResponse.ErrorResponse(
         res,
         "Complete previous mission to unlock new"
+      );
+    }
+    if(userMission){
+      await UserMissionModel.findOneAndUpdate(
+        { mission_id: id, user_id: req.user.id },
+        {
+          status: 'inprogress'
+        },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponse(
+        res,
+        "Started successfully"
       );
     }
     const itemToAdd = {

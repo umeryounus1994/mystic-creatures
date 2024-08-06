@@ -446,18 +446,25 @@ const startTreasureHunt = async (req, res, next) => {
         "Not found!"
       );
     }
-    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id) });
-    if (userHunt) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Treasure Hunt already unlocked for this user"
-      );
-    }
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'open' });
     const findDraftHunt = await UserTreasureHuntModel.find({ user_id: new ObjectId(req.user.id), status: 'inprogress' });
     if (findDraftHunt.length > 0) {
       return apiResponse.ErrorResponse(
         res,
         "Complete previous Treasure Hunt to unlock new"
+      );
+    }
+    if(userHunt){
+      await UserTreasureHuntModel.findOneAndUpdate(
+        { treasure_hunt_id: id, user_id: req.user.id },
+        {
+          status: 'inprogress'
+        },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponse(
+        res,
+        "Started successfully"
       );
     }
     const itemToAdd = {
