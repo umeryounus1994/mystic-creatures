@@ -22,6 +22,15 @@ router.post(
   }]),
   dropController.createDrop
 );
+
+router.post(
+  "/createDropReward",
+  checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'reward_file', maxCount: 1
+  }]),
+  dropController.createDropReward
+);
 router.post(
   "/createDropQuiz",
   checkAdminUserAuth,
@@ -29,6 +38,8 @@ router.post(
 );
 
 router.get("/get_all", dropController.getDrops);
+router.get("/get_all_rewards", dropController.getDropsReward);
+router.get("/get_all_user_rewards", checkUserAuth, dropController.getUserDropsReward);
 router.post("/get_all_user_drops", checkUserAuth,dropController.getUserDrops);
 router.post("/claim_drop/:id", checkUserAuth, dropController.claimDrop);
 router.get("/top_10", checkUserAuth, dropController.top10Players);
@@ -37,6 +48,12 @@ router.patch(
   "/:id",
   checkAuthOrigins,
   dropController.updateDrop
+);
+
+router.patch(
+  "/updateReward/:id",
+  checkAuthOrigins,
+  dropController.updateDropReward
 );
 
 module.exports = router;

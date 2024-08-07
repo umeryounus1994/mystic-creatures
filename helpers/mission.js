@@ -60,7 +60,8 @@ module.exports.getAllMissions = async function (data, user_id, latitude, longitu
                             mission_image: element.mission_image,
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                             mission_status: userMissions ? userMissions?.status : 'open',
-                            mission_progress: checkProgress?.answered
+                            mission_progress: checkProgress?.answered,
+                            created_at: element.created_at
                         }
 
                         result.push(el)
@@ -116,6 +117,7 @@ module.exports.getAllAdminMissions = async function (data) {
                         status: element.status,
                         mission_image: element.mission_image,
                         quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
+                        created_at: element.created_at
                     }
 
                     result.push(el)
@@ -229,6 +231,7 @@ module.exports.getAllUserMissions = async function (data, user_id, latitude, lon
                             mission_image: element?.mission_id.mission_image,
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                             mission_progress: checkProgress?.answered,
+                            created_at: element?.mission_id?.created_at
                         }
 
                         result.push(el)

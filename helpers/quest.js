@@ -26,6 +26,7 @@ module.exports.getAllQuests = async function (data) {
                         mythica_model: element.mythica_model,
                         status: element.status,
                         options: findQuestQuiz,
+                        created_at: element.created_at,
                         quest_image: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg'
                     }
                     result.push(el)
@@ -65,7 +66,8 @@ module.exports.getAllPlayerQuests = async function (data) {
                         level_increase: findQuest.level_increase,
                         mythica_ID: findQuest.mythica_ID?.creature_id,
                         options: findQuestQuiz,
-                        quest_progress: element?.submitted_answer ? 1 : 0
+                        quest_progress: element?.submitted_answer ? 1 : 0,
+                        created_at: findQuest.created_at
                     }
                     result.push(el)
                     resolvve(result);

@@ -64,7 +64,8 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                             treasure_hunt_status: userHunt ? userHunt?.status : (userPurchaseHunt ? 'purchased' : 'open'),
                             hunt_progress: checkProgress?.answered,
-                            hunt_purchase: userPurchaseHunt ? true : false
+                            hunt_purchase: userPurchaseHunt ? true : false,
+                            created_at: element.created_at
 
                         }
 
@@ -124,7 +125,8 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
                         mythica_ID: element.mythica_ID?.creature_id,
                         status: element.status,
                         treasure_hunt_image: element.treasure_hunt_image,
-                        quiz: filteredArray.length > 0 ? quizzesWithOptions : []
+                        quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
+                        created_at: element.created_at
 
                     }
 
@@ -245,7 +247,8 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
                             treasure_hunt_image: element?.treasure_hunt_id.treasure_hunt_image,
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                             hunt_progress: checkProgress?.answered,
-                            hunt_purchase: userPurchaseHunt ? true : false
+                            hunt_purchase: userPurchaseHunt ? true : false,
+                            created_at: element?.treasure_hunt_id?.created_at
                         }
 
                         result.push(el)

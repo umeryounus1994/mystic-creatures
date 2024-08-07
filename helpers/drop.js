@@ -35,7 +35,8 @@ module.exports.getAllDrops = async function (data, user_id, latitude, longitude)
                             mythica_reward_ID: element.mythica_reward?.creature_id,
                             status: element.status,
                             drop_status: userDrops ? userDrops?.status : 'open',
-                            quiz_options: findDropQuiz
+                            quiz_options: findDropQuiz,
+                            created_at: element?.created_at
                         }
 
                         result.push(el)
