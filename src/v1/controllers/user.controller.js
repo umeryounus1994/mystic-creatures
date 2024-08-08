@@ -207,7 +207,7 @@ const getUser = async (req, res, next) => {
 
 const getUsers = async (req, res, next) => {
   try {
-    const users = await UserModel.find({});
+    const users = await UserModel.find({}).sort({ created_at: -1 })
     const all_player_data = await userHelper.getAllUsers(users, req.user.id)
     return res.json({
       status: all_player_data.length > 0 ? true : false,
@@ -222,7 +222,7 @@ const getUsers = async (req, res, next) => {
 
 const getAllUsers = async (req, res, next) => {
   try {
-    const users = await UserModel.find({});
+    const users = await UserModel.find({}).sort({ created_at: -1 })
     const all_player_data = await userHelper.getAllUsersAdmin(users)
     return res.json({
       status: all_player_data.length > 0 ? true : false,

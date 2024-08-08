@@ -107,7 +107,7 @@ const getDrops = async (req, res, next) => {
 
 const getDropsReward = async (req, res, next) => {
   try {
-    const drops = await RewardModel.find({status: 'active'});
+    const drops = await RewardModel.find({status: 'active'}).sort({ created_at: -1 });
     return res.json({
       status: true,
       message: "Data Found",
@@ -120,7 +120,7 @@ const getDropsReward = async (req, res, next) => {
 };
 const getUserDropsReward = async (req, res, next) => {
   try {
-    const drops = await UserRewardModel.find({user_id: new ObjectId(req.user.id)}).populate('reward_id');
+    const drops = await UserRewardModel.find({user_id: new ObjectId(req.user.id)}).populate('reward_id').sort({ created_at: -1 });
     return res.json({
       status: true,
       message: "Data Found",
@@ -142,7 +142,7 @@ const getUserDrops = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const drops = await DropModel.find({status: 'active'})
+    const drops = await DropModel.find({status: 'active'}).sort({ created_at: -1 })
     .populate([
       {
           path: 'mythica_ID', select: { creature_name: 1, creature_id: 1 }
@@ -187,13 +187,44 @@ const claimDrop = async (req, res, next) => {
     }
     const findCorrectOption = await DropQuizModel.findOne({ drop_id: new ObjectId(id), correct_option: true });
    
-    
-
-    if(findCorrectOption?._id == user_answer){
+    if(user_answer != undefined){
+      if(findCorrectOption?._id == user_answer){
+        await UserDropModel.findOneAndUpdate(
+          { drop_id: id, user_id: req.user.id },
+          {
+            submitted_answer: user_answer,
+            status: 'claimed'
+          },
+          { upsert: true, new: true }
+        );
+          var items = {
+            user_id: req.user.id,
+            drop_id: id,
+            mythica_distinguisher: generateUniqueID()
+          }
+          const createdItem = new TransactionModel(items);
+          createdItem.save(async (err) => {})
+          if(checkDrops != null){
+            const userRew = new UserRewardModel({
+              reward_id: checkDrops?._id,
+              user_id: req.user.id
+            })
+            userRew.save(async (err) => {})
+          }
+          return apiResponse.successResponse(
+            res,
+            "Drop Claimed"
+          );
+      } else {
+        return apiResponse.successResponse(
+          res,
+          "You gave wrong answer. Drop Claim not successful"
+        );
+      }
+    } else {
       await UserDropModel.findOneAndUpdate(
         { drop_id: id, user_id: req.user.id },
         {
-          submitted_answer: user_answer,
           status: 'claimed'
         },
         { upsert: true, new: true }
@@ -216,15 +247,7 @@ const claimDrop = async (req, res, next) => {
           res,
           "Drop Claimed"
         );
-    } else {
-      return apiResponse.successResponse(
-        res,
-        "You gave wrong answer. Drop Claim not successful"
-      );
     }
-
-
-
   } catch (err) {
     logger.error(err);
     next(err);

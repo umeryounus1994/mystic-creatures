@@ -340,7 +340,7 @@ const getMissions = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const missions = await MissionModel.find({status: 'active'})
+    const missions = await MissionModel.find({status: 'active'}).sort({ created_at: -1 })
     .populate("mythica_ID");
     const all_missions = await missionHelper.getAllMissions(missions,req.user.id,latitude,longitude)
     return res.json({
@@ -356,7 +356,7 @@ const getMissions = async (req, res, next) => {
 
 const getAdminMissions = async (req, res, next) => {
   try {
-    const missions = await MissionModel.find({status: 'active'})
+    const missions = await MissionModel.find({status: 'active'}).sort({ created_at: -1 })
     .populate("mythica_ID");
     return res.json({
       status: true,
@@ -383,10 +383,10 @@ const getAllUserMissions = async (req, res, next) => {
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
     if(status == "all"){
-      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id),status: 'active'})
+      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id),status: 'active'}).sort({ created_at: -1 })
       .populate("mission_id");
     } else {
-      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id),status: status})
+      missions = await UserMissionModel.find({user_id: new ObjectId(req.user.id),status: status}).sort({ created_at: -1 })
       .populate("mission_id");
     }
     if(missions.length < 1){

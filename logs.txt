@@ -5,3 +5,6 @@
 [ERROR] TypeError: Cannot read properties of undefined (reading 'id')
 [ERROR] TypeError: Cannot read properties of undefined (reading 'id')
 [ERROR] StrictPopulateError: Cannot populate path `reward_id` because it is not in your schema. Set the `strictPopulate` option to false to override.
+[INFO] user login success
+[ERROR] TypeError: userHelper.getAllUsers(...).sort is not a function
+[INFO] user login success

@@ -349,7 +349,7 @@ const getTreasureHunts = async (req, res, next) => {
     }
     const latitude = req.body.latitude;
     const longitude = req.body.longitude;
-    const hunts = await TreasureHuntModel.find({status: 'active'})
+    const hunts = await TreasureHuntModel.find({status: 'active'}).sort({ created_at: -1 })
     .populate("mythica_ID");
     return res.json({
       status: true,
@@ -364,7 +364,7 @@ const getTreasureHunts = async (req, res, next) => {
 
 const getAdminTreasureHunts = async (req, res, next) => {
   try {
-    const hunts = await TreasureHuntModel.find({status: 'active'})
+    const hunts = await TreasureHuntModel.find({status: 'active'}).sort({ created_at: -1 })
     .populate("mythica_ID");
     return res.json({
       status: true,
@@ -390,10 +390,10 @@ const getAllUserHunts = async (req, res, next) => {
     const status = req.params.status;
     let hunt = null;
     if(status == "all"){
-      hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id),status: 'active'})
+      hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id),status: 'active'}).sort({ created_at: -1 })
       .populate("treasure_hunt_id");
     } else {
-      hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id),status: status})
+      hunt = await UserTreasureHuntModel.find({user_id: new ObjectId(req.user.id),status: status}).sort({ created_at: -1 })
       .populate("treasure_hunt_id");
     }
     if(hunt.length < 1){

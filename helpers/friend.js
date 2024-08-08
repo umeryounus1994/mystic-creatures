@@ -16,7 +16,8 @@ module.exports.getAllFriends = async function (data, id) {
                         friend_id: element?.user_id?._id == id ? element?.friend_id?._id : element?.user_id?._id,
                         friend_image: element?.user_id?._id == id ? element?.friend_id?.image : element?.user_id?.image,
                         status: element?.status,
-                        requested_date: element?.created_at
+                        requested_date: element?.created_at,
+                        created_at: element?.created_at,
                     }
                     result.push(el);
                     resolvve(result);

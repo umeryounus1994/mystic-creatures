@@ -131,7 +131,7 @@ const updateQuestQuiz = async (req, res, next) => {
 
 const getQuests = async (req, res, next) => {
   try {
-    const quests = await QuestModel.find({status: 'active'})
+    const quests = await QuestModel.find({status: 'active'}).sort({ created_at: -1 })
     .populate('mythica_ID');
     return res.json({
       status: true,
@@ -227,9 +227,9 @@ const getPlayerQuests = async (req, res, next) => {
     const user_id = req.user.id;
     let quests = null;
     if(status == "all"){
-      quests = await UserQuestModel.find({user_id: new ObjectId(user_id), status: 'active'});
+      quests = await UserQuestModel.find({user_id: new ObjectId(user_id), status: 'active'}).sort({ created_at: -1 })
     } else {
-      quests = await UserQuestModel.find({user_id: new ObjectId(user_id),status: status});
+      quests = await UserQuestModel.find({user_id: new ObjectId(user_id),status: status}).sort({ created_at: -1 })
     }
     return res.json({
       status: true,

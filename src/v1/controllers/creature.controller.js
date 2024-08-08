@@ -104,7 +104,7 @@ const editCreature = async (req, res, next) => {
 
 const listCreatures = async (req, res, next) => {
   try {
-    const creatures = await CreatureModel.find({status: 'active'})
+    const creatures = await CreatureModel.find({status: 'active'}).sort({ created_at: -1 })
     .populate([
         {
             path: 'creature_skill1', select: { skill_name: 1, skill_element: 1,skill_damage_value:1 }

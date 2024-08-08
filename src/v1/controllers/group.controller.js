@@ -174,6 +174,7 @@ const editGroup = async (req, res, next) => {
 const getGroups = async (req, res, next) => {
   try {
     let groupusers = await GroupUserModel.find({ friend_id: new ObjectId(req.user.id) }).populate('friend_id', 'username')
+    .sort({ created_at: -1 })
     .populate([
       {
           path: 'group_id', select: {
@@ -194,6 +195,7 @@ const getGroupFriends = async (req, res, next) => {
     try {
       const id = req.params.id;
       let groups = await GroupUserModel.find({group_id: new ObjectId(id), status: 'active'})
+      .sort({ created_at: -1 })
       .populate([
         {
             path: 'friend_id', select: { username: 1, image: 1 }

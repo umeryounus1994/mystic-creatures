@@ -63,7 +63,7 @@ const getFriends = async (req, res, next) => {
     const status = req.params.status;
     let friends = [];
     if(status == "all") {
-        friends = await FriendModel.find({'friend_id': new ObjectId(req.user.id)})
+        friends = await FriendModel.find({'friend_id': new ObjectId(req.user.id)}).sort({ created_at: -1 })
         .populate([
             {
                 path: 'user_id', select: { username: 1, image: 1 }
@@ -73,7 +73,7 @@ const getFriends = async (req, res, next) => {
             }
           ]);
     } else {
-        friends = await FriendModel.find({'friend_id': new ObjectId(req.user.id), status: status})
+        friends = await FriendModel.find({'friend_id': new ObjectId(req.user.id), status: status}).sort({ created_at: -1 })
         .populate([
             {
                 path: 'user_id', select: { username: 1, image: 1 }
@@ -107,7 +107,7 @@ const changeStatus = async (req, res, next) => {
         "Add Friend first"
       );
     }
-    if(friend?.user_id != req.user.id){
+    if(friend?.user_id == req.user.id){
       return apiResponse.ErrorResponse(
         res,
         "You can not " + status + " this request"
