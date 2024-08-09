@@ -116,7 +116,8 @@ module.exports.getAllUsers = async function (data, userId) {
                         id: element?._id,
                         username: element?.username,
                         image: element?.image,
-                        isFriend: checkFriend != null ? true : false
+                        isFriend: checkFriend != null ? true : false,
+                        created_at: element.created_at
                     }
                     result.push(el);
                     resolvve(result);
@@ -140,7 +141,8 @@ module.exports.getAllUsersAdmin = async function (data) {
                         id: element?._id,
                         username: element?.username,
                         image: element?.image,
-                        status: element?.status
+                        status: element?.status,
+                        created_at: element.created_at
                     }
                     result.push(el);
                     resolvve(result);
