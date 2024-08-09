@@ -128,49 +128,57 @@ const getUser = async (req, res, next) => {
       PictureMysteryCompleted: 0,
       total_xp: 0,
       current_xp: 0,
-      current_level: lastLevel?.level,
+      current_level: lastLevel?.level || 1,
       xp_needed: 0
     };
-    let dummyTotalXp =0;
+    let dummyTotalXp = 0;
     transactions.forEach(element => {
-      if(element?.quest_id) { user_data.QuestsCompleted+=1; 
-        user_data.total_xp+=element?.quest_id?.no_of_xp || 0; 
-        dummyTotalXp+=element?.quest_id?.no_of_xp || 0; 
+      if (element?.quest_id) {
+        user_data.QuestsCompleted += 1;
+        user_data.total_xp += element?.quest_id?.no_of_xp || 0;
+        dummyTotalXp += element?.quest_id?.no_of_xp || 0;
       }
-      if(element?.mission_id) { user_data.MissionsCompleted+=1; 
-        user_data.total_xp+=element?.mission_id?.no_of_xp || 0; 
-        dummyTotalXp+=element?.mission_id?.no_of_xp || 0; 
+      if (element?.mission_id) {
+        user_data.MissionsCompleted += 1;
+        user_data.total_xp += element?.mission_id?.no_of_xp || 0;
+        dummyTotalXp += element?.mission_id?.no_of_xp || 0;
       }
-      if(element?.hunt_id) { user_data.HuntsCompleted+=1; 
-        user_data.total_xp+=element?.hunt_id?.no_of_xp || 0; 
-        dummyTotalXp+=element?.hunt_id?.no_of_xp || 0; 
+      if (element?.hunt_id) {
+        user_data.HuntsCompleted += 1;
+        user_data.total_xp += element?.hunt_id?.no_of_xp || 0;
+        dummyTotalXp += element?.hunt_id?.no_of_xp || 0;
       }
-      if(element?.drop_id) { user_data.DropsCompleted+=1; 
-        user_data.total_xp+=element?.drop_id?.no_of_xp || 0; 
-        dummyTotalXp+=element?.drop_id?.no_of_xp || 0; 
+      if (element?.drop_id) {
+        user_data.DropsCompleted += 1;
+        user_data.total_xp += element?.drop_id?.no_of_xp || 0;
+        dummyTotalXp += element?.drop_id?.no_of_xp || 0;
       }
-      if(element?.picture_mystery_id) { user_data.PictureMysteryCompleted+=1; 
-        user_data.total_xp+=element?.picture_mystery_id?.no_of_xp || 0;  
-        dummyTotalXp+=element?.picture_mystery_id?.no_of_xp || 0; 
+      if (element?.picture_mystery_id) {
+        user_data.PictureMysteryCompleted += 1;
+        user_data.total_xp += element?.picture_mystery_id?.no_of_xp || 0;
+        dummyTotalXp += element?.picture_mystery_id?.no_of_xp || 0;
       }
     });
-    const xpForLevel = (level) => 100 + (level * 0.2 * 100);
-    let xpThreshold = xpForLevel(user_data.current_level);
 
+    const xpForLevel = (level) => 120 + (level - 1) * 20;
+
+    let xpThreshold = xpForLevel(user_data.current_level);
+    
+    // Accumulate XP and calculate the correct level and remaining XP
     while (user_data.total_xp >= xpThreshold) {
       user_data.total_xp -= xpThreshold;
       user_data.current_level += 1;
       xpThreshold = xpForLevel(user_data.current_level);
     }
-
+    
     // Set the current XP and XP needed for the next level
     user_data.current_xp = user_data.total_xp;
     user_data.xp_needed = xpThreshold;
-
+    
     // Ensure total_xp reflects the actual total XP earned
     user_data.total_xp = dummyTotalXp;
-  
-    
+    user_data.current_level = user_data.current_level -1;    
+
     if (user_data.current_level > lastLevel?.level) {
       const level = {
         user_id: req.user.id,
