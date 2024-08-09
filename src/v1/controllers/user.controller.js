@@ -154,19 +154,6 @@ const getUser = async (req, res, next) => {
         dummyTotalXp+=element?.picture_mystery_id?.no_of_xp || 0; 
       }
     });
- // Update current level and XP needed for the next level
-    // let xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
-    // let dummyCurrentXP = user_data.total_xp;
-    // while (user_data.total_xp >= xpThreshold) {
-    //   dummyCurrentXP -= xpThreshold;
-    //   user_data.current_level += 1;
-    //   xpThreshold = 100 + (user_data.current_level * 0.2 * 100);
-    // }
-    // user_data.current_xp = dummyTotalXp - xpThreshold;
-    // user_data.xp_needed = xpThreshold;
-    // user_data.total_xp = dummyTotalXp;
-    // user_data.current_level = user_data.current_level;
-    // Update current level and XP needed for the next level
     const xpForLevel = (level) => 100 + (level * 0.2 * 100);
     let xpThreshold = xpForLevel(user_data.current_level);
 

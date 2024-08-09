@@ -63,31 +63,54 @@ const getFriends = async (req, res, next) => {
     const status = req.params.status;
     let friends = [];
     if(status == "all") {
-        friends = await FriendModel.find({'friend_id': new ObjectId(req.user.id)}).sort({ created_at: -1 })
-        .populate([
-            {
-                path: 'user_id', select: { username: 1, image: 1 }
-            },
-            {
-                path: 'friend_id', select: { username: 1, image: 1 }
-            }
-          ]);
+      
+     const friendsD = await FriendModel.find({
+        $or: [
+            { user_id: req.user.id  },
+            { friend_id: req.user.id }
+        ]
+    })
+    .sort({ created_at: -1 })
+    .populate('user_id', 'username image')  // Populating username and image fields
+    .populate('friend_id', 'username image');
+
+    // Transform the results to only return the friend's information
+    friends = friendsD.map(friend => {
+        const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
+        return {
+            _id: friendData._id,
+            username: friendData.username,
+            image: friendData.image,
+            created_at: friend.created_at
+        };
+    });
     } else {
-        friends = await FriendModel.find({'friend_id': new ObjectId(req.user.id), status: status}).sort({ created_at: -1 })
-        .populate([
-            {
-                path: 'user_id', select: { username: 1, image: 1 }
-            },
-            {
-                path: 'friend_id', select: { username: 1, image: 1 }
-            }
-          ]);
+      const friendsD = await FriendModel.find({
+        $or: [
+            { user_id: req.user.id, status: status  },
+            { friend_id: req.user.id, status: status }
+        ]
+        })
+        .sort({ created_at: -1 })
+        .populate('user_id', 'username image')  // Populating username and image fields
+        .populate('friend_id', 'username image');
+
+        // Transform the results to only return the friend's information
+        friends = friendsD.map(friend => {
+            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
+            return {
+                _id: friendData._id,
+                username: friendData.username,
+                image: friendData.image,
+                created_at: friend.created_at
+            };
+        });
     }
 
     return res.json({
       status: true,
       message: "Data Found",
-      data: await friendHelper.getAllFriends(friends, req.user.id)
+      data: friends.sort((a, b) => moment(b.created_at, 'DD-MM-YYYY').diff(moment(a.created_at, 'DD-MM-YYYY')))
     })
   } catch (err) {
     next(err);
