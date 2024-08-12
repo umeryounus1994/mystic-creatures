@@ -35,19 +35,19 @@ const createGroup = async (req, res, next) => {
         }
         if(req.body?.group_users){
           var parsedJson = JSON.parse(req.body.group_users);
-           await GroupUserModel.remove({ group_id: new ObjectId(id) })
+           await GroupUserModel.remove({ group_id: new ObjectId(createdItem._id) })
            var options = [];
            parsedJson.forEach(element => {
                if(element != req.user.id){
                    options.push({
                        friend_id: element,
-                       group_id: id,
+                       group_id: createdItem._id,
                      });
                }
            });
            options.push({
              friend_id: req.user.id,
-             group_id: id,
+             group_id: createdItem._id,
            });
            GroupUserModel.insertMany(options);
          }
