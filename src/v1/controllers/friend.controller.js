@@ -79,7 +79,7 @@ const getFriends = async (req, res, next) => {
     friends = friendsD.map(friend => {
         const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
         return {
-            _id: friendData._id,
+            _id: friend._id,
             username: friendData.username,
             image: friendData.image,
             created_at: friend.created_at
@@ -100,7 +100,7 @@ const getFriends = async (req, res, next) => {
         friends = friendsD.map(friend => {
             const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
             return {
-                _id: friendData._id,
+                _id: friend._id,
                 username: friendData.username,
                 image: friendData.image,
                 created_at: friend.created_at
