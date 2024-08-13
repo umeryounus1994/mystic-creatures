@@ -87,14 +87,12 @@ const getFriends = async (req, res, next) => {
     });
     } else {
       const friendsD = await FriendModel.find({
-        $or: [
-            { user_id: req.user.id, status: status  },
-            { friend_id: req.user.id, status: status }
-        ]
-        })
-        .sort({ created_at: -1 })
-        .populate('user_id', 'username image')  // Populating username and image fields
-        .populate('friend_id', 'username image');
+        friend_id: req.user.id, // Your ID should be in the friend_id field
+        status: 'requested'    // The status should be 'requested'
+    })
+    .sort({ created_at: -1 })
+    .populate('user_id', 'username image') // Populating the sender's username and image
+    .populate('friend_id', 'username image');
 
         // Transform the results to only return the friend's information
         friends = friendsD.map(friend => {
