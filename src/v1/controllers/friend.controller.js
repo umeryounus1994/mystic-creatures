@@ -88,7 +88,7 @@ const getFriends = async (req, res, next) => {
     } else {
       const friendsD = await FriendModel.find({
         friend_id: req.user.id, // Your ID should be in the friend_id field
-        status: 'requested'    // The status should be 'requested'
+        status: status    // The status should be 'requested'
     })
     .sort({ created_at: -1 })
     .populate('user_id', 'username image') // Populating the sender's username and image
