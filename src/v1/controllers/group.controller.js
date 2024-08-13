@@ -34,7 +34,7 @@ const createGroup = async (req, res, next) => {
           );
         }
         if(req.body?.group_users){
-          var parsedJson = JSON.parse(req.body.group_users);
+           var parsedJson = JSON.parse(req.body.group_users);
            await GroupUserModel.remove({ group_id: new ObjectId(createdItem._id) })
            var options = [];
            parsedJson.forEach(element => {

@@ -135,28 +135,28 @@ const getUser = async (req, res, next) => {
     transactions.forEach(element => {
       if (element?.quest_id) {
         user_data.QuestsCompleted += 1;
-        user_data.total_xp += element?.quest_id?.no_of_xp || 0;
-        dummyTotalXp += element?.quest_id?.no_of_xp || 0;
+        user_data.total_xp += parseInt(element?.quest_id?.no_of_xp) || 0;
+        dummyTotalXp += parseInt(element?.quest_id?.no_of_xp) || 0;
       }
       if (element?.mission_id) {
         user_data.MissionsCompleted += 1;
-        user_data.total_xp += element?.mission_id?.no_of_xp || 0;
-        dummyTotalXp += element?.mission_id?.no_of_xp || 0;
+        user_data.total_xp += parseInt(element?.mission_id?.no_of_xp) || 0;
+        dummyTotalXp += parseInt(element?.mission_id?.no_of_xp) || 0;
       }
       if (element?.hunt_id) {
         user_data.HuntsCompleted += 1;
-        user_data.total_xp += element?.hunt_id?.no_of_xp || 0;
-        dummyTotalXp += element?.hunt_id?.no_of_xp || 0;
+        user_data.total_xp += parseInt(element?.hunt_id?.no_of_xp) || 0;
+        dummyTotalXp += parseInt(element?.hunt_id?.no_of_xp) || 0;
       }
       if (element?.drop_id) {
         user_data.DropsCompleted += 1;
-        user_data.total_xp += element?.drop_id?.no_of_xp || 0;
-        dummyTotalXp += element?.drop_id?.no_of_xp || 0;
+        user_data.total_xp += parseInt(element?.drop_id?.no_of_xp) || 0;
+        dummyTotalXp += parseInt(element?.drop_id?.no_of_xp) || 0;
       }
       if (element?.picture_mystery_id) {
         user_data.PictureMysteryCompleted += 1;
-        user_data.total_xp += element?.picture_mystery_id?.no_of_xp || 0;
-        dummyTotalXp += element?.picture_mystery_id?.no_of_xp || 0;
+        user_data.total_xp += parseInt(element?.picture_mystery_id?.no_of_xp) || 0;
+        dummyTotalXp += parseInt(element?.picture_mystery_id?.no_of_xp) || 0;
       }
     });
 
