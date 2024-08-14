@@ -82,12 +82,16 @@ const getFriends = async (req, res, next) => {
             _id: friend._id,
             username: friendData.username,
             image: friendData.image,
-            created_at: friend.created_at
+            created_at: friend.created_at,
+            status: friend.status
         };
     });
     } else {
       const friendsD = await FriendModel.find({
-        friend_id: req.user.id, // Your ID should be in the friend_id field
+        $or: [
+            { user_id: req.user.id  },
+            { friend_id: req.user.id }
+        ],
         status: status    // The status should be 'requested'
     })
     .sort({ created_at: -1 })
@@ -101,7 +105,8 @@ const getFriends = async (req, res, next) => {
                 _id: friend._id,
                 username: friendData.username,
                 image: friendData.image,
-                created_at: friend.created_at
+                created_at: friend.created_at,
+                status: friend.status
             };
         });
     }
