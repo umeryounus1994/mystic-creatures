@@ -88,29 +88,51 @@ const getFriends = async (req, res, next) => {
         };
     });
     } else {
-      const friendsD = await FriendModel.find({
-        $or: [
-            { user_id: req.user.id  },
-            { friend_id: req.user.id }
-        ],
-        status: status    // The status should be 'requested'
-    })
-    .sort({ created_at: -1 })
-    .populate('user_id', 'username image') // Populating the sender's username and image
-    .populate('friend_id', 'username image');
+      if(status == 'accepted'){
+        const friendsD = await FriendModel.find({
+          user_id: req.user.id,
+          status: 'accepted'    // The status should be 'requested'
+      })
+      .sort({ created_at: -1 })
+      .populate('user_id', 'username image') // Populating the sender's username and image
+      .populate('friend_id', 'username image');
+  
+          // Transform the results to only return the friend's information
+          friends = friendsD.map(friend => {
+              const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
+              return {
+                  _id: friend._id,
+                  username: friendData.username,
+                  image: friendData.image,
+                  created_at: friend.created_at,
+                  friend_id: friendData._id,
+                  status: friend.status
+              };
+          });
+      }
+      if(status == 'requested'){
+        const friendsD = await FriendModel.find({
+          friend_id: req.user.id,
+          status: 'requested'    // The status should be 'requested'
+      })
+      .sort({ created_at: -1 })
+      .populate('user_id', 'username image') // Populating the sender's username and image
+      .populate('friend_id', 'username image');
+  
+          // Transform the results to only return the friend's information
+          friends = friendsD.map(friend => {
+              const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
+              return {
+                  _id: friend._id,
+                  username: friendData.username,
+                  image: friendData.image,
+                  created_at: friend.created_at,
+                  friend_id: friendData._id,
+                  status: friend.status
+              };
+          });
+      }
 
-        // Transform the results to only return the friend's information
-        friends = friendsD.map(friend => {
-            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
-            return {
-                _id: friend._id,
-                username: friendData.username,
-                image: friendData.image,
-                created_at: friend.created_at,
-                friend_id: friendData._id,
-                status: friend.status
-            };
-        });
     }
 
     return res.json({
