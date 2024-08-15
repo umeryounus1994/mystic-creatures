@@ -83,6 +83,7 @@ const getFriends = async (req, res, next) => {
             username: friendData.username,
             image: friendData.image,
             created_at: friend.created_at,
+            friend_id: friendData._id,
             status: friend.status
         };
     });
@@ -106,6 +107,7 @@ const getFriends = async (req, res, next) => {
                 username: friendData.username,
                 image: friendData.image,
                 created_at: friend.created_at,
+                friend_id: friendData._id,
                 status: friend.status
             };
         });
