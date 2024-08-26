@@ -111,12 +111,19 @@ module.exports.getAllUsers = async function (data, userId) {
         data.forEach(element => {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
+                    const friendRecord = await FriendModel.findOne({
+                        $or: [
+                            { user_id: userId, friend_id: element?._id },
+                            { user_id: element?._id, friend_id: userId }
+                        ]
+                    });
+                
                     var checkFriend = await FriendModel.findOne({user_id: new ObjectID(userId), friend_id: new ObjectID(element?._id)});
                     var el = {
                         id: element?._id,
                         username: element?.username,
                         image: element?.image,
-                        isFriend: checkFriend != null ? true : false,
+                        isFriend: friendRecord != null ? friendRecord.status : 'open',
                         created_at: element.created_at
                     }
                     result.push(el);

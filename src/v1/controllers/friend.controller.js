@@ -63,88 +63,87 @@ const getFriends = async (req, res, next) => {
   try {
     const status = req.params.status;
     let friends = [];
-    if(status == "all") {
-      
-     const friendsD = await FriendModel.find({
-        $or: [
-            { user_id: req.user.id  },
-            { friend_id: req.user.id }
-        ]
-    })
-    .sort({ created_at: -1 })
-    .populate('user_id', 'username image')  // Populating username and image fields
-    .populate('friend_id', 'username image');
 
-    // Transform the results to only return the friend's information
-    friends = friendsD.map(friend => {
-        const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
-        return {
-            _id: friend._id,
-            username: friendData.username,
-            image: friendData.image,
-            created_at: friend.created_at,
-            friend_id: friendData._id,
-            status: friend.status
-        };
-    });
-    } else {
-      if(status == 'accepted'){
+    if (status === "all") {
         const friendsD = await FriendModel.find({
-          user_id: req.user.id,
-          status: 'accepted'    // The status should be 'requested'
-      })
-      .sort({ created_at: -1 })
-      .populate('user_id', 'username image') // Populating the sender's username and image
-      .populate('friend_id', 'username image');
-  
-          // Transform the results to only return the friend's information
-          friends = friendsD.map(friend => {
-              const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
-              return {
-                  _id: friend._id,
-                  username: friendData.username,
-                  image: friendData.image,
-                  created_at: friend.created_at,
-                  friend_id: friendData._id,
-                  status: friend.status
-              };
-          });
-      }
-      if(status == 'requested'){
-        const friendsD = await FriendModel.find({
-          $or: [
-              { user_id: req.user.id, status: 'accepted' },
-              { friend_id: req.user.id, status: 'accepted' }
-          ]
-      })
-      .sort({ created_at: -1 })
-      .populate('user_id', 'username image') // Populating the sender's username and image
-      .populate('friend_id', 'username image');
-  
-          // Transform the results to only return the friend's information
-          friends = friendsD.map(friend => {
-              const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
-              return {
-                  _id: friend._id,
-                  username: friendData.username,
-                  image: friendData.image,
-                  created_at: friend.created_at,
-                  friend_id: friendData._id,
-                  status: friend.status
-              };
-          });
-      }
+            $or: [
+                { user_id: req.user.id },
+                { friend_id: req.user.id }
+            ]
+        })
+        .sort({ created_at: -1 })
+        .populate('user_id', 'username image')
+        .populate('friend_id', 'username image');
 
+        friends = friendsD.map(friend => {
+            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
+            return {
+                _id: friend._id,
+                username: friendData.username,
+                image: friendData.image,
+                created_at: friend.created_at,
+                friend_id: friendData._id,
+                status: friend.status
+            };
+        });
+
+    } else if (status === 'accepted') {
+        const friendsD = await FriendModel.find({
+            $or: [
+                { user_id: req.user.id, status: 'accepted' },
+                { friend_id: req.user.id, status: 'accepted' }
+            ]
+        })
+        .sort({ created_at: -1 })
+        .populate('user_id', 'username image')
+        .populate('friend_id', 'username image');
+
+        friends = friendsD.map(friend => {
+            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
+            return {
+                _id: friend._id,
+                username: friendData.username,
+                image: friendData.image,
+                created_at: friend.created_at,
+                friend_id: friendData._id,
+                status: friend.status
+            };
+        });
+
+    } else if (status === 'requested') {
+        const friendsD = await FriendModel.find({
+            $or: [
+                { user_id: req.user.id, status: 'requested' },
+                { friend_id: req.user.id, status: 'requested' }
+            ]
+        })
+        .sort({ created_at: -1 })
+        .populate('user_id', 'username image')
+        .populate('friend_id', 'username image');
+
+        friends = friendsD.map(friend => {
+            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
+            return {
+                _id: friend._id,
+                username: friendData.username,
+                image: friendData.image,
+                created_at: friend.created_at,
+                friend_id: friendData._id,
+                status: friend.status
+            };
+        });
     }
 
     return res.json({
-      status: true,
-      message: "Data Found",
-      data: friends.sort((a, b) => moment(b.created_at, 'DD-MM-YYYY').diff(moment(a.created_at, 'DD-MM-YYYY')))
-    })
-  } catch (err) {
+        status: true,
+        message: "Data Found",
+        data: friends.sort((a, b) => moment(b.created_at).diff(moment(a.created_at)))
+    });
+
+} catch (err) {
     next(err);
-  }
+}
+
 };
 
 
