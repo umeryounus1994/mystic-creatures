@@ -270,13 +270,13 @@ const getQuestById = async (req, res, next) => {
 const completeQuest = async (req, res, next) => {
   try {
     const id = req.params.id;
-    const user_answer = req.body.user_answer;
-    if(!user_answer) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Answer is required"
-      );
-    }
+    const user_answer = req.body.user_answer ?? null;
+    // if(!user_answer) {
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "Answer is required"
+    //   );
+    // }
 
     const quest = await QuestModel.findOne({_id: new ObjectId(id)});
     if(!quest){
@@ -285,13 +285,13 @@ const completeQuest = async (req, res, next) => {
         "Quest not found"
       );
     }
-    const questOption = await QuestQuizModel.findOne({_id: new ObjectId(user_answer), quest_id: new ObjectId(id)});
-    if(!questOption){
-      return apiResponse.ErrorResponse(
-        res,
-        "No Option found"
-      );
-    }
+    // const questOption = await QuestQuizModel.findOne({_id: new ObjectId(user_answer), quest_id: new ObjectId(id)});
+    // if(!questOption){
+    //   return apiResponse.ErrorResponse(
+    //     res,
+    //     "No Option found"
+    //   );
+    // }
     const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(id)});
     if(!userQuest){
       return apiResponse.ErrorResponse(
@@ -306,7 +306,7 @@ const completeQuest = async (req, res, next) => {
       );
     }
     const findCorrectOption = await QuestQuizModel.findOne({ quest_id: new ObjectId(id), correct_option: true });
-    if(findCorrectOption?._id == user_answer){
+   // if(findCorrectOption?._id == user_answer){
       await UserQuestModel.findOneAndUpdate(
         { quest_id: id, user_id: req.user.id },
         {
@@ -316,16 +316,6 @@ const completeQuest = async (req, res, next) => {
         { upsert: true, new: true }
       );
       const user = await userModel.findOne({_id: new ObjectId(req.user.id)});
-      // let current_xp = parseInt(user.current_xp) + parseInt(quest?.no_of_xp);
-      // let current_level = parseInt(user.current_level) + parseInt(quest?.level_increase);
-      // await userModel.findOneAndUpdate(
-      //   { _id: req.user.id },
-      //   {
-      //     current_xp: current_xp,
-      //     current_level: current_level
-      //   },
-      //   { upsert: true, new: true }
-      // );
       var items = {
         user_id: req.user.id,
         quest_id: quest?._id,
@@ -338,12 +328,12 @@ const completeQuest = async (req, res, next) => {
         res,
         "Quest completed"
       );
-    } else {
-      return apiResponse.successResponse(
-        res,
-        "You gave wrong answer. Quest Claim not successful"
-      );
-    }
+    // } else {
+    //   return apiResponse.successResponse(
+    //     res,
+    //     "You gave wrong answer. Quest Claim not successful"
+    //   );
+    // }
  
 
   } catch (err) {
