@@ -73,7 +73,7 @@ router.get("/get_all_admin", checkAdminUserAuth, treasureHuntController.getAdmin
 router.post("/get_all", checkAuthOrigins, treasureHuntController.getTreasureHunts);
 router.post("/get_all_user_hunts/:status", checkUserAuth, treasureHuntController.getAllUserHunts);
 router.get("/get_hunt_by_id/:id", checkAuthOrigins, treasureHuntController.getHuntById);
-router.get("/unlock_hunt/:id", checkUserAuth, treasureHuntController.startTreasureHunt);
+router.post("/unlock_hunt", checkUserAuth, treasureHuntController.startTreasureHunt);
 router.get("/submit_hunt_quiz_answer/:id", checkUserAuth, treasureHuntController.submitHuntQuizAnswer);
 router.get("/claim_hunt/:id", checkUserAuth, treasureHuntController.claimHunt);
 router.get("/user_hunt_progress/:id", checkUserAuth, treasureHuntController.userHuntProgress);

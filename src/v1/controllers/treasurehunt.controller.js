@@ -33,6 +33,7 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       treasure_hunt_start_date: req.body?.treasure_hunt_start_date,
       treasure_hunt_end_date: req.body?.treasure_hunt_end_date,
       hunt_location: location,
+      qr_code: req.body?.qr_code,
       premium_hunt: req.body?.premium_hunt,
       hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
       reward_file: req.files['reward'] ? req.files['reward'][0].location : ""
@@ -113,6 +114,7 @@ const updateTreasureHuntAdmin = async (req, res, next) => {
       treasure_hunt_end_date: req.body?.treasure_hunt_end_date,
       hunt_location: location,
       premium_hunt: req.body?.premium_hunt,
+      qr_code: req.body?.qr_code,
       hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
       reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.reward_file
     };
@@ -438,15 +440,16 @@ const getHuntById = async (req, res, next) => {
 
 const startTreasureHunt = async (req, res, next) => {
   try {
-    const id = req.params.id;
-    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    //const id = req.params.id;
+    const qr_code = req.body.qr_code;
+    const hunt = await TreasureHuntModel.findOne({ qr_code: qr_code });
     if (!hunt) {
       return apiResponse.notFoundResponse(
         res,
         "Not found!"
       );
     }
-    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'open' });
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(hunt?._id), status: 'open' });
     const findDraftHunt = await UserTreasureHuntModel.find({ user_id: new ObjectId(req.user.id), status: 'inprogress' });
     if (findDraftHunt.length > 0) {
       return apiResponse.ErrorResponse(
@@ -456,7 +459,7 @@ const startTreasureHunt = async (req, res, next) => {
     }
     if(userHunt){
       await UserTreasureHuntModel.findOneAndUpdate(
-        { treasure_hunt_id: id, user_id: req.user.id },
+        { treasure_hunt_id: hunt?._id, user_id: req.user.id },
         {
           status: 'inprogress'
         },
@@ -469,7 +472,7 @@ const startTreasureHunt = async (req, res, next) => {
     }
     const itemToAdd = {
       user_id: req.user._id,
-      treasure_hunt_id: id
+      treasure_hunt_id: hunt?._id
     };
     const createdItem = new UserTreasureHuntModel(itemToAdd);
 

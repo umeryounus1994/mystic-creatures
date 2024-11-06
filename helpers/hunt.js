@@ -65,7 +65,8 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                             treasure_hunt_status: userHunt ? userHunt?.status : (userPurchaseHunt ? 'purchased' : 'open'),
                             hunt_progress: checkProgress?.answered,
                             hunt_purchase: userPurchaseHunt ? true : false,
-                            created_at: element.created_at
+                            created_at: element.created_at,
+                            qr_code: element?.qr_code,
 
                         }
 
@@ -126,7 +127,8 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
                         status: element.status,
                         treasure_hunt_image: element.treasure_hunt_image,
                         quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
-                        created_at: element.created_at
+                        created_at: element.created_at,
+                        qr_code: element?.qr_code,
 
                     }
 
@@ -185,6 +187,7 @@ module.exports.getSingleHunt = async function (data, latitude, longitude) {
         treasure_hunt_start_date: data.treasure_hunt_start_date,
         treasure_hunt_end_date: data.treasure_hunt_end_date,
         quiz: filteredArray.length > 0 ? filteredArray : [],
+        qr_code: data?.qr_code,
     }
 
     return el;
@@ -248,7 +251,8 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
                             quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                             hunt_progress: checkProgress?.answered,
                             hunt_purchase: userPurchaseHunt ? true : false,
-                            created_at: element?.treasure_hunt_id?.created_at
+                            created_at: element?.treasure_hunt_id?.created_at,
+                            qr_code: element?.treasure_hunt_id?.qr_code,
                         }
 
                         result.push(el)
