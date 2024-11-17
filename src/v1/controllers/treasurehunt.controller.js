@@ -35,6 +35,7 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       hunt_location: location,
       qr_code: req.body?.qr_code,
       premium_hunt: req.body?.premium_hunt,
+      have_qr: req.body?.have_qr,
       hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
       reward_file: req.files['reward'] ? req.files['reward'][0].location : ""
     };
@@ -115,7 +116,9 @@ const updateTreasureHuntAdmin = async (req, res, next) => {
       hunt_location: location,
       premium_hunt: req.body?.premium_hunt,
       hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
-      reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.reward_file
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.reward_file,
+      qr_code: req.body?.qr_code,
+      have_qr: req.body?.have_qr,
     };
     await TreasureHuntModel.findByIdAndUpdate(
       req.params.id,
@@ -441,11 +444,17 @@ const startTreasureHunt = async (req, res, next) => {
   try {
     //const id = req.params.id;
     const qr_code = req.body.qr_code;
+    if(!qr_code){
+      return apiResponse.notFoundResponse(
+        res,
+        "QR Code Not found!"
+      );
+    }
     const hunt = await TreasureHuntModel.findOne({ qr_code: qr_code });
     if (!hunt) {
       return apiResponse.notFoundResponse(
         res,
-        "Not found!"
+        "Hunt Not found with this QR Code!"
       );
     }
     const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(hunt?._id), status: 'open' });
@@ -488,6 +497,48 @@ const startTreasureHunt = async (req, res, next) => {
         createdItem
       );
     });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+const scanHunt = async (req, res, next) => {
+  try {
+    //const id = req.params.id;
+    const qr_code = req.body.qr_code;
+    if(!qr_code){
+      return apiResponse.notFoundResponse(
+        res,
+        "QR Code Not found!"
+      );
+    }
+    const hunt = await TreasureHuntModel.findOne({ qr_code: qr_code });
+    if (!hunt) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Hunt Not found with this QR Code!"
+      );
+    }
+    const userHunt = await HuntPurchaseModel.findOne({ user_id: new ObjectId(req.user.id), hunt_id: new ObjectId(hunt?._id) });
+    if (!userHunt) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Purchase hunt first to Scan QR"
+      );
+    }
+    await UserTreasureHuntModel.findOneAndUpdate(
+      { treasure_hunt_id: hunt?._id, user_id: req.user.id },
+      {
+        status: 'inprogress'
+      },
+      { upsert: true, new: true }
+    );
+    return apiResponse.successResponseWithData(
+      res,
+      "Started successfully",
+      hunt
+    );
+    
   } catch (err) {
     logger.error(err);
     next(err);
@@ -766,21 +817,50 @@ const purchaseHunt = async (req, res, next) => {
         "Not found!"
       );
     }
+    if(hunt?.premium_hunt == false){
+      return apiResponse.ErrorResponse(
+        res,
+        "This is not a premium hunt"
+      );
+    }
 
     const userHunt = await HuntPurchaseModel.findOne({ user_id: new ObjectId(req.user.id), hunt_id: new ObjectId(id) });
     if (userHunt) {
       return apiResponse.ErrorResponse(
         res,
-        "You have already purchase this treasure hunt"
+        "You have already purchased this treasure hunt"
       );
     }
     var items = {
       user_id: req.user.id,
       hunt_id: id,
-      package: hunt?.hunt_package
+      package: hunt?.hunt_package ? hunt?.hunt_package : "Bronze"
     }
     const createdItem = new HuntPurchaseModel(items);
-    createdItem.save(async (err) => {})
+    createdItem.save(async (err) => {
+      if(hunt?.have_qr == true){
+        const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'open' });
+        if(!userHunt){
+          const itemToAdd = {
+            user_id: req.user._id,
+            treasure_hunt_id: id,
+            status: 'purchased'
+  
+          };
+          const createdItem = new UserTreasureHuntModel(itemToAdd);
+          createdItem.save(async (err) => {});
+        }
+      } else {
+        await UserTreasureHuntModel.findOneAndUpdate(
+          { treasure_hunt_id: id, user_id: req.user.id },
+          {
+            status: 'inprogress'
+          },
+          { upsert: true, new: true }
+        );
+      }
+    
+    })
     return apiResponse.successResponse(
       res,
       "Hunt purchased"
@@ -995,5 +1075,6 @@ module.exports = {
     purchaseHunt,
     removeHunt,
     updateHunt,
-    updateTreasureHuntAdmin
+    updateTreasureHuntAdmin,
+    scanHunt
 };

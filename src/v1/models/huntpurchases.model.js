@@ -13,7 +13,7 @@ const huntPurchasesSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'TreasureHunt'
         },
-        package: { type: String, enum: ["Bronze","Silver","Gold"] },
+        package: { type: String, enum: ["Bronze","Silver","Gold"], default: 'Bronze' },
         status: {
             type: String,
             enum: ["active", "deleted"],

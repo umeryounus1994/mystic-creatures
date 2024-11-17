@@ -29,3 +29,6 @@
 [INFO] user login success
 [INFO] user login success
 [INFO] user login success
+[INFO] user login success
+[ERROR] CastError: Cast to Boolean failed for value "" (type string) at path "premium_hunt" because of "CastError"
+[ERROR] CastError: Cast to Boolean failed for value "1544929287655m3lnnf8o" (type string) at path "premium_hunt" because of "CastError"

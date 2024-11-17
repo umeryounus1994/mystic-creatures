@@ -44,6 +44,10 @@ const treasureSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        have_qr: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: {

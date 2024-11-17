@@ -66,7 +66,8 @@ module.exports.getAllTreasureHunt = async function (data, user_id, latitude, lon
                             hunt_progress: checkProgress?.answered,
                             hunt_purchase: userPurchaseHunt ? true : false,
                             created_at: element.created_at,
-                            qr_code: element?.qr_code,
+                            qr_code: element?.qr_code ? element.qr_code : "",
+                            have_qr: element?.have_qr ? element?.have_qr : false ,
 
                         }
 
@@ -129,6 +130,7 @@ module.exports.getAllAdminTreasureHunt = async function (data) {
                         quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                         created_at: element.created_at,
                         qr_code: element?.qr_code,
+                        have_qr: element?.have_qr ? element?.have_qr : false ,
 
                     }
 
@@ -188,6 +190,7 @@ module.exports.getSingleHunt = async function (data, latitude, longitude) {
         treasure_hunt_end_date: data.treasure_hunt_end_date,
         quiz: filteredArray.length > 0 ? filteredArray : [],
         qr_code: data?.qr_code,
+        have_qr: data?.have_qr,
     }
 
     return el;
@@ -253,6 +256,7 @@ module.exports.getAllUserTreasureHunt = async function (data, user_id, latitude,
                             hunt_purchase: userPurchaseHunt ? true : false,
                             created_at: element?.treasure_hunt_id?.created_at,
                             qr_code: element?.treasure_hunt_id?.qr_code,
+                            have_qr: element?.treasure_hunt_id?.have_qr ? element?.treasure_hunt_id?.have_qr : false ,
                         }
 
                         result.push(el)

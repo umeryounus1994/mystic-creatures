@@ -4,8 +4,9 @@ const mongooseDelete = require("mongoose-delete");
 
 const rewardSchema = new mongoose.Schema(
     {
-        reward_name: { type: String },
+        reward_name: { type: Number },
         reward_file: {type: String},
+        reward_crypes: {type: Number},
         status: {
             type: String,
             enum: ["active", "deleted"],

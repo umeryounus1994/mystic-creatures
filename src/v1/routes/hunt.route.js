@@ -74,6 +74,7 @@ router.post("/get_all", checkAuthOrigins, treasureHuntController.getTreasureHunt
 router.post("/get_all_user_hunts/:status", checkUserAuth, treasureHuntController.getAllUserHunts);
 router.get("/get_hunt_by_id/:id", checkAuthOrigins, treasureHuntController.getHuntById);
 router.post("/unlock_hunt", checkUserAuth, treasureHuntController.startTreasureHunt);
+router.post("/scan_hunt", checkUserAuth, treasureHuntController.scanHunt);
 router.get("/submit_hunt_quiz_answer/:id", checkUserAuth, treasureHuntController.submitHuntQuizAnswer);
 router.get("/claim_hunt/:id", checkUserAuth, treasureHuntController.claimHunt);
 router.get("/user_hunt_progress/:id", checkUserAuth, treasureHuntController.userHuntProgress);

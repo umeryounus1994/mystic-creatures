@@ -43,7 +43,8 @@ const createDropReward = async (req, res, next) => {
   try {
     const data = {
       reward_name: req?.body?.reward_limit,
-      reward_file: req.files['reward_file'] ? req.files['reward_file'][0].location : ""
+      reward_file: req.files['reward_file'] ? req.files['reward_file'][0].location : "",
+      reward_crypes: req?.body?.reward_crypes
     }
 
     const createdItem = new RewardModel(data);
@@ -205,11 +206,17 @@ const claimDrop = async (req, res, next) => {
           const createdItem = new TransactionModel(items);
           createdItem.save(async (err) => {})
           if(checkDrops != null){
-            const userRew = new UserRewardModel({
-              reward_id: checkDrops?._id,
-              user_id: req.user.id
-            })
-            userRew.save(async (err) => {})
+            const findClaimedCryps = await UserRewardModel.findOne({ reward_id: new ObjectId(checkDrops?._id), user_id: req.user.id });
+            if(findClaimedCryps != null){
+              if(checkDrops.reward_name == findNoOfDrops){
+                const userRew = new UserRewardModel({
+                  reward_id: checkDrops?._id,
+                  user_id: req.user.id
+                })
+                userRew.save(async (err) => {})
+              }
+            }
+  
           }
           return apiResponse.successResponse(
             res,
@@ -237,11 +244,16 @@ const claimDrop = async (req, res, next) => {
         const createdItem = new TransactionModel(items);
         createdItem.save(async (err) => {})
         if(checkDrops != null){
-          const userRew = new UserRewardModel({
-            reward_id: checkDrops?._id,
-            user_id: req.user.id
-          })
-          userRew.save(async (err) => {})
+          const findClaimedCryps = await UserRewardModel.findOne({ reward_id: new ObjectId(checkDrops?._id), user_id: req.user.id });
+          if(findClaimedCryps != null){
+            if(checkDrops.reward_name == findNoOfDrops){
+              const userRew = new UserRewardModel({
+                reward_id: checkDrops?._id,
+                user_id: req.user.id
+              })
+              userRew.save(async (err) => {})
+            }
+          }
         }
         return apiResponse.successResponse(
           res,
