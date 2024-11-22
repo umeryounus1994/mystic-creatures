@@ -187,7 +187,10 @@ const claimDrop = async (req, res, next) => {
       );
     }
     const findCorrectOption = await DropQuizModel.findOne({ drop_id: new ObjectId(id), correct_option: true });
-   
+   var reward = {
+    crypes: 0,
+    reward_file : ""
+   }
     if(user_answer != undefined){
       if(findCorrectOption?._id == user_answer){
         await UserDropModel.findOneAndUpdate(
@@ -214,13 +217,16 @@ const claimDrop = async (req, res, next) => {
                   user_id: req.user.id
                 })
                 userRew.save(async (err) => {})
+                reward.crypes = checkDrops?.reward_crypes || 0;
+                reward.reward_file = checkDrops?.reward_file || "";
               }
             }
   
           }
-          return apiResponse.successResponse(
+          return apiResponse.successResponseWithData(
             res,
-            "Drop Claimed"
+            "Drop Claimed",
+            reward
           );
       } else {
         return apiResponse.successResponse(
@@ -252,12 +258,15 @@ const claimDrop = async (req, res, next) => {
                 user_id: req.user.id
               })
               userRew.save(async (err) => {})
+              reward.crypes = checkDrops?.reward_crypes || 0;
+              reward.reward_file = checkDrops?.reward_file || "";
             }
           }
         }
-        return apiResponse.successResponse(
+        return apiResponse.successResponseWithData(
           res,
-          "Drop Claimed"
+          "Drop Claimed",
+          reward
         );
     }
   } catch (err) {

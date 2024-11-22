@@ -502,6 +502,56 @@ const startTreasureHunt = async (req, res, next) => {
     next(err);
   }
 };
+const startTreasureHuntWithId = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const hunt = await TreasureHuntModel.findOne({ _id: new ObjectId(id) });
+    if (!hunt) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Hunt Not found with this ID!"
+      );
+    }
+    const userHunt = await UserTreasureHuntModel.findOne({ user_id: new ObjectId(req.user.id), treasure_hunt_id: new ObjectId(id), status: 'open' });
+
+    if(userHunt){
+      await UserTreasureHuntModel.findOneAndUpdate(
+        { treasure_hunt_id: id, user_id: req.user.id },
+        {
+          status: 'inprogress'
+        },
+        { upsert: true, new: true }
+      );
+      return apiResponse.successResponse(
+        res,
+        "Started successfully"
+      );
+    }
+    const itemToAdd = {
+      user_id: req.user._id,
+      treasure_hunt_id: id
+    };
+    const createdItem = new UserTreasureHuntModel(itemToAdd);
+
+    createdItem.save(async (err) => {
+      if (err) {
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      return apiResponse.successResponseWithData(
+        res,
+        "Created successfully",
+        createdItem
+      );
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
 const scanHunt = async (req, res, next) => {
   try {
     //const id = req.params.id;
@@ -1076,5 +1126,6 @@ module.exports = {
     removeHunt,
     updateHunt,
     updateTreasureHuntAdmin,
-    scanHunt
+    scanHunt,
+    startTreasureHuntWithId
 };
