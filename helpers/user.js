@@ -149,7 +149,8 @@ module.exports.getAllUsersAdmin = async function (data) {
                         username: element?.username,
                         image: element?.image,
                         status: element?.status,
-                        created_at: element.created_at
+                        created_at: element.created_at,
+                        type: element?.user_type ? element?.user_type : "user"
                     }
                     result.push(el);
                     resolvve(result);

@@ -83,6 +83,32 @@ const createUser = async (req, res, next) => {
   }
 };
 
+const createUserSubAdmin = async (req, res, next) => {
+  try {
+    req.body.image = req?.file?.location || "";
+    const { ...itemDetails } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Invalid Data"
+      );
+    }
+    const createdItem = new UserModel(itemDetails);
+
+    createdItem.save(async (err) => {});
+    
+    return apiResponse.successResponseWithData(
+      res,
+      "Created successfully",
+      createdItem
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 
 const getUser = async (req, res, next) => {
   try {
@@ -640,5 +666,6 @@ module.exports = {
   getAnalytics,
   getUserAnalytics,
   purhasePackage,
-  getAllUsers
+  getAllUsers,
+  createUserSubAdmin
 };

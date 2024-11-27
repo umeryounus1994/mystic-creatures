@@ -15,7 +15,7 @@ const {
 
 router.post(
   "/createTreasureHuntAdmin",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   mediaUpload.fields([{
     name: 'option1', maxCount: 1
   }, {
@@ -33,7 +33,7 @@ router.post(
 );
 router.post(
   "/updateTreasureHuntAdmin/:id",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   mediaUpload.fields([{
     name: 'option1', maxCount: 1
   }, {
@@ -51,25 +51,26 @@ router.post(
 );
 router.post(
   "/createTreasureHunt",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   treasureHuntController.createTreasureHunt
 );
 router.post(
   "/createTreasureHuntQuiz",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   treasureHuntController.createTreasureHuntQuiz
 );
 router.post(
   "/createHuntQuiz",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   treasureHuntController.createHuntQuiz
 );
 router.post(
   "/createHuntOptions",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   treasureHuntController.createHuntOptions
 );
 router.get("/get_all_admin", checkAdminUserAuth, treasureHuntController.getAdminTreasureHunts);
+router.get("/get_all_subadmin", checkUserAuth, treasureHuntController.getAdminTreasureHuntsSubAdmin);
 router.post("/get_all", checkAuthOrigins, treasureHuntController.getTreasureHunts);
 router.post("/get_all_user_hunts/:status", checkUserAuth, treasureHuntController.getAllUserHunts);
 router.get("/get_hunt_by_id/:id", checkAuthOrigins, treasureHuntController.getHuntById);

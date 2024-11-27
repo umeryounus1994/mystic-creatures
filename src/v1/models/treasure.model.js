@@ -48,6 +48,10 @@ const treasureSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        created_by: {  
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'User'
+         },
     },
     {
         timestamps: {

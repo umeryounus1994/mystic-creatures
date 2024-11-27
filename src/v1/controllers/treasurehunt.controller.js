@@ -37,7 +37,8 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       premium_hunt: req.body?.premium_hunt,
       have_qr: req.body?.have_qr,
       hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
-      reward_file: req.files['reward'] ? req.files['reward'][0].location : ""
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : "",
+      created_by : req.user.id
     };
     const createdItem = new TreasureHuntModel(huntdata);
 
@@ -187,6 +188,7 @@ const createTreasureHunt = async (req, res, next) => {
     }
     var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
     itemDetails.hunt_location = location;
+    itemDetails.created_by = req.user.id;
     const createdItem = new TreasureHuntModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -369,6 +371,21 @@ const getTreasureHunts = async (req, res, next) => {
 const getAdminTreasureHunts = async (req, res, next) => {
   try {
     const hunts = await TreasureHuntModel.find({status: 'active'}).sort({ created_at: -1 })
+    .populate("mythica_ID");
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await huntHelper.getAllAdminTreasureHunt(hunts)
+    })
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getAdminTreasureHuntsSubAdmin = async (req, res, next) => {
+  try {
+    const hunts = await TreasureHuntModel.find({created_by: new ObjectId(req.user.id), status: 'active'}).sort({ created_at: -1 })
     .populate("mythica_ID");
     return res.json({
       status: true,
@@ -1127,5 +1144,6 @@ module.exports = {
     updateHunt,
     updateTreasureHuntAdmin,
     scanHunt,
-    startTreasureHuntWithId
+    startTreasureHuntWithId,
+    getAdminTreasureHuntsSubAdmin
 };

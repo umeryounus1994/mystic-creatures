@@ -34,3 +34,12 @@
 [ERROR] CastError: Cast to Boolean failed for value "1544929287655m3lnnf8o" (type string) at path "premium_hunt" because of "CastError"
 [INFO] user login success
 [INFO] user login success
+[ERROR] TypeError: Cannot read properties of null (reading 'password')
+[ERROR] TypeError: Cannot read properties of null (reading 'id')
+[ERROR] TypeError: Cannot set properties of null (setting 'last_login')
+[ERROR] TypeError: Cannot read properties of null (reading 'save')
+[ERROR] TypeError: Cannot read properties of undefined (reading 'id')
+[ERROR] TypeError: Cannot read properties of undefined (reading 'id')
+[ERROR] TypeError: Cannot read properties of undefined (reading 'id')
+[ERROR] TypeError: Cannot read properties of undefined (reading 'id')
+[ERROR] TypeError: Cannot read properties of undefined (reading 'id')

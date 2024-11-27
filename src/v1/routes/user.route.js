@@ -18,6 +18,11 @@ router.post(
   mediaUpload.single("picture"),
   userController.createUser
 );
+router.post(
+  "/signup_subadmin",
+  mediaUpload.single("picture"),
+  userController.createUserSubAdmin
+);
 
 router.get("/get_all", checkAuthOrigins, userController.getUsers);
 router.get("/get_all_admin", checkAuthOrigins, userController.getAllUsers);

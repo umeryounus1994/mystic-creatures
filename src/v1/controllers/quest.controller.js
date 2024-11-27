@@ -25,6 +25,7 @@ const createQuest = async (req, res, next) => {
       );
     }
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    itemDetails.created_by = req.user.id;
     const createdItem = new QuestModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -132,6 +133,20 @@ const updateQuestQuiz = async (req, res, next) => {
 const getQuests = async (req, res, next) => {
   try {
     const quests = await QuestModel.find({status: 'active'}).sort({ created_at: -1 })
+    .populate('mythica_ID');
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await questHelper.getAllQuests(quests)
+    })
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+const getQuestsSubAdmin = async (req, res, next) => {
+  try {
+    const quests = await QuestModel.find({created_by: new ObjectId(req.user.id), status: 'active'}).sort({ created_at: -1 })
     .populate('mythica_ID');
     return res.json({
       status: true,
@@ -500,5 +515,6 @@ module.exports = {
   updateQuest,
   top10Players,
   updateQuestData,
-  updateQuestQuiz
+  updateQuestQuiz,
+  getQuestsSubAdmin
 };

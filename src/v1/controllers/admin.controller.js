@@ -9,6 +9,7 @@ const {
   verifyToken,
 } = require("../../../middlewares/authMiddleware");
 const AdminModel = require("../models/admin.model");
+const UserModel = require("../models/user.model");
 const CreatureModel = require("../models/creature.model");
 const AdminPasswordResetModel = require("../models/adminReset.model");
 const {
@@ -29,48 +30,90 @@ const loginAdmin = async (req, res, next) => {
       );
     }
     const params = {
+      email: req.body.email
+    };
+    const params1 = {
       email: req.body.email,
+      user_type: "subadmin"
     };
     const user = await AdminModel.findOne(params).exec();
+    const user_sub = await UserModel.findOne(params1).exec();
 
-    if (!user) {
+    if (!user && !user_sub) {
       return apiResponse.notFoundResponse(
         res,
         "Invalid Credentials"
       );
     }
+    if(user && !user_sub){
 
-    const match = await user.checkPassword(req.body.password, user.password);
+      const match = await user.checkPassword(req.body.password, user.password);
 
-    if (!match) {
-      return apiResponse.notFoundResponse(
-        res,
-        "Invalid Credentials"
-      );
-    }
-     // Generate JWT Access Token
-     const token = await generateToken(
-      { id: user.id, user_type: user.user_type, role: "admin" },
-      process.env.JWT_SECRET_KEY,
-      process.env.JWT_AUTH_TOKEN_EXPIRE
-    );
-
-
-    user.last_login = new Date();
-    user.access_token = token;
-    await user.save();
-  
-
-    res.set("Authorization", `Bearer ${token}`);
-    user.password = undefined;
-
-    return apiResponse.successResponseWithData(
-      res,
-      `Welcome ${user.first_name}, User Authenticated Successfully`,
-      {
-        user
+      if (!match) {
+        return apiResponse.notFoundResponse(
+          res,
+          "Invalid Credentials"
+        );
       }
-    );
+       // Generate JWT Access Token
+       const token = await generateToken(
+        { id: user.id, user_type: user.user_type, role: "admin" },
+        process.env.JWT_SECRET_KEY,
+        process.env.JWT_AUTH_TOKEN_EXPIRE
+      );
+  
+  
+      user.last_login = new Date();
+      user.access_token = token;
+      await user.save();
+    
+  
+      res.set("Authorization", `Bearer ${token}`);
+      user.password = undefined;
+  
+      return apiResponse.successResponseWithData(
+        res,
+        `Welcome ${user.first_name}, User Authenticated Successfully`,
+        {
+          user
+        }
+      );
+    }
+
+    if(!user && user_sub){
+
+      const match = await user_sub.checkPassword(req.body.password, user_sub.password);
+
+      if (!match) {
+        return apiResponse.notFoundResponse(
+          res,
+          "Invalid Credentials"
+        );
+      }
+       // Generate JWT Access Token
+       const token = await generateToken(
+        { id: user_sub.id, user_type: user_sub.user_type, role: "subadmin" },
+        process.env.JWT_SECRET_KEY,
+        process.env.JWT_AUTH_TOKEN_EXPIRE
+      );
+  
+  
+      user_sub.last_login = new Date();
+      user_sub.access_token = token;
+      await user_sub.save();
+    
+  
+      res.set("Authorization", `Bearer ${token}`);
+      user_sub.password = undefined;
+      return apiResponse.successResponseWithData(
+        res,
+        `Welcome ${user_sub.first_name}, User Authenticated Successfully`,
+        {
+          user_sub
+        }
+      );
+    }
+
   } catch (err) {
     logger.error(err);
     next(err);

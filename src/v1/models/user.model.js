@@ -46,6 +46,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["active", "expired"]
     },
+    user_type: {
+      type: String,
+      enum: ["user", "subadmin"],
+      default: "user"
+    },
+    allowed_quest: { type: Number, default: 0 },
+    allowed_hunt: { type: Number, default: 0 },
   },
   {
     timestamps: {

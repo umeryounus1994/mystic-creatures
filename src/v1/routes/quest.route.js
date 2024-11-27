@@ -13,7 +13,7 @@ const mediaUpload = require("../../../middlewares/upload-aws-image");
 
 router.post(
   "/createQuest",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   mediaUpload.fields([{
     name: 'reward', maxCount: 1
   }]),
@@ -21,14 +21,14 @@ router.post(
 );
 router.post(
   "/createQuestQuiz",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   questController.createQuestQuiz
 );
 
 
 router.post(
   "/updateQuest/:id",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   mediaUpload.fields([{
     name: 'reward', maxCount: 1
   }]),
@@ -36,15 +36,15 @@ router.post(
 );
 router.post(
   "/updateQuestQuiz/:id",
-  checkAdminUserAuth,
+  checkAuthOrigins,
   questController.updateQuestQuiz
 );
 router.get("/get_all", questController.getQuests);
+router.get("/get_all_subadmin", checkUserAuth, questController.getQuestsSubAdmin);
 router.post("/unlock_quest", checkUserAuth, questController.unlockQuestForUser);
 router.get("/get_player_quest/:status", checkUserAuth, questController.getPlayerQuests);
 router.get("/get_quest_by_id/:id", checkAuthOrigins, questController.getQuestById);
 router.post("/complete_quest/:id", checkUserAuth, questController.completeQuest);
-
 router.get("/quest_analytics", checkAdminUserAuth, questController.getQuestAnalytics);
 router.delete(
   "/:id",
