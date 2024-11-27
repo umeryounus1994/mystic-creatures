@@ -166,7 +166,7 @@ const getUserDrops = async (req, res, next) => {
 
 const claimDrop = async (req, res, next) => {
   try {
-    const findNoOfDrops = await UserDropModel.countDocuments({ user_id: new ObjectId(req.user.id) });
+    let findNoOfDrops = await UserDropModel.countDocuments({ user_id: new ObjectId(req.user.id) });
     const checkDrops = await RewardModel.findOne({reward_name: findNoOfDrops});
    
     const id = req.params.id;
@@ -189,7 +189,8 @@ const claimDrop = async (req, res, next) => {
     const findCorrectOption = await DropQuizModel.findOne({ drop_id: new ObjectId(id), correct_option: true });
    var reward = {
     crypes: 0,
-    reward_file : ""
+    reward_file : "",
+    limit: 0
    }
     if(user_answer != undefined){
       if(findCorrectOption?._id == user_answer){
@@ -210,8 +211,8 @@ const claimDrop = async (req, res, next) => {
           createdItem.save(async (err) => {})
           if(checkDrops != null){
             const findClaimedCryps = await UserRewardModel.findOne({ reward_id: new ObjectId(checkDrops?._id), user_id: req.user.id });
-            if(findClaimedCryps != null){
-              if(checkDrops.reward_name == findNoOfDrops){
+            if(findClaimedCryps == null){
+              if(checkDrops.reward_name == findNoOfDrops + 1){
                 const userRew = new UserRewardModel({
                   reward_id: checkDrops?._id,
                   user_id: req.user.id
@@ -219,6 +220,7 @@ const claimDrop = async (req, res, next) => {
                 userRew.save(async (err) => {})
                 reward.crypes = checkDrops?.reward_crypes || 0;
                 reward.reward_file = checkDrops?.reward_file || "";
+                reward.limit = checkDrops?.reward_name || 0
               }
             }
   
@@ -251,8 +253,8 @@ const claimDrop = async (req, res, next) => {
         createdItem.save(async (err) => {})
         if(checkDrops != null){
           const findClaimedCryps = await UserRewardModel.findOne({ reward_id: new ObjectId(checkDrops?._id), user_id: req.user.id });
-          if(findClaimedCryps != null){
-            if(checkDrops.reward_name == findNoOfDrops){
+          if(findClaimedCryps == null){
+            if(checkDrops.reward_name == findNoOfDrops + 1){
               const userRew = new UserRewardModel({
                 reward_id: checkDrops?._id,
                 user_id: req.user.id
@@ -260,6 +262,7 @@ const claimDrop = async (req, res, next) => {
               userRew.save(async (err) => {})
               reward.crypes = checkDrops?.reward_crypes || 0;
               reward.reward_file = checkDrops?.reward_file || "";
+              reward.limit = checkDrops?.reward_name || 0;
             }
           }
         }

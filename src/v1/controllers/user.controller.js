@@ -15,6 +15,7 @@ const LevelModel = require("../models/level.model");
 const PictureMysteryModel = require("../models/picturemysteries.model");
 const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
+const UserRewardModel = require("../models/userreward.model");
 const {
   softDelete,
   totalItems,
@@ -129,7 +130,8 @@ const getUser = async (req, res, next) => {
       total_xp: 0,
       current_xp: 0,
       current_level: lastLevel?.level || 1,
-      xp_needed: 0
+      xp_needed: 0,
+      drop_rewards: []
     };
     let dummyTotalXp = 0;
     transactions.forEach(element => {
@@ -187,6 +189,22 @@ const getUser = async (req, res, next) => {
       const item = new LevelModel(level);
       await item.save();
     }
+    const drops = await UserRewardModel.find({user_id: new ObjectId(req.user.id)}).populate([
+        {
+            path: 'reward_id',
+            select: { reward_crypes: 1, reward_file: 1, reward_name: 1 }
+        }
+      ]).
+    sort({ created_at: -1 });
+    drops.forEach(d => {
+      user_data.drop_rewards.push({
+        reward_file: d?.reward_id?.reward_file,
+        reward_crypes: d?.reward_id?.reward_crypes,
+        reward_limit: d?.reward_id?.reward_name
+      });
+    })
+   
+
     return apiResponse.successResponseWithDataStats(
       res,
       "User Details Fetched",
