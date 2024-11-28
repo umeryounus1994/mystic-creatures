@@ -167,7 +167,7 @@ const getUserDrops = async (req, res, next) => {
 const claimDrop = async (req, res, next) => {
   try {
     let findNoOfDrops = await UserDropModel.countDocuments({ user_id: new ObjectId(req.user.id) });
-    const checkDrops = await RewardModel.findOne({reward_name: findNoOfDrops});
+    const checkDrops = await RewardModel.findOne({reward_name: findNoOfDrops + 1});
    
     const id = req.params.id;
     const user_answer = req.body.user_answer;
