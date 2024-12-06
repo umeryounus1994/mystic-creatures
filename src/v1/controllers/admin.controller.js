@@ -42,7 +42,7 @@ const loginAdmin = async (req, res, next) => {
     if (!user && !user_sub) {
       return apiResponse.notFoundResponse(
         res,
-        "Invalid Credentials"
+        "Invalid Credentials1"
       );
     }
     if(user && !user_sub){
@@ -52,7 +52,7 @@ const loginAdmin = async (req, res, next) => {
       if (!match) {
         return apiResponse.notFoundResponse(
           res,
-          "Invalid Credentials"
+          "Invalid Credentials2"
         );
       }
        // Generate JWT Access Token
@@ -87,7 +87,7 @@ const loginAdmin = async (req, res, next) => {
       if (!match) {
         return apiResponse.notFoundResponse(
           res,
-          "Invalid Credentials"
+          "Invalid Credentials3"
         );
       }
        // Generate JWT Access Token

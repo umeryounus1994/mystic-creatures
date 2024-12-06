@@ -16,6 +16,15 @@ const logger = require('../../../middlewares/logger');
 
 const createQuest = async (req, res, next) => {
   try {
+    const quests = await QuestModel.find({created_by: new ObjectId(req.user.id), status: 'active'}).sort({ created_at: -1 })
+    if(req.user.user_type == 'subadmin'){
+      if(quests.length >= req.user.allowed_quest){
+        return apiResponse.notFoundResponse(
+          res,
+          "Quest limit exceeded!"
+        );
+      }
+    }
     const { ...itemDetails } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -146,8 +155,11 @@ const getQuests = async (req, res, next) => {
 };
 const getQuestsSubAdmin = async (req, res, next) => {
   try {
+    
     const quests = await QuestModel.find({created_by: new ObjectId(req.user.id), status: 'active'}).sort({ created_at: -1 })
     .populate('mythica_ID');
+
+
     return res.json({
       status: true,
       message: "Data Found",

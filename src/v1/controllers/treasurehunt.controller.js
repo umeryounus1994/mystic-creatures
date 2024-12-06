@@ -16,6 +16,15 @@ const logger = require('../../../middlewares/logger');
 
 const createTreasureHuntAdmin = async (req, res, next) => {
   try {
+    const quests = await TreasureHuntModel.find({created_by: new ObjectId(req.user.id), status: 'active'}).sort({ created_at: -1 })
+    if(req.user.user_type == 'subadmin'){
+      if(quests.length >= req.user.allowed_hunt){
+        return apiResponse.notFoundResponse(
+          res,
+          "Hunt limit exceeded!"
+        );
+      }
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return apiResponse.ErrorResponse(
