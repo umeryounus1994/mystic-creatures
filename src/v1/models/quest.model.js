@@ -26,6 +26,10 @@ const questSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'User'
          },
+         quest_group: {  
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'QuestGroup'
+         },
     },
     {
         timestamps: {
