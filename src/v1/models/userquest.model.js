@@ -10,6 +10,10 @@ const userQuestsSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'Quest'
         },
+        quest_group_id: {
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'QuestGroup'
+        },
         user_id: {
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'User'

@@ -9,15 +9,12 @@ const questGroupSchema = new mongoose.Schema(
         qr_code: { type: String },
         no_of_crypes: { type: Number, default: 0 },
         reward_file: {type: String},
+        group_package: {type: String, enum: ["Bronze","Silver", "Gold"], required: false, default: undefined},
         status: {
             type: String,
             enum: ["active", "deleted"],
             default: "active",
         },
-        created_by: {  
-            type: String,
-            type: mongoose.Schema.Types.ObjectId, ref: 'User'
-         },
     },
     {
         timestamps: {

@@ -4,9 +4,12 @@ const { ObjectId } = require("mongodb");
 const { validationResult } = require("express-validator");
 const apiResponse = require("../../../helpers/apiResponse");
 const QuestModel = require("../models/quest.model");
+const QuestGroupModel = require("../models/questgroup.model");
 const TransactionModel = require("../models/transactions.model");
 const QuestQuizModel = require("../models/questquiz.model");
 const UserQuestModel = require("../models/userquest.model");
+const UserQuestGroupModel = require("../models/userquestgroup.model");
+const QuestPurchaseModel = require("../models/questpurchases.model");
 var questHelper = require("../../../helpers/quest");
 const userModel = require("../models/user.model");
 const {
@@ -513,6 +516,137 @@ const top10Players = async (req, res, next) => {
   }
 };
 
+const createQuestGroup = async (req, res, next) => {
+  try {
+    const { ...itemDetails } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid Data"
+      );
+    }
+    itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    const createdItem = new QuestGroupModel(itemDetails);
+
+    createdItem.save(async (err) => {
+      if (err) {
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      return apiResponse.successResponseWithData(
+        res,
+        "Created successfully",
+        createdItem
+      );
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getAllQuestGroups = async (req, res, next) => {
+  try {
+    const quests = await QuestGroupModel.find({status: 'active'}).sort({ created_at: -1 });
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await questHelper.getAllQuestGroups(quests)
+    })
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const addQuestToGroup = async (req, res, next) => {
+  try {
+    const quest_id = req.body.quest_id;
+    const quest_group_id = req.body.quest_group_id;
+
+    const userQuest = await QuestModel.findOne({_id: new ObjectId(quest_id)});
+    console.log(userQuest)
+    if(userQuest && userQuest.quest_group_id != undefined){
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest already added in a group"
+      );
+    }
+    const updatedGroup = await QuestModel.findByIdAndUpdate(
+      quest_id,
+      {quest_group_id: quest_group_id},
+      {
+        new: true,
+      }
+    );
+       // Something went wrong kindly try again later
+       if (!updatedGroup) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Something went wrong, Kindly try again later"
+        );
+      }
+      return apiResponse.successResponse(
+        res,
+        "Quest Added to Group"
+      );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const purchaseQuestGroup = async (req, res, next) => {
+  try {
+    const qr_code = req.params.qr_code;
+    const package = req.params.group_package;
+
+    const questgroup = await QuestGroupModel.findOne({ qr_code: qr_code });
+    if (!questgroup) {
+      return apiResponse.notFoundResponse(
+        res,
+        "No Group found with this QR Code!"
+      );
+    }
+
+    const userQuest = await QuestPurchaseModel.findOne({ user_id: new ObjectId(req.user.id), quest_group_id: new ObjectId(questgroup?._id) });
+    if (userQuest) {
+      return apiResponse.ErrorResponse(
+        res,
+        "You have already purchased this Quest Group"
+      );
+    }
+    var items = {
+      user_id: req.user.id,
+      quest_group_id: questgroup?._id,
+      package: package ? package : "Bronze"
+    }
+    const createdItem = new QuestPurchaseModel(items);
+    createdItem.save(async (err) => {
+        const userHunt = await UserQuestGroupModel.findOne({ user_id: new ObjectId(req.user.id), quest_group_id: new ObjectId(questgroup?._id) });
+        if(!userHunt){
+          const itemToAdd = {
+            user_id: req.user._id,
+            quest_group_id: questgroup?._id,
+            status: 'inprogress' 
+          };
+          const createdItem = new UserQuestGroupModel(itemToAdd);
+          createdItem.save(async (err) => {});
+        }
+    })
+    return apiResponse.successResponse(
+      res,
+      "Quest Group purchased"
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 
 module.exports = {
   createQuest,
@@ -528,5 +662,9 @@ module.exports = {
   top10Players,
   updateQuestData,
   updateQuestQuiz,
-  getQuestsSubAdmin
+  getQuestsSubAdmin,
+  createQuestGroup,
+  getAllQuestGroups,
+  addQuestToGroup,
+  purchaseQuestGroup
 };

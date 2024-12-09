@@ -58,4 +58,21 @@ router.patch(
 );
 router.get("/top_10", checkUserAuth, questController.top10Players);
 
+router.post(
+  "/createQuestGroup",
+  checkAdminUserAuth,
+  mediaUpload.fields([{
+    name: 'reward', maxCount: 1
+  }]),
+  questController.createQuestGroup
+);
+router.get("/get_all_quest_groups", checkAuthOrigins, questController.getAllQuestGroups);
+
+router.post(
+  "/addQuestToGroup",
+  checkAdminUserAuth,
+  questController.addQuestToGroup
+);
+router.get("/purchase_quest_group/:qr_code", checkUserAuth, questController.purchaseQuestGroup);
+
 module.exports = router;

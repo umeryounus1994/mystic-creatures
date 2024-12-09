@@ -26,7 +26,7 @@ const questSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'User'
          },
-         quest_group: {  
+         quest_group_id: {  
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'QuestGroup'
          },

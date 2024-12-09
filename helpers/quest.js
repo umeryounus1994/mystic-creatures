@@ -2,6 +2,8 @@ const ObjectID = require('mongodb').ObjectId;
 var moment = require('moment');
 const QuestQuizModel = require("../src/v1/models/questquiz.model");
 const QuestModel = require("../src/v1/models/quest.model");
+const QuestPurchaseModel = require("../src/v1/models/questpurchases.model");
+const UserQuestGroupModel = require("../src/v1/models/userquestgroup.model");
 
 module.exports.getAllQuests = async function (data) {
     const promiseArr = [];
@@ -68,6 +70,39 @@ module.exports.getAllPlayerQuests = async function (data) {
                         options: findQuestQuiz,
                         quest_progress: element?.submitted_answer ? 1 : 0,
                         created_at: findQuest.created_at
+                    }
+                    result.push(el)
+                    resolvve(result);
+                })
+            )
+        })
+        return Promise.all(promiseArr).then(ress => {
+            resolve(result.sort((a, b) => moment(b.created_at, 'DD-MM-YYYY').diff(moment(a.created_at, 'DD-MM-YYYY'))))
+        })
+    })
+}
+module.exports.getAllQuestGroups = async function (data) {
+    const promiseArr = [];
+    var result = [];
+    return new Promise((resolve, reject) => {
+        data.forEach(element => {
+            promiseArr.push(
+                new Promise(async (resolvve, rejectt) => {
+                    var findQuests = await QuestModel.find({quest_group_id: new ObjectID(element._id)})
+                    var questPurchase = await QuestPurchaseModel.findOne({quest_group_id: new ObjectID(element?._id)});
+                    var questGroupPurchase = await UserQuestGroupModel.findOne({quest_group_id: new ObjectID(element?._id)});
+                    var el ={}
+                    var el ={
+                        id: element._id,
+                        quest_group_name : element.quest_group_name ? element.quest_group_name : "",
+                        qr_code : element.qr_code,
+                        no_of_crypes : element.no_of_crypes,
+                        reward_file: element.reward_file,
+                        package: element.group_package,
+                        status: element.status,
+                        quests: questPurchase != null ? findQuests : [],
+                        is_purchased: questPurchase != null ? true : false,
+                        created_at: element.created_at,
                     }
                     result.push(el)
                     resolvve(result);
