@@ -41,7 +41,7 @@ const createMissionAdmin = async (req, res, next) => {
 
     createdItem.save(async (err) => {
       if (err) {
-        console.log(err)
+       
         return apiResponse.ErrorResponse(
           res,
           "System went wrong, Kindly try again later"
@@ -186,7 +186,7 @@ const createMission = async (req, res, next) => {
 
     createdItem.save(async (err) => {
       if (err) {
-        console.log(err)
+  
         return apiResponse.ErrorResponse(
           res,
           "System went wrong, Kindly try again later"

@@ -14,7 +14,6 @@ async function getPublicKey(url) {
         }
       })
       .catch((error) => {
-        console.log(error);
       });
   } catch (error) {
     Sentry.captureException(error);

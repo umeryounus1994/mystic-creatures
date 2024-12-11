@@ -29,6 +29,7 @@ module.exports.getAllQuests = async function (data) {
                         status: element.status,
                         options: findQuestQuiz,
                         created_at: element.created_at,
+                        assigned_group: element?.quest_group_id ? element?.quest_group_id?.quest_group_name : "N/A",
                         quest_image: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg'
                     }
                     result.push(el)

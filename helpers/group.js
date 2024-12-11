@@ -35,7 +35,6 @@ module.exports.getAllMyGroups = async function (groupusers) {
         const result = await Promise.all(promises);
         return result;
     } catch(ex){
-        console.log(ex)
     }
   
 }

@@ -145,7 +145,14 @@ const updateQuestQuiz = async (req, res, next) => {
 const getQuests = async (req, res, next) => {
   try {
     const quests = await QuestModel.find({status: 'active'}).sort({ created_at: -1 })
-    .populate('mythica_ID');
+    .populate([
+      {
+          path: 'mythica_ID'
+      },
+      {
+          path: 'quest_group_id', select: { quest_group_name: 1 }
+      }
+    ]);
     return res.json({
       status: true,
       message: "Data Found",
@@ -568,7 +575,6 @@ const addQuestToGroup = async (req, res, next) => {
     const quest_group_id = req.body.quest_group_id;
 
     const userQuest = await QuestModel.findOne({_id: new ObjectId(quest_id)});
-    console.log(userQuest)
     if(userQuest && userQuest.quest_group_id != undefined){
       return apiResponse.ErrorResponse(
         res,

@@ -57,15 +57,9 @@ module.exports.sendTemplate = (to, from, templateId, dynamic_template_data) => {
     templateId,
     dynamic_template_data,
   };
-  console.log(msg);
   sgMail
     .send(msg)
     .then((response) => {
-      console.log("mail-sent-successfully", {
-        templateId,
-        dynamic_template_data,
-      });
-      console.log("response", response);
       /* assume success */
     })
     .catch((error) => {

@@ -1180,9 +1180,7 @@ module.exports.sendTemplate = (to, templateId, template_data) => {
   sgMail
     .send(msg)
     .then(() => {
-      console.log('mail-sent-successfully', {templateId, template_data})
     })
     .catch((error) => {
-      console.error('send-grid-error: ', error.toString())
     })
 }

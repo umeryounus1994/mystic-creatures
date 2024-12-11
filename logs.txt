@@ -46,3 +46,20 @@
 [INFO] user login success
 [INFO] user login success
 [INFO] user login success
+[INFO] user login success
+[ERROR] CastError: Cast to ObjectId failed for value "{
+  id: '670cf643501f3b7b61e34761',
+  quest_title: 'HAHAHA',
+  quest_question: 'HAHAHA',
+  qr_code: '693575044510m28w0vfc',
+  no_of_xp: 100,
+  no_of_crypes: 100,
+  reward_file: '',
+  mythica: 'Tritsche',
+  mythica_ID: 11,
+  level_increase: 100,
+  status: 'active',
+  options: [],
+  created_at: '2024-10-14T10:45:23.139Z',
+  quest_image: 'https://st.depositphotos.com/1819777/4778/v/450/depositphotos_47785885-stock-illustration-treasure-map.jpg'
+}" (type Object) at path "_id" for model "Quest"
