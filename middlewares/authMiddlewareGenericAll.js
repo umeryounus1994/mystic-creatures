@@ -26,7 +26,7 @@ const checkAuthOrigins = async (req, res, next) => {
           req.user = user_data 
         }
         if (admin_data) {
-          req.user = user_data 
+          req.user = admin_data 
         }
         next();
   } catch (error) {

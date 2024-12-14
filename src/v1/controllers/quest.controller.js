@@ -36,6 +36,7 @@ const createQuest = async (req, res, next) => {
         "Invalid Data"
       );
     }
+    
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
     itemDetails.created_by = req.user.id;
     const createdItem = new QuestModel(itemDetails);
