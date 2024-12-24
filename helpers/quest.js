@@ -90,6 +90,12 @@ module.exports.getAllQuestGroups = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var findQuests = await QuestModel.find({quest_group_id: new ObjectID(element._id)})
+                    .populate([
+                        {
+                            path: 'mythica_ID', select: {
+                                creature_id: 1
+                            }
+                        }])
                     var questPurchase = await QuestPurchaseModel.findOne({quest_group_id: new ObjectID(element?._id)});
                     var questGroupPurchase = await UserQuestGroupModel.findOne({quest_group_id: new ObjectID(element?._id)});
                     var el ={}
