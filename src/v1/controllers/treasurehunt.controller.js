@@ -595,12 +595,14 @@ const scanHunt = async (req, res, next) => {
         "Hunt Not found with this QR Code!"
       );
     }
-    const userHunt = await HuntPurchaseModel.findOne({ user_id: new ObjectId(req.user.id), hunt_id: new ObjectId(hunt?._id) });
-    if (!userHunt) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Purchase hunt first to Scan QR"
-      );
+    if(hunt.premium_hunt == true){
+      const userHunt = await HuntPurchaseModel.findOne({ user_id: new ObjectId(req.user.id), hunt_id: new ObjectId(hunt?._id) });
+      if (!userHunt) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Purchase hunt first to Scan QR"
+        );
+      }
     }
     await UserTreasureHuntModel.findOneAndUpdate(
       { treasure_hunt_id: hunt?._id, user_id: req.user.id },

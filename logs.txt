@@ -67,3 +67,4 @@
 [ERROR] TypeError: Cannot read properties of null (reading 'id')
 [ERROR] TypeError: Cannot read properties of null (reading 'id')
 [ERROR] TypeError: Cannot read properties of null (reading 'id')
+[INFO] user login success
