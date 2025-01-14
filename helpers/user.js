@@ -29,7 +29,9 @@ module.exports.getAllPlayerData = async function (data) {
                                 gender: findQuest?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
                                 reward_file: findQuest?.reward_file ? findQuest?.reward_file : "N/A",
-                                total_xp : xps + findQuest?.no_of_xp
+                                total_xp : xps + findQuest?.no_of_xp,
+                                type: 'Quest',
+                                item_name: findQuest?.quest_title
                             };
                             result.push(el);
                         }
@@ -44,7 +46,9 @@ module.exports.getAllPlayerData = async function (data) {
                                 gender: findMission?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
                                 reward_file: findMission?.reward_file ? findMission?.reward_file : "N/A",
-                                total_xp : xps + findMission?.no_of_xp
+                                total_xp : xps + findMission?.no_of_xp,
+                                type: 'Mission',
+                                item_name: findMission?.mission_title
                             };
                             result.push(el);
                         }
@@ -59,7 +63,9 @@ module.exports.getAllPlayerData = async function (data) {
                                 gender: findHunt?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
                                 reward_file: findHunt?.reward_file ? findHunt?.reward_file : "N/A",
-                                total_xp : xps + findHunt?.no_of_xp
+                                total_xp : xps + findHunt?.no_of_xp,
+                                type: 'Treasure Hunt',
+                                item_name: findHunt?.treasure_hunt_title
                             };
                             result.push(el);
                         }
@@ -74,7 +80,9 @@ module.exports.getAllPlayerData = async function (data) {
                                 gender: findDrop?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
                                 reward_file: findDrop?.reward_file ? findDrop?.reward_file : "N/A",
-                                total_xp : xps + findDrop?.no_of_xp
+                                total_xp : xps + findDrop?.no_of_xp,
+                                type: 'Drop',
+                                item_name: findDrop?.drop_name
                             };
                             result.push(el);
                         }
@@ -89,7 +97,9 @@ module.exports.getAllPlayerData = async function (data) {
                                 gender: findPictureMystery?.mythica_ID?.creature_gender,
                                 mythica_distinguisher: element.mythica_distinguisher,
                                 reward_file: findPictureMystery?.reward_file ? findPictureMystery?.reward_file : "N/A",
-                                total_xp : xps + findPictureMystery?.no_of_xp
+                                total_xp : xps + findPictureMystery?.no_of_xp,
+                                type: 'Picture Mystery',
+                                item_name: findPictureMystery?.picture_mystery_question
                             };
                             result.push(el);
                         }
