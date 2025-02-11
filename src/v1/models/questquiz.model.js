@@ -5,6 +5,7 @@ const mongooseDelete = require("mongoose-delete");
 
 const questionSchema = new mongoose.Schema({
     answer: { type: String },
+    answer_image: { type: String },
     correct_option: {
         type: Boolean,
         default: false

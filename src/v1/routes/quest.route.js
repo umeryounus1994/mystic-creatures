@@ -16,12 +16,36 @@ router.post(
   checkAuthOrigins,
   mediaUpload.fields([{
     name: 'reward', maxCount: 1
+  }, {
+    name: 'quest_file', maxCount: 1
+  }, 
+  {
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  },{
+    name: 'option4', maxCount: 1
+  }, {
+    name: 'option5', maxCount: 1
   }]),
   questController.createQuest
 );
 router.post(
   "/createQuestQuiz",
   checkAuthOrigins,
+  mediaUpload.fields([ {
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  },{
+    name: 'option4', maxCount: 1
+  }, {
+    name: 'option5', maxCount: 1
+  }]),
   questController.createQuestQuiz
 );
 
@@ -31,6 +55,19 @@ router.post(
   checkAuthOrigins,
   mediaUpload.fields([{
     name: 'reward', maxCount: 1
+  }, {
+    name: 'quest_file', maxCount: 1
+  }, 
+  {
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  },{
+    name: 'option4', maxCount: 1
+  }, {
+    name: 'option5', maxCount: 1
   }]),
   questController.updateQuestData
 );

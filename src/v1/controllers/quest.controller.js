@@ -38,7 +38,10 @@ const createQuest = async (req, res, next) => {
     }
     
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    itemDetails.quest_image = req.files['quest_file'] ? req.files['quest_file'][0].location : ""
     itemDetails.created_by = req.user.id;
+    var questions = JSON.parse(req.body.questions);
+ 
     const createdItem = new QuestModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -48,11 +51,66 @@ const createQuest = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
-      return apiResponse.successResponseWithData(
-        res,
-        "Created successfully",
-        createdItem
-      );
+      const quizes = [];
+      
+    if(req?.files?.option1 && req.files.option1.length > 0){
+      let d = {
+        answer: questions[0].answer,
+        answer_image: req.files.option1[0].location,
+          correct_option: req.body.correct == 'option1' ? true : false,
+          quest_id: createdItem?._id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option2 && req.files.option2.length > 0){
+      let d = {
+        answer: questions[1].answer,
+        answer_image: req.files.option2[0].location,
+          correct_option: req.body.correct == 'option2' ? true : false,
+          quest_id: createdItem?._id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option3 && req.files.option3.length > 0){
+      let d = {
+        answer: questions[2].answer,
+        answer_image: req.files.option3[0].location,
+          correct_option: req.body.correct == 'option3' ? true : false,
+          quest_id: createdItem?._id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option4 && req.files.option4.length > 0){
+      let d = {
+        answer: questions[3].answer,
+        answer_image: req.files.option4[0].location,
+          correct_option: req.body.correct == 'option4' ? true : false,
+          quest_id: createdItem?._id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option5 && req.files.option5.length > 0){
+      let d = {
+        answer: questions[4].answer,
+        answer_image: req.files.option5[0].location,
+          correct_option: req.body.correct == 'option5' ? true : false,
+          quest_id: createdItem?._id
+      }
+      quizes.push(d);
+    }
+    QuestQuizModel.insertMany(quizes)
+      .then(function () {
+
+        return apiResponse.successResponseWithData(
+          res,
+          "Created successfully"
+        );
+      });
+      // return apiResponse.successResponseWithData(
+      //   res,
+      //   "Created successfully",
+      //   createdItem
+      // );
     });
   } catch (err) {
     logger.error(err);
@@ -71,6 +129,7 @@ const updateQuestData = async (req, res, next) => {
       );
     }
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    itemDetails.quest_image = req.files['quest_file'] ? req.files['quest_file'][0].location : ""
     const updatedAdmin = await QuestModel.findByIdAndUpdate(
       req.params.id,
       itemDetails,
@@ -87,10 +146,65 @@ const updateQuestData = async (req, res, next) => {
       }
   
   
-      return apiResponse.successResponse(
-        res,
-        "Quest Updated"
-      );
+      await QuestQuizModel.deleteMany({quest_id: new ObjectId(req.params.id)});
+    if(req?.files?.option1 && req.files.option1.length > 0){
+      let d = {
+        answer: questions[0].answer,
+        answer_image: req.files.option1[0].location,
+          correct_option: req.body.correct == 'option1' ? true : false,
+          quest_id: req.params.id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option2 && req.files.option2.length > 0){
+      let d = {
+        answer: questions[1].answer,
+        answer_image: req.files.option2[0].location,
+          correct_option: req.body.correct == 'option2' ? true : false,
+          quest_id: req.params.id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option3 && req.files.option3.length > 0){
+      let d = {
+        answer: questions[2].answer,
+        answer_image: req.files.option3[0].location,
+          correct_option: req.body.correct == 'option3' ? true : false,
+          quest_id: req.params.id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option4 && req.files.option4.length > 0){
+      let d = {
+        answer: questions[3].answer,
+        answer_image: req.files.option4[0].location,
+          correct_option: req.body.correct == 'option4' ? true : false,
+          quest_id: req.params.id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option5 && req.files.option5.length > 0){
+      let d = {
+        answer: questions[4].answer,
+        answer_image: req.files.option5[0].location,
+          correct_option: req.body.correct == 'option5' ? true : false,
+          quest_id: req.params.id
+      }
+      quizes.push(d);
+    }
+    QuestQuizModel.insertMany(quizes)
+      .then(function () {
+
+        return apiResponse.successResponseWithData(
+          res,
+          "updated successfully"
+        );
+      });
+      // return apiResponse.successResponseWithData(
+      //   res,
+      //   "Created successfully",
+      //   createdItem
+      // );
   } catch (err) {
     logger.error(err);
     next(err);
@@ -106,7 +220,48 @@ const createQuestQuiz = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    QuestQuizModel.insertMany(req.body)
+    const quizes = [];
+    if(req?.files?.option1 && req.files.option1.length > 0){
+      let d = {
+        answer_image: req.files.option1[0].location,
+          correct_option: req.body.correct == 'option1' ? true : false,
+          quest_id: req.body?.quest_id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option2 && req.files.option2.length > 0){
+      let d = {
+        answer_image: req.files.option2[0].location,
+          correct_option: req.body.correct == 'option2' ? true : false,
+          quest_id: req.body?.quest_id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option3 && req.files.option3.length > 0){
+      let d = {
+        answer_image: req.files.option3[0].location,
+          correct_option: req.body.correct == 'option3' ? true : false,
+          quest_id: req.body?.quest_id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option4 && req.files.option4.length > 0){
+      let d = {
+        answer_image: req.files.option4[0].location,
+          correct_option: req.body.correct == 'option4' ? true : false,
+          quest_id: req.body?.quest_id
+      }
+      quizes.push(d);
+    }
+    if(req?.files?.option5 && req.files.option5.length > 0){
+      let d = {
+        answer_image: req.files.option5[0].location,
+          correct_option: req.body.correct == 'option5' ? true : false,
+          quest_id: req.body?.quest_id
+      }
+      quizes.push(d);
+    }
+    QuestQuizModel.insertMany(quizes)
       .then(function () {
 
         return apiResponse.successResponseWithData(
@@ -129,7 +284,7 @@ const updateQuestQuiz = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    await QuestQuizModel.deleteMany({quest_id: new ObjectId(req.params.id)});
+   
     QuestQuizModel.insertMany(req.body)
       .then(function () {
         return apiResponse.successResponseWithData(
