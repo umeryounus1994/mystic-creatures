@@ -129,7 +129,8 @@ const updateQuestData = async (req, res, next) => {
       );
     }
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
-    itemDetails.quest_image = req.files['quest_file'] ? req.files['quest_file'][0].location : ""
+    itemDetails.quest_image = req.files['quest_file'] ? req.files['quest_file'][0].location : "";
+    var questions = JSON.parse(req.body.questions);
     const updatedAdmin = await QuestModel.findByIdAndUpdate(
       req.params.id,
       itemDetails,
@@ -147,6 +148,7 @@ const updateQuestData = async (req, res, next) => {
   
   
       await QuestQuizModel.deleteMany({quest_id: new ObjectId(req.params.id)});
+      var quizes = [];
     if(req?.files?.option1 && req.files.option1.length > 0){
       let d = {
         answer: questions[0].answer,
@@ -155,6 +157,17 @@ const updateQuestData = async (req, res, next) => {
           quest_id: req.params.id
       }
       quizes.push(d);
+    } else {
+      let d = {
+        answer: questions[0].answer,
+        answer_image: questions[0].answer_image,
+          correct_option: req.body.correct == 'option1' ? true : false,
+          quest_id: req.params.id
+      }
+      if(questions[0] != undefined){
+        quizes.push(d);
+      }
+      
     }
     if(req?.files?.option2 && req.files.option2.length > 0){
       let d = {
@@ -164,6 +177,16 @@ const updateQuestData = async (req, res, next) => {
           quest_id: req.params.id
       }
       quizes.push(d);
+    } else {
+      let d = {
+        answer: questions[1].answer,
+        answer_image: questions[1].answer_image,
+          correct_option: req.body.correct == 'option2' ? true : false,
+          quest_id: req.params.id
+      }
+      if(questions[1] != undefined){
+        quizes.push(d);
+      }
     }
     if(req?.files?.option3 && req.files.option3.length > 0){
       let d = {
@@ -173,15 +196,35 @@ const updateQuestData = async (req, res, next) => {
           quest_id: req.params.id
       }
       quizes.push(d);
+    } else {
+      let d = {
+        answer: questions[2]?.answer,
+        answer_image: questions[2]?.answer_image,
+          correct_option: req.body.correct == 'option3' ? true : false,
+          quest_id: req.params.id
+      }
+      if(questions[2] != undefined){
+        quizes.push(d);
+      }
     }
     if(req?.files?.option4 && req.files.option4.length > 0){
       let d = {
-        answer: questions[3].answer,
+        answer: questions[3]?.answer,
         answer_image: req.files.option4[0].location,
           correct_option: req.body.correct == 'option4' ? true : false,
           quest_id: req.params.id
       }
       quizes.push(d);
+    } else {
+      let d = {
+        answer: questions[3]?.answer,
+        answer_image: questions[3]?.answer_image,
+          correct_option: req.body.correct == 'option4' ? true : false,
+          quest_id: req.params.id
+      }
+      if(questions[3] != undefined){
+        quizes.push(d);
+      }
     }
     if(req?.files?.option5 && req.files.option5.length > 0){
       let d = {
@@ -191,6 +234,16 @@ const updateQuestData = async (req, res, next) => {
           quest_id: req.params.id
       }
       quizes.push(d);
+    } else {
+      let d = {
+        answer: questions[4]?.answer,
+        answer_image: questions[4]?.answer_image,
+          correct_option: req.body.correct == 'option5' ? true : false,
+          quest_id: req.params.id
+      }
+      if(questions[4] != undefined){
+        quizes.push(d);
+      }
     }
     QuestQuizModel.insertMany(quizes)
       .then(function () {

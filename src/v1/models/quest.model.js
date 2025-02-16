@@ -15,7 +15,7 @@ const questSchema = new mongoose.Schema(
         quest_image: {type: String},
         quest_type: {       
             type: String,
-            enum: ["simple", "image"],
+            enum: ["simple", "image","video"],
             default: "simple",},
         mythica_ID: {  
             type: String,

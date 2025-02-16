@@ -70,3 +70,8 @@
 [INFO] user login success
 [ERROR] SyntaxError: Unexpected token o in JSON at position 1
 [ERROR] TypeError: req.body.questions.forEach is not a function
+[ERROR] ReferenceError: questions is not defined
+[ERROR] ReferenceError: quizes is not defined
+[ERROR] TypeError: Cannot read properties of undefined (reading 'answer')
+[ERROR] TypeError: Cannot read properties of undefined (reading 'answer')
+[ERROR] TypeError: Cannot read properties of undefined (reading 'answer')
