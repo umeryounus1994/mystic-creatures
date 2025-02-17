@@ -292,6 +292,10 @@ const updateUser = async (req, res, next) => {
     if (req.body.password) {
       req.body.password = await hashPassord({ password: req.body.password });
     }
+    if(req.file.location){
+      req.body.image = req?.file?.location;
+    }
+   
 
     // update user profile
     const updatedUser = await UserModel.findByIdAndUpdate(

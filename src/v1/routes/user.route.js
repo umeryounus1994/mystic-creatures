@@ -47,9 +47,10 @@ router.get(
   checkUserAuth,
   userController.purhasePackage
 );
-router.patch(
-  "/:id",
+router.post(
+  "/updateprofile/:id",
   checkAuthOrigins,
+  mediaUpload.single("picture"),
   userController.updateUser
 );
 router.post(
