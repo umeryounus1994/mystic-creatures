@@ -49,7 +49,7 @@ router.get(
 );
 router.post(
   "/updateprofile/:id",
-  checkAuthOrigins,
+  checkUserAuth,
   mediaUpload.single("picture"),
   userController.updateUser
 );
