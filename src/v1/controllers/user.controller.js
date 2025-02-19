@@ -30,7 +30,6 @@ const logger = require('../../../middlewares/logger');
 
 const createUser = async (req, res, next) => {
   try {
-    req.body.image = req?.file?.location || "";
     const { ...itemDetails } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -292,9 +291,9 @@ const updateUser = async (req, res, next) => {
     if (req.body.password) {
       req.body.password = await hashPassord({ password: req.body.password });
     }
-    if(req.file.location){
-      req.body.image = req?.file?.location;
-    }
+    // if(req.file.location){
+    //   req.body.image = req?.file?.location;
+    // }
    
 
     // update user profile

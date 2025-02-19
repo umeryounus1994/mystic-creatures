@@ -15,7 +15,6 @@ const {
 
 router.post(
   "/signup",
-  mediaUpload.single("picture"),
   userController.createUser
 );
 router.post(
@@ -50,7 +49,6 @@ router.get(
 router.post(
   "/updateprofile/:id",
   checkUserAuth,
-  mediaUpload.single("picture"),
   userController.updateUser
 );
 router.post(
