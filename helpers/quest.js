@@ -74,7 +74,9 @@ module.exports.getAllPlayerQuests = async function (data) {
                         quest_progress: element?.submitted_answer ? 1 : 0,
                         created_at: findQuest.created_at
                     }
-                    result.push(el)
+                    if(findQuest.status == 'active'){
+                        result.push(el)
+                    }
                     resolvve(result);
                 })
             )
@@ -91,7 +93,7 @@ module.exports.getAllQuestGroups = async function (data) {
         data.forEach(element => {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
-                    var findQuests = await QuestModel.find({quest_group_id: new ObjectID(element._id)})
+                    var findQuests = await QuestModel.find({quest_group_id: new ObjectID(element._id), status: 'active'})
                     .populate([
                         {
                             path: 'mythica_ID', select: {
