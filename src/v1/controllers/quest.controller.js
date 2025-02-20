@@ -393,7 +393,7 @@ const getQuestsSubAdmin = async (req, res, next) => {
 const unlockQuestForUser = async (req, res, next) => {
   try {
     const qr_code = req.body.qr_code;
-    const quest = await QuestModel.findOne({ qr_code: qr_code })
+    const quest = await QuestModel.findOne({ qr_code: qr_code, status: 'active' })
     .populate([
       {
           path: 'mythica_ID', select: {
@@ -416,6 +416,8 @@ const unlockQuestForUser = async (req, res, next) => {
       );
     }
     const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: { $in: ['unlocked', 'inprogress'] } });
+
+    
     if(findDraftQuests.length > 0){
       return apiResponse.ErrorResponse(
         res,
@@ -623,12 +625,34 @@ const getQuestAnalytics = async (req, res, next) => {
 
 const deleteQuest = async (req, res, next) => {
   try {
-    await softDelete({
-      req,
+    
+    const findDraftQuests = await UserQuestModel.find({quest_id: new ObjectId(req.params.id), status: { $in: ['unlocked', 'inprogress'] } });
+    if (findDraftQuests.length > 0) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest is currently unlocked/ inprogress and can not be deleted"
+      );
+    }
+    const updatedAdmin = await QuestModel.findByIdAndUpdate(
+      req.params.id,
+      {status: 'deleted'},
+      {
+        new: true,
+      }
+    );
+    // Something went wrong kindly try again later
+    if (!updatedAdmin) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Something went wrong, Kindly try again later"
+      );
+    }
+
+
+    return apiResponse.successResponse(
       res,
-      Model: QuestModel,
-      itemName: "Quest",
-    });
+      "Quest Deleted"
+    );
   } catch (err) {
     logger.error(err);
     next(err);
