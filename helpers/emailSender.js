@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 const sgMail = require("@sendgrid/mail");
 
-const sgMailApiKey = process.env.SENDGRID_API_KEY;
+const sgMailApiKey = "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";
 sgMail.setApiKey(sgMailApiKey);
 
 const transporter = nodemailer.createTransport({
