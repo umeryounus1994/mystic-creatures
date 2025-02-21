@@ -179,8 +179,8 @@ const updateQuestData = async (req, res, next) => {
       quizes.push(d);
     } else {
       let d = {
-        answer: questions[1].answer,
-        answer_image: questions[1].answer_image,
+        answer: questions[1]?.answer,
+        answer_image: questions[1]?.answer_image,
           correct_option: req.body.correct == 'option2' ? true : false,
           quest_id: req.params.id
       }
