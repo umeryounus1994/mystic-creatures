@@ -416,14 +416,18 @@ const unlockQuestForUser = async (req, res, next) => {
       );
     }
     const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: { $in: ['unlocked', 'inprogress'] } });
-
-    
     if(findDraftQuests.length > 0){
-      return apiResponse.ErrorResponse(
-        res,
-        "Complete previous quest to unlock new"
-      );
+      const findQust = await QuestModel.findOne({ _id: new ObjectId(findDraftQuests[0]._id) });
+      if(findQust & findQust?.status != "deleted"){
+          return apiResponse.ErrorResponse(
+            res,
+            "Complete previous quest to unlock new"
+          );
+      }
     }
+ 
+    
+ 
     const itemToAdd = {
       user_id: req.user.id,
       quest_id: quest?._id
@@ -451,6 +455,8 @@ const unlockQuestForUser = async (req, res, next) => {
         deleted: quest?.deleted,
         created_at: quest?.created_at,
         updated_at: quest?.updated_at,
+        quest_type: quest?.quest_type
+
       }
       const responsedata = {
         quest: questd,
@@ -475,7 +481,7 @@ const getPlayerQuests = async (req, res, next) => {
     const user_id = req.user.id;
     let quests = null;
     if(status == "all"){
-      quests = await UserQuestModel.find({user_id: new ObjectId(user_id), status: 'active'}).sort({ created_at: -1 })
+      quests = await UserQuestModel.find({user_id: new ObjectId(user_id)}).sort({ created_at: -1 })
     } else {
       quests = await UserQuestModel.find({user_id: new ObjectId(user_id),status: status}).sort({ created_at: -1 })
     }
