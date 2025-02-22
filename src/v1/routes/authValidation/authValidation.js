@@ -4,9 +4,9 @@ const apiResponse = require("../../../../helpers/apiResponse");
 // Validation rules
 const passwordValidation = [
   body("password")
-    .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/)
+    .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{5,}$/)
     .withMessage(
-      "Password must contain at least one number, one uppercase letter, one lowercase letter, and one special character, and be at least 8 characters long"
+      "Password must contain at least one number, one uppercase letter, one lowercase letter, and one special character, and be at least 5 characters long"
     ),
 ];
 
@@ -19,7 +19,7 @@ const validateRequest = (req, res, next) => {
 
   return apiResponse.validationErrorWithData(
     res,
-    "Password validation failed",
+    "Password must contain at least one number, one uppercase letter, one lowercase letter, and one special character, and be at least 5 characters long",
     "Invalid Data"
   );
 };
