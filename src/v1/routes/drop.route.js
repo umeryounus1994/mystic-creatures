@@ -38,6 +38,7 @@ router.post(
 );
 
 router.get("/get_all", dropController.getDrops);
+router.get("/get_all_subadmin", checkAuthOrigins, dropController.getDropsSubAdmin);
 router.get("/get_all_rewards", dropController.getDropsReward);
 router.get("/get_all_user_rewards", checkUserAuth, dropController.getUserDropsReward);
 router.post("/get_all_user_drops", checkUserAuth,dropController.getUserDrops);

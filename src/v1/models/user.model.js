@@ -51,6 +51,7 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "subadmin"],
       default: "user"
     },
+    permissions: [String],
     allowed_quest: { type: Number, default: 0 },
     allowed_hunt: { type: Number, default: 0 },
   },

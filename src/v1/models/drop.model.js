@@ -38,6 +38,10 @@ const dropSchema = new mongoose.Schema(
             enum: ["active", "deleted"],
             default: "active",
         },
+        created_by: {  
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'User'
+         },
     },
     {
         timestamps: {

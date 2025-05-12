@@ -35,7 +35,8 @@ const createMissionAdmin = async (req, res, next) => {
       mission_start_date: req.body?.mission_start_date,
       mission_end_date: req.body?.mission_end_date,
       mission_location: location,
-      reward_file: req.files['reward'] ? req.files['reward'][0].location : ""
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : "",
+      created_by: req.user.id
     };
     const createdItem = new MissionModel(missiondata);
 
@@ -182,6 +183,7 @@ const createMission = async (req, res, next) => {
     }
     var location = { type: 'Point', coordinates: [req.body?.mission_latitude, req.body?.mission_longitude] };
     itemDetails.mission_location = location;
+    itemDetails.created_by = req.user.id
     const createdItem = new MissionModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -323,6 +325,20 @@ const createQuizOptions = async (req, res, next) => {
       );
     });
 
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+const getMissionsSubAdmin = async (req, res, next) => {
+  try {
+    const missions = await MissionModel.find({created_by: new ObjectId(req.user.id), status: 'active'}).sort({ created_at: -1 })
+    .populate("mythica_ID");
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: await missionHelper.getAllAdminMissions(missions)
+    })
   } catch (err) {
     logger.error(err);
     next(err);
@@ -939,5 +955,6 @@ module.exports = {
   createMissionAdmin,
   removeMission,
   updateMission,
-  updateMissionAdmin
+  updateMissionAdmin,
+  getMissionsSubAdmin
 };

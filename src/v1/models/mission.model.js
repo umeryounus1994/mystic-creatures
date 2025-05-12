@@ -38,6 +38,10 @@ const missionSchema = new mongoose.Schema(
             enum: ["draft","active", "deleted"],
             default: "draft",
         },
+        created_by: {  
+            type: String,
+            type: mongoose.Schema.Types.ObjectId, ref: 'User'
+         },
     },
     {
         timestamps: {

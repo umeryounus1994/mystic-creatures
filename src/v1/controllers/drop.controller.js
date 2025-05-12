@@ -18,6 +18,7 @@ const createDrop = async (req, res, next) => {
     var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     itemDetails.location = location;
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    itemDetails.created_by = req.user.id
     const createdItem = new DropModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -87,6 +88,27 @@ const createDropQuiz = async (req, res, next) => {
 const getDrops = async (req, res, next) => {
   try {
     const drops = await DropModel.find({status: 'active'})
+    .populate([
+      {
+          path: 'mythica_ID', select: { creature_name: 1 }
+      },
+      {
+          path: 'mythica_reward', select: { creature_name: 1 }
+      }
+    ]);
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: drops
+    })
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+const getDropsSubAdmin = async (req, res, next) => {
+  try {
+    const drops = await DropModel.find({created_by: new ObjectId(req.user.id), status: 'active'})
     .populate([
       {
           path: 'mythica_ID', select: { creature_name: 1 }
@@ -426,5 +448,6 @@ module.exports = {
   createDropReward,
   getDropsReward,
   updateDropReward,
-  getUserDropsReward
+  getUserDropsReward,
+  getDropsSubAdmin
 };

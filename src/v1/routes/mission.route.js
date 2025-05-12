@@ -66,6 +66,7 @@ router.post(
 );
 router.get("/get_all_admin", checkAdminUserAuth,missionController.getAdminMissions);
 router.post("/get_all", checkAuthOrigins,missionController.getMissions);
+router.post("/get_all_subadmin", checkAuthOrigins,missionController.getMissionsSubAdmin);
 router.post("/get_all_user_missions/:status", checkUserAuth, missionController.getAllUserMissions);
 router.get("/get_mission_by_id/:id", checkAuthOrigins, missionController.getMissionById);
 router.get("/unlock_mission/:id", checkUserAuth, missionController.startMission);

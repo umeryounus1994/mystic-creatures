@@ -150,7 +150,6 @@ const createQuest = async (req, res, next) => {
         quizes.push(d);
       }
     }
-    console.log(quizes);
     
     QuestQuizModel.insertMany(quizes)
       .then(function () {
