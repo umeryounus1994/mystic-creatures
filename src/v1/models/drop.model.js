@@ -38,6 +38,11 @@ const dropSchema = new mongoose.Schema(
             enum: ["active", "deleted"],
             default: "active",
         },
+        drop_type: {       
+            type: String,
+            enum: ["simple", "image","video"],
+            default: "simple"
+        },
         created_by: {  
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'User'

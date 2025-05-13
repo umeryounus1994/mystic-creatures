@@ -18,7 +18,8 @@ const createDrop = async (req, res, next) => {
     var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     itemDetails.location = location;
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
-    itemDetails.created_by = req.user.id
+    itemDetails.created_by = req.user.id;
+    var questions = JSON.parse(req.body.questions);
     const createdItem = new DropModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -28,11 +29,138 @@ const createDrop = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
-      return apiResponse.successResponseWithData(
-        res,
-        "Created successfully",
-        createdItem
-      );
+      const quizes = [];
+      if(quizes.length > 0){
+        if(req?.files?.option1 && req.files.option1.length > 0){
+          let d = {
+            answer: questions[0].answer,
+            answer_image: req.files.option1[0].location,
+              correct_option: questions[0]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+        else {
+          let d = {
+            answer: questions[0]?.answer,
+            answer_image: questions[0]?.answer_image,
+              correct_option: questions[0]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          if(questions[0] != undefined){
+            quizes.push(d);
+          }
+        }
+        if(req?.files?.option2 && req.files.option2.length > 0){
+          let d = {
+            answer: questions[1].answer,
+            answer_image: req.files.option2[0].location,
+              correct_option: questions[1]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+        else {
+          let d = {
+            answer: questions[1]?.answer,
+            answer_image: questions[1]?.answer_image,
+              correct_option: questions[1]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          if(questions[1] != undefined){
+            quizes.push(d);
+          }
+        }
+        if(req?.files?.option3 && req.files.option3.length > 0){
+          let d = {
+            answer: questions[2].answer,
+            answer_image: req.files.option3[0].location,
+              correct_option: questions[2]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          quizes.push(d);
+        } else {
+          let d = {
+            answer: questions[2]?.answer,
+            answer_image: questions[2]?.answer_image,
+              correct_option: questions[2]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          if(questions[2] != undefined){
+            quizes.push(d);
+          }
+        }
+        if(req?.files?.option4 && req.files.option4.length > 0){
+          let d = {
+            answer: questions[3].answer,
+            answer_image: req.files.option4[0].location,
+              correct_option: questions[3]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          quizes.push(d);
+        } else {
+          let d = {
+            answer: questions[3]?.answer,
+            answer_image: questions[3]?.answer_image,
+              correct_option: questions[3]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          if(questions[3] != undefined){
+            quizes.push(d);
+          }
+        }
+        if(req?.files?.option5 && req.files.option5.length > 0){
+          let d = {
+            answer: questions[4].answer,
+            answer_image: req.files.option5[0].location,
+              correct_option: questions[4]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          quizes.push(d);
+        } else {
+          let d = {
+            answer: questions[4]?.answer,
+            answer_image: questions[4]?.answer_image,
+              correct_option: questions[4]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          if(questions[4] != undefined){
+            quizes.push(d);
+          }
+        }
+        if(req?.files?.option6 && req.files.option6.length > 0){
+          let d = {
+            answer: questions[5].answer,
+            answer_image: req.files.option6[0].location,
+              correct_option: questions[5]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          quizes.push(d);
+        } else {
+          let d = {
+            answer: questions[5]?.answer,
+            answer_image: questions[5]?.answer_image,
+              correct_option: questions[4]?.correct_option == 'true' ? true : false,
+              drop_id: createdItem?._id
+          }
+          if(questions[5] != undefined){
+            quizes.push(d);
+          }
+        }
+        DropQuizModel.insertMany(quizes)
+        .then(function () {
+  
+          return apiResponse.successResponseWithData(
+            res,
+            "Created successfully"
+          );
+        });
+      } else {
+        return apiResponse.successResponseWithData(
+          res,
+          "Created successfully"
+        );
+      }
     });
   } catch (err) {
     logger.error(err);

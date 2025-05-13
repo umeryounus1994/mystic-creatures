@@ -26,6 +26,7 @@ module.exports.getAllDrops = async function (data, user_id, latitude, longitude)
                         var el = {
                             id: element._id,
                             drop_name: element.drop_name,
+                            drop_type: element.drop_type ? element.drop_type : "simple",
                             location: element.location,
                             drop_description: element.drop_description,
                             reward_file: element.reward_file,
