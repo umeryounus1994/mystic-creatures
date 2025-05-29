@@ -19,6 +19,16 @@ router.post(
   checkAdminUserAuth,
   mediaUpload.fields([{
     name: 'reward', maxCount: 1
+  }, {
+    name: 'option1', maxCount: 1
+  }, {
+    name: 'option2', maxCount: 1
+  },{
+    name: 'option3', maxCount: 1
+  },{
+    name: 'option4', maxCount: 1
+  }, {
+    name: 'option5', maxCount: 1
   }]),
   dropController.createDrop
 );
