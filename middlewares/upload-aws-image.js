@@ -3,8 +3,10 @@ const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 const multerS3 = require("multer-s3");
 const { randomNumber } = require("../utils/randomNumber");
+const path = require('path');
 
 const spacesEndpoint = new aws.Endpoint(process.env.AWS_END_POINT);
+
 // aws.config.update({
 
 // });
@@ -21,8 +23,9 @@ module.exports = multer({
       cb(null, { fieldName: file.fieldname });
     },
     key(req, file, cb) {
-      const fileName = `${uuidv4()}_${randomNumber(6)}`;
-      cb(null, `_${Date.now().toString()}_${fileName}`);
+      const fileExtension = path.extname(file.originalname); // get .jpg, .png, etc.
+      const fileName = `${uuidv4()}_${randomNumber(6)}${fileExtension}`;
+      cb(null, `_${Date.now()}_${fileName}`);
     },
   })
 });
