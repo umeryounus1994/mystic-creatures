@@ -30,7 +30,7 @@ const createDrop = async (req, res, next) => {
         );
       }
       const quizes = [];
-      if(quizes.length > 0){
+      if(questions.length > 0){
         if(req?.files?.option1 && req.files.option1.length > 0){
           let d = {
             answer: questions[0].answer,
