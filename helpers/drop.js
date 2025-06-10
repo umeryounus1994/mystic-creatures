@@ -20,7 +20,7 @@ module.exports.getAllDrops = async function (data, user_id, latitude, longitude)
                         longitude: longitude
                     }
                     const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 11) {
+                    if (locationDistance < 70) {
                         const userDrops = await UserDropModel.findOne({ drop_id: new ObjectID(element?._id), user_id: new ObjectID(user_id) });
                         var findDropQuiz = await DropQuizModel.find({drop_id: new ObjectID(element._id)})
                         var el = {

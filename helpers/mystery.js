@@ -19,7 +19,7 @@ module.exports.getAllPictureMystery = async function (data, latitude, longitude)
                         longitude: longitude
                     }
                     const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 11) {
+                    if (locationDistance < 70) {
                         var findQuestQuiz = await PictureMysteryQuizModel.find({picture_mystery_id: new ObjectID(element._id)})
                         var el ={}
                         var el ={
@@ -66,7 +66,7 @@ module.exports.getAllUserMysteries = async function (data, latitude, longitude) 
                         longitude: longitude
                     }
                     const locationDistance = haversine(userLocation, endLocation, { unit: 'km' })
-                    if (locationDistance < 11) {
+                    if (locationDistance < 70) {
                         var findQuestQuiz = await PictureMysteryQuizModel.find({picture_mystery_id: new ObjectID(element._id)})
                         var el ={}
                         var el ={
