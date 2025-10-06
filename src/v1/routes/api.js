@@ -13,6 +13,7 @@ const friendRoute = require("./friend.route");
 const groupRoute = require("./group.route");
 const pictureRoute = require("./picturemystery.route");
 const mysteryBagRoute = require("./mysterybag.route");
+const skyGiftRoute = require("./skygifts.route");
 
 const filehandlingRoute = require("./filehandling.route");
 
@@ -30,5 +31,6 @@ app.use("/group/", groupRoute);
 app.use("/pictureMystery/", pictureRoute);
 app.use("/fileupload/", filehandlingRoute);
 app.use("/mysteryBag/", mysteryBagRoute);
+app.use("/skyGift/", skyGiftRoute);
 
 module.exports = app;

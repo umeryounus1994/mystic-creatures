@@ -26,6 +26,7 @@ const userHelper = require("../../../helpers/user");
 const bcrypt = require("bcrypt");
 const moment = require('moment');
 const logger = require('../../../middlewares/logger');
+const userskygiftsModel = require("../models/userskygifts.model");
 
 
 const createUser = async (req, res, next) => {
@@ -156,7 +157,8 @@ const getUser = async (req, res, next) => {
       current_xp: 0,
       current_level: lastLevel?.level || 1,
       xp_needed: 0,
-      drop_rewards: []
+      drop_rewards: [],
+      skyGiftRewards: []
     };
     let dummyTotalXp = 0;
     transactions.forEach(element => {
@@ -221,11 +223,24 @@ const getUser = async (req, res, next) => {
         }
       ]).
     sort({ created_at: -1 });
+    const skyGifts = await userskygiftsModel.find({user_id: new ObjectId(req.user.id)}).populate([
+        {
+            path: 'sky_gift_id',
+            select: { gift_name: 1, reward_file: 1 }
+        }
+      ]).
+    sort({ created_at: -1 });
     drops.forEach(d => {
       user_data.drop_rewards.push({
         reward_file: d?.reward_id?.reward_file,
         reward_crypes: d?.reward_id?.reward_crypes,
         reward_limit: d?.reward_id?.reward_name
+      });
+    })
+     skyGifts.forEach(d => {
+      user_data.skyGiftRewards.push({
+        reward_file: d?.reward_id?.reward_file,
+        gift_name: d?.sky_gift_id?.gift_name
       });
     })
    
