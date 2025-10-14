@@ -18,8 +18,7 @@ const mysteryBagSchema = new mongoose.Schema(
     {
         bag_title: { type: String, required: true },
         bag_description: { type: String },
-        clue_text: { type: String },
-        reward_text: { type: String },
+        drawing_file: { type: String },
         reward_file: { type: String }, // for item rewards
         bag_type: {
             type: String,

@@ -15,6 +15,7 @@ const createMysteryBag = async (req, res, next) => {
         
         bagDetails.location = location;
         bagDetails.reward_file = req.files['reward_file'] ? req.files['reward_file'][0].location : "";
+        bagDetails.drawing_file = req.files['drawing_file'] ? req.files['drawing_file'][0].location : "";
         bagDetails.created_by = req.user.id;
         
         const createdBag = new MysteryBagModel(bagDetails);
@@ -110,8 +111,7 @@ const interactWithMysteryBag = async (req, res, next) => {
             `Mystery bag ${status} successfully`,
             {
                 bag_title: mysteryBag.bag_title,
-                clue_text: mysteryBag.clue_text,
-                reward_text: mysteryBag.reward_text,
+                drawing_file: mysteryBag.drawing_file,
                 reward_file: mysteryBag.reward_file,
                 action: status
             }
@@ -164,6 +164,9 @@ const editMysteryBag = async (req, res, next) => {
         // Update reward file if new one uploaded
         if (req.files && req.files['reward_file']) {
             bagDetails.reward_file = req.files['reward_file'][0].location;
+        }
+         if (req.files && req.files['drawing_file']) {
+            bagDetails.drawing_file = req.files['drawing_file'][0].location;
         }
         
         const updatedBag = await MysteryBagModel.findByIdAndUpdate(
@@ -267,8 +270,7 @@ const getSingleMysteryBag = async (req, res, next) => {
             id: mysteryBag._id,
             bag_title: mysteryBag.bag_title,
             bag_description: mysteryBag.bag_description,
-            clue_text: mysteryBag.clue_text,
-            reward_text: mysteryBag.reward_text,
+            drawing_file: mysteryBag.drawing_file,
             reward_file: mysteryBag.reward_file,
             bag_type: mysteryBag.bag_type,
             location: mysteryBag.location,
@@ -324,8 +326,7 @@ const getUserCollectedMysteryBags = async (req, res, next) => {
                 id: interaction.mystery_bag_id._id,
                 bag_title: interaction.mystery_bag_id.bag_title,
                 bag_description: interaction.mystery_bag_id.bag_description,
-                clue_text: interaction.mystery_bag_id.clue_text,
-                reward_text: interaction.mystery_bag_id.reward_text,
+                drawing_file: interaction.mystery_bag_id.drawing_file,
                 reward_file: interaction.mystery_bag_id.reward_file,
                 bag_type: interaction.mystery_bag_id.bag_type,
                 location: interaction.mystery_bag_id.location,
