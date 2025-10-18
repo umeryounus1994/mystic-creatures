@@ -23,6 +23,15 @@ exports.successResponseWithDataStats = (res, message, data, stats) => {
   };
   return res.status(200).json(resData);
 };
+exports.successResponseWithDataClues = (res, message, data, clues) => {
+  const resData = {
+    success: true,
+    message,
+    data,
+    clues
+  };
+  return res.status(200).json(resData);
+};
 
 exports.successResponseWithPagination = (res, page, total, perPage, data) => {
   const resData = {

@@ -17,6 +17,14 @@ const userMysteryBagSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: true
+        },
+        submitted_answer: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'MysteryBagQuiz'
+        },
+        is_correct: {
+            type: Boolean,
+            default: null
         }
     },
     {

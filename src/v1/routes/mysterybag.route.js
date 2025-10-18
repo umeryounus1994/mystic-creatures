@@ -11,7 +11,8 @@ const { checkAuthOrigins } = require("../../../middlewares/authMiddlewareGeneric
 router.post(
     "/create",
     checkAuthOrigins,
-    mediaUpload.fields([{ name: 'reward_file', maxCount: 1 },
+    mediaUpload.fields([
+        { name: 'reward_file', maxCount: 1 },
         { name: 'drawing_file', maxCount: 1 }
     ]),
     mysteryBagController.createMysteryBag
@@ -38,7 +39,8 @@ router.get(
 router.post(
     "/edit/:id", 
     checkAdminUserAuth,
-    mediaUpload.fields([{ name: 'reward_file', maxCount: 1 },
+    mediaUpload.fields([
+        { name: 'reward_file', maxCount: 1 },
         { name: 'drawing_file', maxCount: 1 }
     ]),
     mysteryBagController.editMysteryBag

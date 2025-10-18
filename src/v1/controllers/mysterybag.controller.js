@@ -3,6 +3,7 @@ const UserMysteryBagModel = require("../models/usermysterybag.model");
 const apiResponse = require("../../../helpers/apiResponse");
 const { ObjectId } = require('mongodb');
 const mysteryBagHelper = require("../../../helpers/mysterybag");
+const MysteryBagQuizModel = require("../models/mysterybagquiz.model");
 
 const createMysteryBag = async (req, res, next) => {
     try {
@@ -17,6 +18,7 @@ const createMysteryBag = async (req, res, next) => {
         bagDetails.reward_file = req.files['reward_file'] ? req.files['reward_file'][0].location : "";
         bagDetails.drawing_file = req.files['drawing_file'] ? req.files['drawing_file'][0].location : "";
         bagDetails.created_by = req.user.id;
+        var questions = JSON.parse(req.body.questions);
         
         const createdBag = new MysteryBagModel(bagDetails);
         
@@ -27,11 +29,35 @@ const createMysteryBag = async (req, res, next) => {
                     "System went wrong, Kindly try again later"
                 );
             }
-            return apiResponse.successResponseWithData(
-                res,
-                "Mystery bag created successfully",
-                createdBag
-            );
+            
+            const quizes = [];
+            
+            questions.forEach(question => {
+                let d = {
+                    answer: question.answer,
+                    correct_option: question?.correct_option == 'true' ? true : false,
+                    mystery_bag_id: createdBag?._id 
+                }
+                quizes.push(d);
+            });
+            
+            if (quizes.length > 0) {
+                MysteryBagQuizModel.insertMany(quizes)
+                    .then(function () {
+                        return apiResponse.successResponseWithDataClues(
+                            res,
+                            "Mystery bag created successfully",
+                            createdBag,
+                            questions
+                        );
+                    });
+            } else {
+                return apiResponse.successResponseWithData(
+                    res,
+                    "Mystery bag created successfully",
+                    createdBag
+                );
+            }
         });
     } catch (err) {
         next(err);
@@ -75,6 +101,7 @@ const interactWithMysteryBag = async (req, res, next) => {
     try {
         const id = req.params.id;
         const action = req.body.action; // 'view' or 'collect'
+        const user_answer = req.body.user_answer;
         
         const mysteryBag = await MysteryBagModel.findOne({ _id: new ObjectId(id) });
         if (!mysteryBag) {
@@ -96,24 +123,47 @@ const interactWithMysteryBag = async (req, res, next) => {
             return apiResponse.ErrorResponse(res, "This mystery bag is view-only");
         }
         
-        const status = action === "collect" ? "collected" : "viewed";
+        let status = action === "collect" ? "collected" : "viewed";
+        let responseMessage = `Mystery bag ${status} successfully`;
+        let isCorrect = null;
+        
+        // Check answer if provided
+        if (user_answer) {
+            const correctOption = await MysteryBagQuizModel.findOne({  
+                mystery_bag_id: new ObjectId(id), 
+                correct_option: true 
+            });
+            
+            if (correctOption && correctOption._id.toString() === user_answer) {
+                status = "collected";
+                responseMessage = "Correct answer! Mystery bag collected successfully";
+                isCorrect = true;
+            } else {
+                status = "viewed";
+                responseMessage = "Wrong answer! You cannot attempt this mystery bag again";
+                isCorrect = false;
+            }
+        }
         
         const userInteraction = new UserMysteryBagModel({
             mystery_bag_id: id,
             user_id: req.user.id,
-            status: status
+            status: status,
+            submitted_answer: user_answer || null,
+            is_correct: isCorrect
         });
         
         await userInteraction.save();
         
         return apiResponse.successResponseWithData(
             res,
-            `Mystery bag ${status} successfully`,
+            responseMessage,
             {
                 bag_title: mysteryBag.bag_title,
                 drawing_file: mysteryBag.drawing_file,
                 reward_file: mysteryBag.reward_file,
-                action: status
+                action: status,
+                is_correct: isCorrect
             }
         );
     } catch (err) {
@@ -128,10 +178,22 @@ const getUserMysteryBags = async (req, res, next) => {
             status: 'active'
         }).sort({ created_at: -1 });
         
+        // Add quiz questions to each bag
+        const bagsWithQuiz = await Promise.all(userBags.map(async (bag) => {
+            const quizQuestions = await MysteryBagQuizModel.find({ 
+                mystery_bag_id: new ObjectId(bag._id) 
+            });
+            
+            return {
+                ...bag.toObject(),
+                clues: quizQuestions
+            };
+        }));
+        
         return apiResponse.successResponseWithData(
             res,
             "User mystery bags retrieved",
-            userBags
+            bagsWithQuiz
         );
     } catch (err) {
         next(err);
@@ -161,11 +223,11 @@ const editMysteryBag = async (req, res, next) => {
             };
         }
         
-        // Update reward file if new one uploaded
-        if (req.files && req.files['reward_file']) {
+        // Update files if new ones uploaded
+        if (req.files && req.files['reward_file']) { 
             bagDetails.reward_file = req.files['reward_file'][0].location;
         }
-         if (req.files && req.files['drawing_file']) {
+        if (req.files && req.files['drawing_file']) {
             bagDetails.drawing_file = req.files['drawing_file'][0].location;
         }
         
@@ -174,6 +236,29 @@ const editMysteryBag = async (req, res, next) => {
             bagDetails,
             { new: true }
         );
+        
+        // Handle quiz questions if provided
+        if (req.body.questions) {
+            var questions = JSON.parse(req.body.questions);
+            
+            // Delete existing quiz questions
+            await MysteryBagQuizModel.deleteMany({mystery_bag_id: new ObjectId(id)});
+            
+            const quizes = [];
+            
+            questions.forEach(question => {
+                let d = {
+                    answer: question.answer,
+                    correct_option: question?.correct_option == 'true' ? true : false,
+                    mystery_bag_id: id
+                }
+                quizes.push(d);
+            });
+            
+            if (quizes.length > 0) {
+                await MysteryBagQuizModel.insertMany(quizes);
+            }
+        }
         
         return apiResponse.successResponseWithData(
             res,
@@ -187,17 +272,26 @@ const editMysteryBag = async (req, res, next) => {
 
 const getAllMysteryBags = async (req, res, next) => {
     try {
-        
         const mysteryBags = await MysteryBagModel.find({ status: 'active' })
-            .sort({ created_at: -1 })
+            .sort({ created_at: -1 });
             
-        const total = await MysteryBagModel.countDocuments({ status: 'active' });
+        // Add quiz questions to each bag
+        const bagsWithQuiz = await Promise.all(mysteryBags.map(async (bag) => {
+            const quizQuestions = await MysteryBagQuizModel.find({ 
+                mystery_bag_id: new ObjectId(bag._id) 
+            });
+            
+            return {
+                ...bag.toObject(),
+                quiz: quizQuestions
+            };
+        }));
         
         return apiResponse.successResponseWithData(
             res,
             "Mystery bags retrieved successfully",
             {
-                bags: mysteryBags,
+                bags: bagsWithQuiz,
             }
         );
     } catch (err) {
@@ -266,6 +360,11 @@ const getSingleMysteryBag = async (req, res, next) => {
             user_id: new ObjectId(req.user.id) 
         });
         
+        // Get quiz questions
+        const quizQuestions = await MysteryBagQuizModel.find({ 
+            mystery_bag_id: new ObjectId(id) 
+        });
+        
         const bagData = {
             id: mysteryBag._id,
             bag_title: mysteryBag.bag_title,
@@ -278,7 +377,8 @@ const getSingleMysteryBag = async (req, res, next) => {
             created_by: mysteryBag.created_by?.username,
             created_at: mysteryBag.created_at,
             interaction_status: userInteraction ? userInteraction.status : null,
-            can_interact: !userInteraction
+            can_interact: !userInteraction,
+            clues: quizQuestions
         }; 
         
         return apiResponse.successResponseWithData(
@@ -293,7 +393,7 @@ const getSingleMysteryBag = async (req, res, next) => {
 
 const getUserCollectedMysteryBags = async (req, res, next) => { 
     try {
-        const status = req.params.status; // 'viewed', 'collected', or 'all'
+        const status = req.params.status;
         
         let query = { user_id: new ObjectId(req.user.id) };
         
@@ -318,21 +418,29 @@ const getUserCollectedMysteryBags = async (req, res, next) => {
             );
         }
         
-        const formattedData = userInteractions.map(interaction => ({
-            interaction_id: interaction._id,
-            interaction_status: interaction.status,
-            interaction_date: interaction.created_at,
-            mystery_bag: {
-                id: interaction.mystery_bag_id._id,
-                bag_title: interaction.mystery_bag_id.bag_title,
-                bag_description: interaction.mystery_bag_id.bag_description,
-                drawing_file: interaction.mystery_bag_id.drawing_file,
-                reward_file: interaction.mystery_bag_id.reward_file,
-                bag_type: interaction.mystery_bag_id.bag_type,
-                location: interaction.mystery_bag_id.location,
-                created_by: interaction.mystery_bag_id.created_by?.username,
-                created_at: interaction.mystery_bag_id.created_at
-            }
+        const formattedData = await Promise.all(userInteractions.map(async (interaction) => {
+            // Get quiz questions for each mystery bag
+            const quizQuestions = await MysteryBagQuizModel.find({ 
+                mystery_bag_id: new ObjectId(interaction.mystery_bag_id._id) 
+            });
+            
+            return {
+                interaction_id: interaction._id,
+                interaction_status: interaction.status,
+                interaction_date: interaction.created_at,
+                mystery_bag: {
+                    id: interaction.mystery_bag_id._id,
+                    bag_title: interaction.mystery_bag_id.bag_title,
+                    bag_description: interaction.mystery_bag_id.bag_description,
+                    drawing_file: interaction.mystery_bag_id.drawing_file,
+                    reward_file: interaction.mystery_bag_id.reward_file,
+                    bag_type: interaction.mystery_bag_id.bag_type,
+                    location: interaction.mystery_bag_id.location,
+                    created_by: interaction.mystery_bag_id.created_by?.username,
+                    created_at: interaction.mystery_bag_id.created_at,
+                    quiz: quizQuestions
+                }
+            };
         }));
         
         return apiResponse.successResponseWithData(
