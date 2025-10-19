@@ -17,5 +17,10 @@ module.exports = {
     camelcase: ['off'],
     'prefer-promise-reject-errors': 'off',
     'consistent-return': 'off',
+    'no-console': 'off',
+    'no-unused-vars': 'warn',
+    'no-var': 'off',
+    'vars-on-top': 'off',
+    'prefer-const': 'warn'
   },
 };

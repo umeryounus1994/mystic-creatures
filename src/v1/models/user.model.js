@@ -54,6 +54,40 @@ const userSchema = new mongoose.Schema(
     permissions: [String],
     allowed_quest: { type: Number, default: 0 },
     allowed_hunt: { type: Number, default: 0 },
+    user_role: {
+      type: String,
+      enum: ["family", "partner", "admin"],
+      default: "family"
+    },
+    partner_profile: {
+      business_name: String, 
+      business_description: String,
+      phone: String,
+      commission_rate: { type: Number, default: 15 },
+      bank_details: {
+        account_number: String,
+        routing_number: String,
+        account_holder: String
+      },
+      approval_status: {
+        type: String,
+        enum: ["pending", "approved", "rejected", "suspended"],
+        default: "pending"
+      },
+      documents: [String] // URLs to uploaded documents
+    },
+    subscription: {
+      plan_type: { 
+        type: String, 
+        enum: ["free", "basic", "premium"],
+        default: "free" 
+      },
+      expires_at: Date,
+      features: {
+        booking_discount: { type: Number, default: 0 },
+        exclusive_access: { type: Boolean, default: false }
+      }
+    }
   },
   {
     timestamps: {
