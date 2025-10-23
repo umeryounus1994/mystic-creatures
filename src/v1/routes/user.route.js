@@ -17,6 +17,17 @@ router.post(
   "/signup",
   userController.createUser
 );
+
+router.post(
+  "/partner-signup",
+  mediaUpload.single("image"),
+  userController.createUserPartner
+);
+router.post(
+  "/family-signup",
+  mediaUpload.single("image"),
+  userController.createUserFamily
+);
 router.post(
   "/signup_subadmin",
   mediaUpload.single("picture"),
@@ -73,6 +84,12 @@ router.delete(
   "/:id",
   checkAdminUserAuth,
   userController.deleteUser
+);
+
+router.post(
+  "/partner/:id/approval-status",
+  checkAdminUserAuth,
+  userController.updatePartnerApprovalStatus
 );
 
 module.exports = router;

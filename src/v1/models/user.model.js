@@ -48,17 +48,12 @@ const userSchema = new mongoose.Schema(
     },
     user_type: {
       type: String,
-      enum: ["user", "subadmin"],
+      enum: ["family", "partner", "admin", "user", "subadmin"],
       default: "user"
     },
     permissions: [String],
     allowed_quest: { type: Number, default: 0 },
     allowed_hunt: { type: Number, default: 0 },
-    user_role: {
-      type: String,
-      enum: ["family", "partner", "admin"],
-      default: "family"
-    },
     partner_profile: {
       business_name: String, 
       business_description: String,
@@ -74,7 +69,6 @@ const userSchema = new mongoose.Schema(
         enum: ["pending", "approved", "rejected", "suspended"],
         default: "pending"
       },
-      documents: [String] // URLs to uploaded documents
     },
     subscription: {
       plan_type: { 

@@ -160,7 +160,8 @@ module.exports.getAllUsersAdmin = async function (data) {
                         image: element?.image,
                         status: element?.status,
                         created_at: element.created_at,
-                        type: element?.user_type ? element?.user_type : "user"
+                        type: element?.user_type ? element?.user_type : "user",
+                        approval_status: element?.partner_profile?.approval_status || null
                     }
                     result.push(el);
                     resolvve(result);

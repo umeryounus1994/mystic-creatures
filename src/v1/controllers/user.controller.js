@@ -83,6 +83,150 @@ const createUser = async (req, res, next) => {
   }
 };
 
+const createUserPartner = async (req, res, next) => {
+  try {
+    const { ...itemDetails } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Invalid Data"
+      );
+    }
+
+    // Parse partner_profile from JSON string
+    if (req.body.partner_profile) {
+      try {
+        itemDetails.partner_profile = JSON.parse(req.body.partner_profile);
+      } catch (parseError) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Invalid partner profile data"
+        );
+      }
+    }
+
+    // Handle image upload if present
+    if (req?.file?.location) {
+      itemDetails.image = req.file.location;
+    }
+
+    // Set user_role to partner
+    itemDetails.user_type = 'partner';
+
+    const createdItem = new UserModel(itemDetails);
+
+    createdItem.save(async (err) => {
+      if (err) {
+        if (err?.keyValue?.email != null && err?.code === 11000) {
+          return apiResponse.ErrorResponse(
+            res,
+            "Email already in use"
+          );
+        }
+        if (err?.keyValue?.username != null && err?.code === 11000) {
+          return apiResponse.ErrorResponse(
+            res,
+            "Username already in use"
+          );
+        }
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      
+      // Remove sensitive data from response
+      createdItem.password = undefined;
+      createdItem.current_level = undefined;
+      createdItem.current_xp = 0;
+
+      // Create initial level for partner
+      const level = {
+        user_id: createdItem?._id,
+        level: 1
+      }
+      const item = new LevelModel(level);
+      item.save();
+
+      return apiResponse.successResponseWithData(
+        res,
+        "Partner created successfully",
+        createdItem
+      );
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const createUserFamily = async (req, res, next) => {
+  try {
+    const { ...itemDetails } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Invalid Data"
+      );
+    }
+
+    // Handle image upload if present
+    if (req?.file?.location) {
+      itemDetails.image = req.file.location;
+    }
+
+    // Set user_role to partner
+    itemDetails.user_type = 'family';
+
+    const createdItem = new UserModel(itemDetails);
+
+    createdItem.save(async (err) => {
+      if (err) {
+        if (err?.keyValue?.email != null && err?.code === 11000) {
+          return apiResponse.ErrorResponse(
+            res,
+            "Email already in use"
+          );
+        }
+        if (err?.keyValue?.username != null && err?.code === 11000) {
+          return apiResponse.ErrorResponse(
+            res,
+            "Username already in use"
+          );
+        }
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      
+      // Remove sensitive data from response
+      createdItem.password = undefined;
+      createdItem.current_level = undefined;
+      createdItem.current_xp = 0;
+
+      // Create initial level for partner
+      const level = {
+        user_id: createdItem?._id,
+        level: 1
+      }
+      const item = new LevelModel(level);
+      item.save();
+
+      return apiResponse.successResponseWithData(
+        res,
+        "Family created successfully",
+        createdItem
+      );
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 const createUserSubAdmin = async (req, res, next) => {
   try {
     req.body.image = req?.file?.location || "";
@@ -663,10 +807,76 @@ const purhasePackage = async (req, res, next) => {
   }
 };
 
+const updatePartnerApprovalStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { approval_status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Invalid user ID"
+      );
+    }
+
+    if (!['approved', 'rejected', 'suspended'].includes(approval_status)) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid approval status. Must be 'approved', 'rejected', or 'suspended'"
+      );
+    }
+
+    // Find the user and check if they are a partner
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return apiResponse.notFoundResponse(
+        res,
+        "User not found"
+      );
+    }
+
+    if (user.user_type !== 'partner' || user.user_type !== 'family') {
+      return apiResponse.ErrorResponse(
+        res,
+        "User is not a partner"
+      );
+    }
+
+    // Update partner approval status
+    const updateData = {
+      'partner_profile.approval_status': approval_status
+    };
 
 
 
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).select('-password -access_token');
 
+    if (!updatedUser) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Failed to update partner status"
+      );
+    }
+
+    return apiResponse.successResponseWithData(
+      res,
+      `Partner ${approval_status} successfully`,
+      {
+        user_id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        approval_status: updatedUser.partner_profile.approval_status,
+      }
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
 
 module.exports = {
   createUser,
@@ -685,5 +895,8 @@ module.exports = {
   getUserAnalytics,
   purhasePackage,
   getAllUsers,
-  createUserSubAdmin
+  createUserSubAdmin,
+  createUserPartner,
+  updatePartnerApprovalStatus,
+  createUserFamily
 };
