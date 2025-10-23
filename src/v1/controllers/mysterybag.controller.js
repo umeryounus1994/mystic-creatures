@@ -18,7 +18,17 @@ const createMysteryBag = async (req, res, next) => {
         bagDetails.reward_file = req.files['reward_file'] ? req.files['reward_file'][0].location : "";
         bagDetails.drawing_file = req.files['drawing_file'] ? req.files['drawing_file'][0].location : "";
         bagDetails.created_by = req.user.id;
-        var questions = JSON.parse(req.body.questions);
+        var questions = [];
+        if (req.body.questions) {
+            try {
+                questions = JSON.parse(req.body.questions);
+                if (!Array.isArray(questions)) {
+                    questions = [];
+                }
+            } catch (parseError) {
+                questions = [];
+            }
+        }
         
         const createdBag = new MysteryBagModel(bagDetails);
         
