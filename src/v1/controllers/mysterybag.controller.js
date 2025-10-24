@@ -45,7 +45,7 @@ const createMysteryBag = async (req, res, next) => {
             questions.forEach(question => {
                 let d = {
                     answer: question.answer,
-                    correct_option: question?.correct_option == 'true' ? true : false,
+                    correct_option: question?.correct_option === true || question?.correct_option === 'true',
                     mystery_bag_id: createdBag?._id 
                 }
                 quizes.push(d);
@@ -259,7 +259,7 @@ const editMysteryBag = async (req, res, next) => {
             questions.forEach(question => {
                 let d = {
                     answer: question.answer,
-                    correct_option: question?.correct_option == 'true' ? true : false,
+                    correct_option: question?.correct_option === true || question?.correct_option === 'true',
                     mystery_bag_id: id
                 }
                 quizes.push(d);
