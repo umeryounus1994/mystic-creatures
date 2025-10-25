@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const activityController = require('../controllers/activity.controller');
-const { checkUserAuth } = require('../../../middlewares/authMiddleware');
 const { checkAdminUserAuth } = require('../../../middlewares/authMiddlewareAdminPanel');
+const { checkPartnerUserAuth } = require('../../../middlewares/authMiddlewarePartnerPanel');
+const mediaUpload = require('../../../middlewares/upload-aws-image');
 
 // Public routes
 router.get('/', activityController.getAll);
 router.get('/:id', activityController.getById);
 
 // Partner routes (require authentication)
-router.post('/', checkUserAuth, activityController.create);
-router.put('/:id', checkUserAuth, activityController.update);
-router.delete('/:id', checkUserAuth, activityController.delete);
+router.post('/', checkPartnerUserAuth, mediaUpload.array('images', 5), activityController.create);
+router.post('/:id', checkPartnerUserAuth, mediaUpload.array('images', 5), activityController.update);
+router.delete('/:id', checkPartnerUserAuth, activityController.delete);
 
 // Admin routes
 router.put('/:id/approve', checkAdminUserAuth, activityController.approve);

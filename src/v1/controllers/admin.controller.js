@@ -29,90 +29,77 @@ const loginAdmin = async (req, res, next) => {
         "Email and password are required"
       );
     }
-    const params = {
-      email: req.body.email
-    };
-    const params1 = {
-      email: req.body.email,
-      user_type: "subadmin"
-    };
-    const user = await AdminModel.findOne(params).exec();
-    const user_sub = await UserModel.findOne(params1).exec();
 
-    if (!user && !user_sub) {
+    const email = req.body.email;
+    let user = null;
+    let userType = null;
+
+    // Check AdminModel for admin and manager users
+    const adminUser = await AdminModel.findOne({ 
+      email,
+      user_type: { $in: ["admin", "subadmin"] }
+    }).exec();
+    if (adminUser) {
+      user = adminUser;
+      userType = adminUser.user_type;
+    }
+
+    // Check UserModel for subadmin, partner, and family users
+    if (!user) {
+      const userModelUser = await UserModel.findOne({ 
+        email, 
+        user_type: { $in: ["partner", "family"] }
+      }).exec();
+      if (userModelUser) {
+        user = userModelUser;
+        userType = userModelUser.user_type;
+      }
+    }
+
+    // If no user found in either model
+    if (!user) {
       return apiResponse.notFoundResponse(
         res,
-        "Invalid Credentials1"
+        "Invalid Credentials"
       );
     }
-    if(user && !user_sub){
 
-      const match = await user.checkPassword(req.body.password, user.password);
-
-      if (!match) {
-        return apiResponse.notFoundResponse(
-          res,
-          "Invalid Credentials2"
-        );
-      }
-       // Generate JWT Access Token
-       const token = await generateToken(
-        { id: user.id, user_type: user.user_type, role: "admin" },
-        process.env.JWT_SECRET_KEY,
-        process.env.JWT_AUTH_TOKEN_EXPIRE
-      );
-  
-  
-      user.last_login = new Date();
-      user.access_token = token;
-      await user.save();
-    
-  
-      res.set("Authorization", `Bearer ${token}`);
-      user.password = undefined;
-  
-      return apiResponse.successResponseWithData(
+    // Check password
+    const match = await user.checkPassword(req.body.password, user.password);
+    if (!match) {
+      return apiResponse.notFoundResponse(
         res,
-        `Welcome ${user.first_name}, User Authenticated Successfully`,
-        {
-          user
-        }
+        "Invalid Credentials"
       );
     }
 
-    if(!user && user_sub){
+    // Generate JWT Access Token
+    const token = await generateToken(
+      { 
+        id: user.id, 
+        user_type: user.user_type || userType, 
+        role: userType 
+      },
+      process.env.JWT_SECRET_KEY,
+      process.env.JWT_AUTH_TOKEN_EXPIRE
+    );
 
-      const match = await user_sub.checkPassword(req.body.password, user_sub.password);
+    // Update user with token and last login
+    user.last_login = new Date();
+    user.access_token = token;
+    await user.save();
 
-      if (!match) {
-        return apiResponse.notFoundResponse(
-          res,
-          "Invalid Credentials3"
-        );
-      }
-       // Generate JWT Access Token
-       const token = await generateToken(
-        { id: user_sub.id, user_type: user_sub.user_type, role: "subadmin" },
-        process.env.JWT_SECRET_KEY,
-        process.env.JWT_AUTH_TOKEN_EXPIRE
-      );
-  
-  
-      user_sub.last_login = new Date();
-      user_sub.access_token = token;
-      await user_sub.save();
+    // Set response header
+    res.set("Authorization", `Bearer ${token}`);
     
-  
-      res.set("Authorization", `Bearer ${token}`);
-      user_sub.password = undefined;
-      return apiResponse.successResponseWithData(
-        res,
-        `Welcome ${user_sub.first_name}, User Authenticated Successfully`,
-        {
-          user_sub
-        }
-      );
-    }
+    // Remove password from response
+    user.password = undefined;
+
+    return apiResponse.successResponseWithData(
+      res,
+      `Welcome ${user.first_name || user.username}, User Authenticated Successfully`,
+      { user }
+    );
 
   } catch (err) {
     logger.error(err);

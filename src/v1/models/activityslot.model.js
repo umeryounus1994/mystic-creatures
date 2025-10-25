@@ -10,9 +10,7 @@ const activitySlotSchema = new mongoose.Schema({
         type: String, 
         enum: ["available", "full", "cancelled"], 
         default: "available" 
-    },
-    special_pricing: { type: Number }, // Override activity price if needed
-    notes: { type: String }
+    }
 }, {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }
 });

@@ -14,6 +14,7 @@ const groupRoute = require("./group.route");
 const pictureRoute = require("./picturemystery.route");
 const mysteryBagRoute = require("./mysterybag.route");
 const skyGiftRoute = require("./skygifts.route");
+const activityRoute = require("./activity.routes");
 
 const filehandlingRoute = require("./filehandling.route");
 
@@ -32,5 +33,6 @@ app.use("/pictureMystery/", pictureRoute);
 app.use("/fileupload/", filehandlingRoute);
 app.use("/mysteryBag/", mysteryBagRoute);
 app.use("/skyGift/", skyGiftRoute);
+app.use("/activity/", activityRoute);
 
 module.exports = app;

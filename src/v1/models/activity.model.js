@@ -27,13 +27,11 @@ const activitySchema = new mongoose.Schema({
     status: { 
         type: String, 
         enum: ["draft", "pending", "approved", "rejected", "inactive"],
-        default: "draft" 
+        default: "pending" 
     },
-    tags: [String],
-    age_group: {
-        min_age: { type: Number, default: 0 },
-        max_age: { type: Number, default: 100 }
-    }
+    approved_at: { type: Date },
+    rejected_at: { type: Date },
+    rejection_reason: { type: String }
 }, {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }
 });
