@@ -12,7 +12,6 @@ const QuestModel = require("../models/quest.model");
 const MissionModel = require("../models/mission.model");
 const HuntModel = require("../models/treasure.model");
 const LevelModel = require("../models/level.model");
-const PictureMysteryModel = require("../models/picturemysteries.model");
 const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
 const UserRewardModel = require("../models/userreward.model");
@@ -27,7 +26,7 @@ const bcrypt = require("bcrypt");
 const moment = require('moment');
 const logger = require('../../../middlewares/logger');
 const userskygiftsModel = require("../models/userskygifts.model");
-
+const Activity = require("../models/activity.model");
 
 const createUser = async (req, res, next) => {
   try {
@@ -718,6 +717,8 @@ const getAnalytics = async (req, res, next) => {
     const quests = await QuestModel.find({status: "active"});
     const missions = await MissionModel.find({status: "active"});
     const hunts = await HuntModel.find({status: "active"});
+    const activities = await Activity.find({status: "approved"});
+    const partners = await UserModel.find({user_type: "partner", status: "active"});
 
     return res.json({
       status: true,
@@ -725,7 +726,9 @@ const getAnalytics = async (req, res, next) => {
         users: users.length,
         quests: quests.length,
         missions: missions.length,
-        hunts: hunts.length
+        hunts: hunts.length,
+        activities: activities.length,
+        partners: partners.length
       }
     
     })
