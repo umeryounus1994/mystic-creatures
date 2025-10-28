@@ -718,6 +718,7 @@ const getAnalytics = async (req, res, next) => {
     const missions = await MissionModel.find({status: "active"});
     const hunts = await HuntModel.find({status: "active"});
     const activities = await Activity.find({status: "approved"});
+    const pendingActivities = await Activity.find({status: "pending"});
     const partners = await UserModel.find({user_type: "partner", status: "active"});
 
     return res.json({
@@ -728,6 +729,7 @@ const getAnalytics = async (req, res, next) => {
         missions: missions.length,
         hunts: hunts.length,
         activities: activities.length,
+        pendingActivities: pendingActivities.length,
         partners: partners.length
       }
     

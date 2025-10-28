@@ -20,7 +20,7 @@ router.post('/:id', checkPartnerUserAuth, mediaUpload.array('images', 5), activi
 router.delete('/:id', checkPartnerUserAuth, activityController.delete);
 
 // Admin routes
-router.put('/:id/approve', checkAdminUserAuth, activityController.approve);
-router.put('/:id/reject', checkAdminUserAuth, activityController.reject);
+router.post('/:id/approve', checkAdminUserAuth, activityController.approve);
+router.post('/:id/reject', checkAdminUserAuth, activityController.reject);
 
 module.exports = router;
