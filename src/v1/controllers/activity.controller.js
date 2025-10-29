@@ -103,9 +103,38 @@ const activityController = {
             const slots = await ActivitySlot.find({ activity_id: req.params.id })
                 .sort({ start_time: 1 });
 
+            // Get pending bookings for these slots
+            const slotIds = slots.map(slot => slot._id);
+            const pendingBookings = await Booking.find({
+                slot_id: { $in: slotIds },
+                booking_status: 'pending',
+                payment_status: 'pending'
+            });
+
+            // Calculate reserved spots for each slot
+            const slotsWithReservation = slots.map(slot => {
+                const pendingForSlot = pendingBookings.filter(
+                    booking => booking.slot_id.toString() === slot._id.toString()
+                );
+                
+                const reservedSpots = pendingForSlot.reduce(
+                    (total, booking) => total + booking.participants, 0
+                );
+
+                const actualAvailableSpots = slot.available_spots - slot.booked_spots - reservedSpots;
+
+                return {
+                    ...slot.toObject(),
+                    reserved_spots: reservedSpots,
+                    actual_available_spots: Math.max(0, actualAvailableSpots),
+                    slot_status: actualAvailableSpots <= 0 ? 'full' : 
+                               slot.status === 'cancelled' ? 'cancelled' : 'available'
+                };
+            });
+
             const activityWithSlots = {
                 ...activity.toObject(),
-                slots
+                slots: slotsWithReservation
             };
 
             return generateResponse(res, 200, 'Activity retrieved successfully', activityWithSlots);
@@ -386,6 +415,162 @@ const activityController = {
             return generateResponse(res, 200, 'Partner stats retrieved successfully', stats);
         } catch (error) {
             return generateResponse(res, 500, 'Error retrieving partner stats', null, error.message);
+        }
+    },
+
+    // Browse activities with filters for family users
+    browseActivities: async (req, res) => {
+        try {
+            const { 
+                page = 1, 
+                limit = 10, 
+                category, 
+                date, 
+                latitude, 
+                longitude, 
+                radius = 10, // km
+                search,
+                min_price,
+                max_price
+            } = req.query;
+
+            const filter = { status: 'approved' };
+            
+            if (category) filter.category = category;
+            if (search) {
+                filter.$or = [
+                    { title: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } }
+                ];
+            }
+            if (min_price || max_price) {
+                filter.price = {};
+                if (min_price) filter.price.$gte = parseFloat(min_price);
+                if (max_price) filter.price.$lte = parseFloat(max_price);
+            }
+
+            // Location-based search
+            if (latitude && longitude) {
+                filter.location = {
+                    $near: {
+                        $geometry: {
+                            type: 'Point',
+                            coordinates: [parseFloat(longitude), parseFloat(latitude)]
+                        },
+                        $maxDistance: radius * 1000 // Convert km to meters
+                    }
+                };
+            }
+
+            let activities = await Activity.find(filter)
+                .populate('partner_id', 'first_name last_name partner_profile.business_name')
+                .limit(limit * 1)
+                .skip((page - 1) * limit)
+                .sort({ created_at: -1 });
+
+            // Filter by date if provided
+            if (date) {
+                const targetDate = new Date(date);
+                const activityIds = activities.map(a => a._id);
+                
+                const availableSlots = await ActivitySlot.find({
+                    activity_id: { $in: activityIds },
+                    date: {
+                        $gte: new Date(targetDate.setHours(0, 0, 0, 0)),
+                        $lt: new Date(targetDate.setHours(23, 59, 59, 999))
+                    },
+                    status: 'available'
+                });
+
+                const availableActivityIds = availableSlots.map(slot => slot.activity_id.toString());
+                activities = activities.filter(activity => 
+                    availableActivityIds.includes(activity._id.toString())
+                );
+            }
+
+            const total = activities.length;
+
+            return generateResponse(res, 200, 'Activities retrieved successfully', {
+                activities,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: Math.ceil(total / limit),
+                    total_items: total
+                }
+            });
+        } catch (error) {
+            return generateResponse(res, 500, 'Error browsing activities', null, error.message);
+        }
+    },
+    getActivityDetails: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { date } = req.query;
+
+            const activity = await Activity.findById(id)
+                .populate('partner_id', 'first_name last_name partner_profile.business_name partner_profile.contact_info');
+
+            if (!activity || activity.status !== 'approved') {
+                return generateResponse(res, 404, 'Activity not found or not available');
+            }
+
+            // Get all slots
+            let slotsFilter = { activity_id: id };
+            if (date) {
+                const targetDate = new Date(date);
+                slotsFilter.start_time = {
+                    $gte: new Date(targetDate.setHours(0, 0, 0, 0)),
+                    $lt: new Date(targetDate.setHours(23, 59, 59, 999))
+                };
+            }
+
+            const slots = await ActivitySlot.find(slotsFilter)
+                .sort({ start_time: 1 });
+
+            // Get pending bookings for these slots
+            const slotIds = slots.map(slot => slot._id);
+            const pendingBookings = await Booking.find({
+                slot_id: { $in: slotIds },
+                booking_status: 'pending',
+                payment_status: 'pending'
+            });
+
+            // Calculate reserved spots for each slot
+            const slotsWithReservation = slots.map(slot => {
+                const pendingForSlot = pendingBookings.filter(
+                    booking => booking.slot_id.toString() === slot._id.toString()
+                );
+                
+                const reservedSpots = pendingForSlot.reduce(
+                    (total, booking) => total + booking.participants, 0
+                );
+
+                const actualAvailableSpots = slot.available_spots - slot.booked_spots - reservedSpots;
+
+                return {
+                    ...slot.toObject(),
+                    reserved_spots: reservedSpots,
+                    actual_available_spots: Math.max(0, actualAvailableSpots),
+                    slot_status: actualAvailableSpots <= 0 ? 'full' : 
+                               slot.status === 'cancelled' ? 'cancelled' : 'available'
+                };
+            });
+
+            // Get reviews
+            const reviews = await require('../models/review.model').find({ activity_id: id })
+                .populate('user_id', 'first_name last_name')
+                .sort({ created_at: -1 })
+                .limit(5);
+
+            const activityDetails = {
+                ...activity.toObject(),
+                slots: slotsWithReservation,
+                reviews: reviews || []
+            };
+
+            return generateResponse(res, 200, 'Activity details retrieved successfully', activityDetails);
+        } catch (error) {
+            return generateResponse(res, 500, 'Error retrieving activity details', null, error.message);
         }
     }
 };

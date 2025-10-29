@@ -15,7 +15,7 @@ const reviewRoutes = require('./review.routes');
 // Mount routes
 router.use('/users', userRoutes);
 router.use('/activities', activityRoutes);
-router.use('/bookings', bookingRoutes);
+router.use('/booking', bookingRoutes);
 router.use('/quests', digitalQuestRoutes);
 router.use('/commissions', commissionRoutes);
 router.use('/payouts', payoutRoutes);

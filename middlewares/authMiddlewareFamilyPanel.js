@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
-const apiResponse = require("../helpers/apiResponse");
+const apiResponse = require("../helpers/apiResponse.js");
 const userModel = require("../src/v1/models/user.model.js");
 
-const checkPartnerUserAuth = async (req, res, next) => {
+const checkFamilyUserAuth = async (req, res, next) => {
   let token;
   const authorization = req.headers.Authorization || req.headers.authorization;
   if (authorization && authorization.startsWith("Bearer")) {
@@ -16,7 +16,7 @@ const checkPartnerUserAuth = async (req, res, next) => {
       const data = await userModel.findOne({
         _id: id,
         access_token: token,
-        user_type: "partner"
+        user_type: "family"
       }).select("-password");
       if (!data) {
         return apiResponse.unauthorizedResponse(
@@ -48,5 +48,5 @@ const checkPartnerUserAuth = async (req, res, next) => {
 };
 
 module.exports = {
-  checkPartnerUserAuth,
+  checkFamilyUserAuth,
 };
