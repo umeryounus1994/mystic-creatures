@@ -369,7 +369,8 @@ const activityController = {
                 activity_id: { $in: activityIds }
             })
                 .populate('user_id', 'first_name last_name')
-                .populate('activity_id', 'title')
+                .populate('activity_id', 'title price')
+                .populate('slot_id', 'date start_time end_time')
                 .sort({ created_at: -1 })
                 .limit(5);
 

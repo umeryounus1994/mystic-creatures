@@ -3,6 +3,7 @@ const router = express.Router();
 const bookingController = require('../controllers/booking.controller');
 const { checkFamilyUserAuth } = require('../../../middlewares/authMiddlewareFamilyPanel');
 const { checkAdminUserAuth } = require('../../../middlewares/authMiddlewareAdminPanel');
+const { checkPartnerUserAuth } = require('../../../middlewares/authMiddlewarePartnerPanel');
 
 // Family user booking routes
 router.post('/create', checkFamilyUserAuth, bookingController.createBooking);
@@ -10,5 +11,8 @@ router.post('/confirm', checkFamilyUserAuth, bookingController.confirmBooking);
 router.get('/my-bookings', checkFamilyUserAuth, bookingController.getUserBookings);
 router.get('/:id', checkFamilyUserAuth, bookingController.getById);
 router.put('/:id/cancel', checkAdminUserAuth, bookingController.cancel);
+
+// Partner booking routes
+router.get('/partner/my-bookings', checkPartnerUserAuth, bookingController.getPartnerBookings);
 
 module.exports = router;

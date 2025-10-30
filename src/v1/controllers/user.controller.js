@@ -27,6 +27,7 @@ const moment = require('moment');
 const logger = require('../../../middlewares/logger');
 const userskygiftsModel = require("../models/userskygifts.model");
 const Activity = require("../models/activity.model");
+const Booking = require("../models/booking.model");
 
 const createUser = async (req, res, next) => {
   try {
@@ -883,6 +884,80 @@ const updatePartnerApprovalStatus = async (req, res, next) => {
   }
 };
 
+const getFamilyDashboard = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's booking stats
+    const totalBookings = await Booking.countDocuments({ user_id: userId });
+    const confirmedBookings = await Booking.countDocuments({
+      user_id: userId,
+      booking_status: 'confirmed'
+    });
+    const pendingBookings = await Booking.countDocuments({
+      user_id: userId,
+      booking_status: 'pending'
+    });
+    const completedBookings = await Booking.countDocuments({
+      user_id: userId,
+      booking_status: 'completed'
+    });
+
+    // Get recent bookings
+    const recentBookings = await Booking.find({ user_id: userId })
+      .populate('activity_id', 'title images price location')
+      .populate('slot_id', 'date start_time end_time')
+      .sort({ created_at: -1 })
+      .limit(5);
+
+    // Get upcoming bookings
+    const upcomingBookings = await Booking.find({
+      user_id: userId,
+      booking_status: { $in: ['confirmed', 'pending'] }
+    })
+      .populate('activity_id', 'title images price location')
+      .populate('slot_id', 'date start_time end_time')
+      .sort({ created_at: -1 })
+      .limit(3);
+
+    // Calculate total spent
+    const totalSpent = await Booking.aggregate([
+      { 
+        $match: { 
+          user_id: new ObjectId(userId),
+          payment_status: 'paid'
+        } 
+      },
+      { $group: { _id: null, total: { $sum: '$total_amount' } } }
+    ]);
+
+    const dashboardStats = {
+      bookings: {
+        total: totalBookings,
+        confirmed: confirmedBookings,
+        pending: pendingBookings,
+        completed: completedBookings,
+        cancelled: totalBookings - confirmedBookings - pendingBookings - completedBookings
+      },
+      spending: {
+        totalSpent: totalSpent[0]?.total || 0,
+        averagePerBooking: totalBookings > 0 ? (totalSpent[0]?.total || 0) / totalBookings : 0
+      },
+      recentBookings,
+      upcomingBookings
+    };
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Family dashboard data retrieved successfully",
+      dashboardStats
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -903,5 +978,6 @@ module.exports = {
   createUserSubAdmin,
   createUserPartner,
   updatePartnerApprovalStatus,
-  createUserFamily
+  createUserFamily,
+  getFamilyDashboard
 };

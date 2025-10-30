@@ -4,6 +4,7 @@ const router = express.Router();
 const userController = require("../controllers/user.controller");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
 const { checkUserAuth } = require("../../../middlewares/authMiddleware");
+const { checkFamilyUserAuth } = require("../../../middlewares/authMiddlewareFamilyPanel");
 const { checkAuthOrigins } = require("../../../middlewares/authMiddlewareGenericAll");
 const {
   checkAdminUserAuth,
@@ -90,6 +91,12 @@ router.post(
   "/partner/:id/approval-status",
   checkAdminUserAuth,
   userController.updatePartnerApprovalStatus
+);
+
+router.get(
+  "/family-dashboard",
+  checkFamilyUserAuth,
+  userController.getFamilyDashboard
 );
 
 module.exports = router;
