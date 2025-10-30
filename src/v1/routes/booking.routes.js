@@ -15,4 +15,7 @@ router.put('/:id/cancel', checkAdminUserAuth, bookingController.cancel);
 // Partner booking routes
 router.get('/partner/my-bookings', checkPartnerUserAuth, bookingController.getPartnerBookings);
 
+// Admin booking routes
+router.get('/admin/all-bookings', checkAdminUserAuth, bookingController.getAllBookings);
+
 module.exports = router;

@@ -229,6 +229,68 @@ const bookingController = {
         } catch (error) {
             return generateResponse(res, 500, 'Error retrieving partner bookings', null, error.message);
         }
+    },
+
+    // Get all bookings (Admin only)
+    getAllBookings: async (req, res) => {
+        try {
+            const { status, page = 1, limit = 10, partner_id, user_id } = req.query;
+            
+            const filter = {};
+            if (status) filter.booking_status = status;
+            if (partner_id) {
+                const partnerActivities = await Activity.find({ partner_id }).select('_id');
+                const activityIds = partnerActivities.map(activity => activity._id);
+                filter.activity_id = { $in: activityIds };
+            }
+            if (user_id) filter.user_id = user_id;
+
+            const bookings = await Booking.find(filter)
+                .populate('activity_id', 'title description images price location address')
+                .populate('slot_id', 'date start_time end_time')
+                .populate('user_id', 'username email phone partner_profile')
+                .populate({
+                    path: 'activity_id',
+                    populate: {
+                        path: 'partner_id',
+                        select: 'username email partner_profile.business_name'
+                    }
+                })
+                .sort({ created_at: -1 })
+                .limit(limit * 1)
+                .skip((page - 1) * limit);
+
+            const total = await Booking.countDocuments(filter);
+            
+            // Format bookings with customer and partner info
+            const formattedBookings = bookings.map(booking => ({
+                ...booking.toObject(),
+                customer: {
+                    name: booking.user_id?.partner_profile?.business_name || 
+                          booking.user_id?.username || 
+                          'Unknown User',
+                    email: booking.user_id?.email,
+                    phone: booking.user_id?.phone
+                },
+                partner: {
+                    name: booking.activity_id?.partner_id?.partner_profile?.business_name ||
+                          booking.activity_id?.partner_id?.username ||
+                          'Unknown Partner',
+                    email: booking.activity_id?.partner_id?.email
+                }
+            }));
+
+            return generateResponse(res, 200, 'All bookings retrieved successfully', {
+                bookings: formattedBookings,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: Math.ceil(total / limit),
+                    total_items: total
+                }
+            });
+        } catch (error) {
+            return generateResponse(res, 500, 'Error retrieving bookings', null, error.message);
+        }
     }
 };
 
