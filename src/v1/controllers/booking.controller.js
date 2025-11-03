@@ -115,9 +115,9 @@ const bookingController = {
     // Cancel booking
     cancel: async (req, res) => {
         try {
-            const { cancellation_reason } = req.body;
+            const { cancellation_reason, booking_id } = req.body;
             
-            const booking = await Booking.findById(req.params.id);
+            const booking = await Booking.findById(booking_id);
             if (!booking) {
                 return generateResponse(res, 404, 'Booking not found');
             }
@@ -131,14 +131,16 @@ const bookingController = {
             booking.cancelled_at = new Date();
             await booking.save();
             
-            // Update slot availability
-            const slot = await ActivitySlot.findById(booking.slot_id);
-            if (slot) {
-                slot.booked_spots -= booking.participants;
-                if (slot.status === 'full') {
-                    slot.status = 'available';
+            // Update slot availability only if booking was confirmed/paid
+            if (booking.payment_status === 'paid') {
+                const slot = await ActivitySlot.findById(booking.slot_id);
+                if (slot && slot.booked_spots >= booking.participants) {
+                    slot.booked_spots = Math.max(0, slot.booked_spots - booking.participants);
+                    if (slot.status === 'full') {
+                        slot.status = 'available';
+                    }
+                    await slot.save();
                 }
-                await slot.save();
             }
             
             return generateResponse(res, 200, 'Booking cancelled successfully', booking);
@@ -150,9 +152,9 @@ const bookingController = {
     // Confirm booking after payment
     confirmBooking: async (req, res) => {
         try {
-            const { booking_id, payment_intent_id, payment_method } = req.body;
+            const { booking_id } = req.body;
             
-            const booking = await Booking.findOne({ booking_id });
+            const booking = await Booking.findOne({ _id: booking_id });
             if (!booking) {
                 return generateResponse(res, 404, 'Booking not found');
             }
@@ -164,8 +166,6 @@ const bookingController = {
             // Update booking status
             booking.booking_status = 'confirmed';
             booking.payment_status = 'paid';
-            booking.payment_intent_id = payment_intent_id;
-            booking.payment_method = payment_method;
             await booking.save();
             
             // Now update slot availability

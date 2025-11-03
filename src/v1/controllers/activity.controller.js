@@ -111,6 +111,25 @@ const activityController = {
                 payment_status: 'pending'
             });
 
+            // Get user's bookings for these slots (if user is logged in)
+            let userBookedSlots = [];
+            if (req.user && req.user.id) {
+                if (req.user.user_type === 'family') {
+                    // Family users see only their own bookings
+                    userBookedSlots = await Booking.find({
+                        slot_id: { $in: slotIds },
+                        user_id: req.user.id
+                    }).select('slot_id booking_status payment_status participants cancellation_reason created_at');
+                } else if (req.user.user_type === 'partner' || req.user.user_type === 'admin') {
+                    // Partners and admins see all bookings for this activity
+                    userBookedSlots = await Booking.find({
+                        slot_id: { $in: slotIds }
+                    })
+                    .populate('user_id', 'username email partner_profile.business_name')
+                    .select('slot_id booking_status payment_status participants cancellation_reason user_id created_at');
+                }
+            }
+
             // Calculate reserved spots for each slot
             const slotsWithReservation = slots.map(slot => {
                 const pendingForSlot = pendingBookings.filter(
@@ -134,7 +153,23 @@ const activityController = {
 
             const activityWithSlots = {
                 ...activity.toObject(),
-                slots: slotsWithReservation
+                slots: slotsWithReservation,
+                user_booked_slots: userBookedSlots.map(booking => ({
+                    slot_id: booking.slot_id,
+                    booking_status: booking.booking_status,
+                    payment_status: booking.payment_status,
+                    participants: booking.participants,
+                    cancellation_reason: booking.cancellation_reason,
+                    booked_at: booking.created_at,
+                    ...(req.user.user_type !== 'family' && booking.user_id && {
+                        customer: {
+                            name: booking.user_id.partner_profile?.business_name || 
+                                  booking.user_id.username || 
+                                  'Unknown User',
+                            email: booking.user_id.email
+                        }
+                    })
+                }))
             };
 
             return generateResponse(res, 200, 'Activity retrieved successfully', activityWithSlots);

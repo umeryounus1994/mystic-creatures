@@ -7,10 +7,10 @@ const { checkPartnerUserAuth } = require('../../../middlewares/authMiddlewarePar
 
 // Family user booking routes
 router.post('/create', checkFamilyUserAuth, bookingController.createBooking);
-router.post('/confirm', checkFamilyUserAuth, bookingController.confirmBooking);
+router.post('/confirm-booking', checkPartnerUserAuth, bookingController.confirmBooking);
 router.get('/my-bookings', checkFamilyUserAuth, bookingController.getUserBookings);
 router.get('/:id', checkFamilyUserAuth, bookingController.getById);
-router.put('/:id/cancel', checkAdminUserAuth, bookingController.cancel);
+router.post('/cancel-booking', checkPartnerUserAuth, bookingController.cancel);
 
 // Partner booking routes
 router.get('/partner/my-bookings', checkPartnerUserAuth, bookingController.getPartnerBookings);

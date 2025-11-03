@@ -4,6 +4,7 @@ const activityController = require('../controllers/activity.controller');
 const { checkAdminUserAuth } = require('../../../middlewares/authMiddlewareAdminPanel');
 const { checkPartnerUserAuth } = require('../../../middlewares/authMiddlewarePartnerPanel');
 const { checkFamilyUserAuth } = require('../../../middlewares/authMiddlewareFamilyPanel');
+const { checkAuthOrigins } = require('../../../middlewares/authMiddlewareGenericAll');
 const mediaUpload = require('../../../middlewares/upload-aws-image');
 
 // Public routes
@@ -14,7 +15,7 @@ router.get('/dashboard-stats', checkPartnerUserAuth, activityController.getPartn
 router.get('/search-activities', checkFamilyUserAuth, activityController.browseActivities);
 
 // ID-based routes (must come after specific routes)
-router.get('/:id', activityController.getById);
+router.get('/:id', checkAuthOrigins, activityController.getById);
 
 // Partner routes (require authentication)
 router.post('/', checkPartnerUserAuth, mediaUpload.array('images', 5), activityController.create);
