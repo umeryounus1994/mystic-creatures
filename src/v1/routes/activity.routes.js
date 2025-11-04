@@ -26,6 +26,8 @@ router.delete('/:id', checkPartnerUserAuth, activityController.delete);
 router.post('/:id/approve', checkAdminUserAuth, activityController.approve);
 router.post('/:id/reject', checkAdminUserAuth, activityController.reject);
 
+router.get('/get-single-activity/:id', activityController.getSingleActivity);
+
 // Public routes for family users
 
 //router.get('/details/:id', activityController.getActivityDetails);

@@ -68,6 +68,14 @@ const activityController = {
             if (status) filter.status = status;
             if (partner_id) filter.partner_id = partner_id;
 
+            // Get activities that have at least one slot with end_time > current time
+            const currentTime = new Date();
+            const activeSlots = await ActivitySlot.find({
+                end_time: { $gt: currentTime }
+            }).distinct('activity_id');
+
+            filter._id = { $in: activeSlots };
+
             const activities = await Activity.find(filter)
                 .populate('partner_id', 'first_name last_name partner_profile.business_name')
                 .limit(limit * 1)
@@ -170,6 +178,60 @@ const activityController = {
                         }
                     })
                 }))
+            };
+
+            return generateResponse(res, 200, 'Activity retrieved successfully', activityWithSlots);
+        } catch (error) {
+            return generateResponse(res, 500, 'Error retrieving activity', null, error.message);
+        }
+    },
+
+    // Get single activity (public route - no user booking info)
+    getSingleActivity: async (req, res) => {
+        try {
+            const activity = await Activity.findById(req.params.id)
+                .populate('partner_id', 'first_name last_name partner_profile.business_name');
+
+            if (!activity) {
+                return generateResponse(res, 404, 'Activity not found');
+            }
+
+            // Get activity slots
+            const slots = await ActivitySlot.find({ activity_id: req.params.id })
+                .sort({ start_time: 1 });
+
+            // Get pending bookings for these slots
+            const slotIds = slots.map(slot => slot._id);
+            const pendingBookings = await Booking.find({
+                slot_id: { $in: slotIds },
+                booking_status: 'pending',
+                payment_status: 'pending'
+            });
+
+            // Calculate reserved spots for each slot
+            const slotsWithReservation = slots.map(slot => {
+                const pendingForSlot = pendingBookings.filter(
+                    booking => booking.slot_id.toString() === slot._id.toString()
+                );
+                
+                const reservedSpots = pendingForSlot.reduce(
+                    (total, booking) => total + booking.participants, 0
+                );
+
+                const actualAvailableSpots = slot.available_spots - slot.booked_spots - reservedSpots;
+
+                return {
+                    ...slot.toObject(),
+                    reserved_spots: reservedSpots,
+                    actual_available_spots: Math.max(0, actualAvailableSpots),
+                    slot_status: actualAvailableSpots <= 0 ? 'full' : 
+                               slot.status === 'cancelled' ? 'cancelled' : 'available'
+                };
+            });
+
+            const activityWithSlots = {
+                ...activity.toObject(),
+                slots: slotsWithReservation
             };
 
             return generateResponse(res, 200, 'Activity retrieved successfully', activityWithSlots);
