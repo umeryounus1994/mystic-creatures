@@ -13,36 +13,49 @@ module.exports.getAllQuests = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var findQuestQuiz = await QuestQuizModel.find({quest_id: new ObjectID(element._id)})
-                    var el ={}
-                    var el ={
+                    var el = {
                         id: element._id,
-                        quest_title : element.quest_title ? element.quest_title : "",
-                        quest_question : element.quest_question,
+                        quest_title: element.quest_title ? element.quest_title : "",
+                        quest_question: element.quest_question,
                         qr_code: element.qr_code,
                         quest_password: element?.quest_password ? element?.quest_password : "",
                         quest_image: element.quest_image,
                         quest_type: element.quest_type,
                         no_of_xp: element.no_of_xp,
-                        no_of_crypes : element.no_of_crypes,
+                        no_of_crypes: element.no_of_crypes,
                         reward_file: element.reward_file,
                         mythica: element?.mythica_ID?.creature_name,
-                        mythica_ID: element?.mythica_ID?.creature_id,
-                        level_increase: element.level_increase,
-                        mythica_model: element.mythica_model,
+                        quest_context: element.quest_context,
+                        // Activity details if linked
+                        activity_details: element.activity_id ? {
+                            id: element.activity_id._id,
+                            title: element.activity_id.title,
+                            partner_name: element.activity_id.partner_id?.partner_profile?.business_name || 
+                                         `${element.activity_id.partner_id?.first_name} ${element.activity_id.partner_id?.last_name}` ||
+                                         'Unknown Partner'
+                        } : null,
+                        // Quest creator details
+                        created_by_details: element.created_by ? {
+                            name: element.created_by.partner_profile?.business_name || 
+                                  `${element.created_by.first_name} ${element.created_by.last_name}` ||
+                                  'Unknown Creator'
+                        } : null,
+                        quest_group: element?.quest_group_id?.quest_group_name,
                         status: element.status,
-                        options: findQuestQuiz,
+                        deleted: element.deleted,
                         created_at: element.created_at,
-                        assigned_group: element?.quest_group_id ? element?.quest_group_id?.quest_group_name : "N/A",
+                        updated_at: element.updated_at,
+                        quiz: findQuestQuiz
                     }
-                    result.push(el)
-                    resolvve(result);
+                    result.push(el);
+                    resolvve();
                 })
-            )
-        })
-        return Promise.all(promiseArr).then(ress => {
-            resolve(result.sort((a, b) => moment(b.created_at, 'DD-MM-YYYY').diff(moment(a.created_at, 'DD-MM-YYYY'))))
-        })
-    })
+            );
+        });
+        Promise.all(promiseArr).then(() => {
+            resolve(result);
+        });
+    });
 }
 
 

@@ -8,7 +8,7 @@ const questSchema = new mongoose.Schema(
         quest_question: { type: String },
         quest_title: { type: String },
         qr_code: { type: String },
-        quest_password: { type: String }, // Optional password for quest
+        quest_password: { type: String },
         no_of_xp: { type: Number, default: 0 },
         no_of_crypes: { type: Number, default: 0 },
         level_increase: { type: Number, default: 0 },
@@ -18,6 +18,18 @@ const questSchema = new mongoose.Schema(
             type: String,
             enum: ["simple", "image","video"],
             default: "simple"
+        },
+        // Link to activity (optional)
+        activity_id: {
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: 'Activity',
+            required: false
+        },
+        // Quest can be standalone or activity-linked
+        quest_context: {
+            type: String,
+            enum: ["standalone", "activity_linked"],
+            default: "standalone"
         },
         mythica_ID: {  
             type: String,

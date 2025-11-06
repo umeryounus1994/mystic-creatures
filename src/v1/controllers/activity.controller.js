@@ -1,6 +1,7 @@
 const Activity = require('../models/activity.model');
 const ActivitySlot = require('../models/activityslot.model');
 const Booking = require('../models/booking.model');
+const QuestModel = require('../models/quest.model');            
 const { generateResponse } = require('../utils/response');
 
 const activityController = {
@@ -35,7 +36,6 @@ const activityController = {
                 try {
                     parsedSlots = typeof slots === 'string' ? JSON.parse(slots) : slots;
                 } catch (error) {
-                    console.log('Error parsing slots:', error);
                 }
 
                 if (Array.isArray(parsedSlots) && parsedSlots.length > 0) {
@@ -73,9 +73,9 @@ const activityController = {
             const activeSlots = await ActivitySlot.find({
                 end_time: { $gt: currentTime }
             }).distinct('activity_id');
+            
 
             filter._id = { $in: activeSlots };
-
             const activities = await Activity.find(filter)
                 .populate('partner_id', 'first_name last_name partner_profile.business_name')
                 .limit(limit * 1)
@@ -97,7 +97,7 @@ const activityController = {
         }
     },
 
-    // Get activity by ID
+    // Get activity by ID with linked quests
     getById: async (req, res) => {
         try {
             const activity = await Activity.findById(req.params.id)
@@ -106,6 +106,12 @@ const activityController = {
             if (!activity) {
                 return generateResponse(res, 404, 'Activity not found');
             }
+
+            // Get linked quests for this activity
+            const linkedQuests = await QuestModel.find({
+                activity_id: req.params.id,
+                status: 'active'
+            }).select('quest_title quest_image quest_type no_of_xp no_of_crypes qr_code quest_password');
 
             // Get activity slots
             const slots = await ActivitySlot.find({ activity_id: req.params.id })
@@ -123,13 +129,11 @@ const activityController = {
             let userBookedSlots = [];
             if (req.user && req.user.id) {
                 if (req.user.user_type === 'family') {
-                    // Family users see only their own bookings
                     userBookedSlots = await Booking.find({
                         slot_id: { $in: slotIds },
                         user_id: req.user.id
                     }).select('slot_id booking_status payment_status participants cancellation_reason created_at');
                 } else if (req.user.user_type === 'partner' || req.user.user_type === 'admin') {
-                    // Partners and admins see all bookings for this activity
                     userBookedSlots = await Booking.find({
                         slot_id: { $in: slotIds }
                     })
@@ -162,6 +166,7 @@ const activityController = {
             const activityWithSlots = {
                 ...activity.toObject(),
                 slots: slotsWithReservation,
+                linked_quests: linkedQuests,
                 user_booked_slots: userBookedSlots.map(booking => ({
                     slot_id: booking.slot_id,
                     booking_status: booking.booking_status,
