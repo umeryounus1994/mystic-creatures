@@ -8,6 +8,7 @@ const questSchema = new mongoose.Schema(
         quest_question: { type: String },
         quest_title: { type: String },
         qr_code: { type: String },
+        quest_password: { type: String }, // Optional password for quest
         no_of_xp: { type: Number, default: 0 },
         no_of_crypes: { type: Number, default: 0 },
         level_increase: { type: Number, default: 0 },

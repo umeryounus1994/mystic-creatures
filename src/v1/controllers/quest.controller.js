@@ -445,6 +445,8 @@ const getQuestsSubAdmin = async (req, res, next) => {
 const unlockQuestForUser = async (req, res, next) => {
   try {
     const qr_code = req.body.qr_code;
+    const quest_password = req.body.quest_password; // Optional password
+    
     const quest = await QuestModel.findOne({ qr_code: qr_code, status: 'active' })
     .populate([
       {
@@ -457,6 +459,22 @@ const unlockQuestForUser = async (req, res, next) => {
         res,
         "Not found!"
       );
+    }
+
+    // Check if quest has password protection
+    if (quest.quest_password) {
+      if (!quest_password) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Password required for this quest"
+        );
+      }
+      if (quest.quest_password !== quest_password) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Incorrect password"
+        );
+      }
     }
 
     const questQuiz = await QuestQuizModel.find({quest_id: new ObjectId(quest?._id)});
@@ -477,8 +495,6 @@ const unlockQuestForUser = async (req, res, next) => {
           );
       }
     }
- 
-    
  
     const itemToAdd = {
       user_id: req.user.id,
@@ -508,7 +524,6 @@ const unlockQuestForUser = async (req, res, next) => {
         created_at: quest?.created_at,
         updated_at: quest?.updated_at,
         quest_type: quest?.quest_type
-
       }
       const responsedata = {
         quest: questd,
