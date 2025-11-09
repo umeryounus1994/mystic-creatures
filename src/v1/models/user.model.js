@@ -70,6 +70,9 @@ const userSchema = new mongoose.Schema(
         default: "pending"
       },
     },
+    // Payment integration fields
+    stripe_customer_id: { type: String, default: "" },
+    paypal_customer_id: { type: String, default: "" },
     subscription: {
       plan_type: { 
         type: String, 

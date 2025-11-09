@@ -22,6 +22,13 @@ const bookingSchema = new mongoose.Schema({
     payment_intent_id: { type: String },
     payment_method: { type: String },
     
+    // Payment fields
+    stripe_payment_intent_id: { type: String },
+    stripe_payment_data: { type: Object },
+    paypal_payment_id: { type: String },
+    paypal_payment_data: { type: Object },
+    paid_at: { type: Date },
+    
     // Booking status
     booking_status: {
         type: String,

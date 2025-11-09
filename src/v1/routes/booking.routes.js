@@ -11,6 +11,7 @@ router.post('/confirm-booking', checkPartnerUserAuth, bookingController.confirmB
 router.get('/my-bookings', checkFamilyUserAuth, bookingController.getUserBookings);
 router.get('/:id', checkFamilyUserAuth, bookingController.getById);
 router.post('/cancel-booking', checkPartnerUserAuth, bookingController.cancel);
+router.post('/update-payment-data', checkFamilyUserAuth, bookingController.updatePaymentData);
 
 // Partner booking routes
 router.get('/partner/my-bookings', checkPartnerUserAuth, bookingController.getPartnerBookings);

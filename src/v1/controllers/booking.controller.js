@@ -8,7 +8,7 @@ const bookingController = {
     // Create booking
     createBooking: async (req, res) => {
         try {
-            const { activity_id, slot_id, participants, special_requests } = req.body;
+            const { activity_id, slot_id, participants, special_requests, payment_method } = req.body;
             
             // Validate activity and slot
             const activity = await Activity.findById(activity_id);
@@ -44,7 +44,8 @@ const bookingController = {
                 partner_amount,
                 special_requests,
                 booking_status: 'pending', // Keep as pending until payment
-                payment_status: 'pending'
+                payment_status: 'pending',
+                payment_method
             };
             
             const booking = new Booking(bookingData);
@@ -159,13 +160,12 @@ const bookingController = {
                 return generateResponse(res, 404, 'Booking not found');
             }
             
-            if (booking.payment_status === 'paid') {
-                return generateResponse(res, 400, 'Booking already confirmed');
+            if (booking.payment_status !== 'paid') {
+                return generateResponse(res, 400, 'Booking payment is pending');
             }
             
             // Update booking status
             booking.booking_status = 'confirmed';
-            booking.payment_status = 'paid';
             await booking.save();
             
             // Now update slot availability
@@ -290,6 +290,68 @@ const bookingController = {
             });
         } catch (error) {
             return generateResponse(res, 500, 'Error retrieving bookings', null, error.message);
+        }
+    },
+
+    // Update payment data
+    updatePaymentData: async (req, res) => {
+        try {
+            const { booking_id, stripe_payment_data } = req.body;
+            
+            if (!booking_id || !stripe_payment_data) {
+                return generateResponse(res, 400, 'Booking ID and stripe payment data are required');
+            }
+            
+            const booking = await Booking.findById(booking_id);
+            if (!booking) {
+                return generateResponse(res, 404, 'Booking not found');
+            }
+            
+            // Update booking with payment data
+            const updatedBooking = await Booking.findByIdAndUpdate(
+                booking_id,
+                {
+                    stripe_payment_data,
+                    paid_at: new Date(),
+                    payment_status: 'paid'
+                },
+                { new: true }
+            );
+            
+            return generateResponse(res, 200, 'Payment data updated successfully', updatedBooking);
+        } catch (error) {
+            return generateResponse(res, 500, 'Error updating payment data', null, error.message);
+        }
+    },
+
+    // Update PayPal payment data
+    updatePayPalPaymentData: async (req, res) => {
+        try {
+            const { booking_id, paypal_payment_data } = req.body;
+            
+            if (!booking_id || !paypal_payment_data) {
+                return generateResponse(res, 400, 'Booking ID and PayPal payment data are required');
+            }
+            
+            const booking = await Booking.findById(booking_id);
+            if (!booking) {
+                return generateResponse(res, 404, 'Booking not found');
+            }
+            
+            // Update booking with PayPal payment data
+            const updatedBooking = await Booking.findByIdAndUpdate(
+                booking_id,
+                {
+                    paypal_payment_data,
+                    paid_at: new Date(),
+                    payment_status: 'paid'
+                },
+                { new: true }
+            );
+            
+            return generateResponse(res, 200, 'PayPal payment data updated successfully', updatedBooking);
+        } catch (error) {
+            return generateResponse(res, 500, 'Error updating PayPal payment data', null, error.message);
         }
     }
 };

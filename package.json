@@ -28,6 +28,7 @@
   "license": "ISC",
   "keywords": [],
   "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.3",
     "@sendgrid/mail": "^7.7.0",
     "@sentry/node": "^7.56.0",
     "@sentry/profiling-node": "^1.0.6",
@@ -72,7 +73,9 @@
     "nodemailer": "^6.7.7",
     "otp-generator": "^4.0.0",
     "passport": "^0.6.0",
+    "paypal-rest-sdk": "^1.8.1",
     "redis": "^4.2.0",
+    "stripe": "^14.0.0",
     "ua-parser-js": "^1.0.35",
     "uuid": "^9.0.0",
     "winston": "^3.9.0",
