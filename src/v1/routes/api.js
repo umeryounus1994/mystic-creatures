@@ -19,6 +19,7 @@ const bookingRoute = require("./booking.routes");
 // Add these route imports
 const paymentRoutes = require('./payment.route');
 const webhookRoutes = require('./webhook.route');
+const activityDropRoutes = require("./activitydrop.route");
 
 const filehandlingRoute = require("./filehandling.route");
 
@@ -39,10 +40,13 @@ app.use("/mysteryBag/", mysteryBagRoute);
 app.use("/skyGift/", skyGiftRoute);
 app.use("/activity/", activityRoute);
 app.use("/booking/", bookingRoute);
+app.use("/activity-drop/", activityDropRoutes);
 
 
 // Add these route handlers
 app.use('/payment/', paymentRoutes);
 app.use('/webhook/', webhookRoutes);
+
+
 
 module.exports = app;
