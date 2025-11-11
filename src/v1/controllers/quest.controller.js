@@ -1041,6 +1041,133 @@ const getActivityQuests = async (req, res, next) => {
     next(err);
   }
 };
+const scanQuestQRCode = async (req, res, next) => {
+  try {
+    const { qr_code } = req.body;
+
+    if (!qr_code) {
+      return apiResponse.ErrorResponse(
+        res,
+        "QR code data is required"
+      );
+    }
+
+    let parsedData = {};
+
+    try {
+      // Try to parse as JSON first
+      parsedData = JSON.parse(qr_code);
+      
+      // Validate required qr_code field
+      if (!parsedData.qr_code) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Invalid QR code format: qr_code field is required"
+        );
+      }
+
+    } catch (parseError) {
+      // If JSON parsing fails, treat as raw QR code
+      parsedData = {
+        qr_code: qr_code.trim(),
+        quest_password: null
+      };
+    }
+
+    // First check if quest exists with this qr_code
+    const quest = await QuestModel.findOne({ 
+      qr_code: parsedData.qr_code, 
+      status: 'active' 
+    });
+
+    if (!quest) {
+      return apiResponse.notFoundResponse(
+        res,
+        "No quest found with this QR code"
+      );
+    }
+
+    // Extract and validate data
+    const result = {
+      qr_code: quest.qr_code,
+      quest_password: quest.quest_password || null,
+      has_password: !!(quest.quest_password && quest.quest_password.trim() !== "")
+    };
+
+    return apiResponse.successResponseWithData(
+      res,
+      "QR code scanned successfully",
+      result
+    );
+
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+const confirmQuestQRCode = async (req, res, next) => {
+  try {
+    const { qr_code, quest_password } = req.body;
+
+    if (!qr_code) {
+      return apiResponse.ErrorResponse(
+        res,
+        "QR code data is required"
+      );
+    }
+    if (!quest_password) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Password is required"
+      );
+    }
+
+    let parsedData = {};
+
+    try {
+      // Try to parse as JSON first
+      parsedData = JSON.parse(qr_code);
+      
+      // Validate required qr_code field
+      if (!parsedData.qr_code) {
+        return apiResponse.ErrorResponse(
+          res,
+          "Invalid QR code format: qr_code field is required"
+        );
+      }
+
+    } catch (parseError) {
+      // If JSON parsing fails, treat as raw QR code
+      parsedData = {
+        qr_code: qr_code.trim(),
+        quest_password: null
+      };
+    }
+
+    // First check if quest exists with this qr_code
+    const quest = await QuestModel.findOne({ 
+      qr_code: qr_code,
+      quest_password: quest_password, 
+      status: 'active' 
+    });
+
+    if (!quest) {
+      return apiResponse.notFoundResponse(
+        res,
+        "No quest found with this QR code"
+      );
+    }
+
+    return apiResponse.successResponse(
+      res,
+      "QR code verified successfully"
+    );
+
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
 
 module.exports = {
   createQuest,
@@ -1061,5 +1188,7 @@ module.exports = {
   getAllQuestGroups,
   addQuestToGroup,
   purchaseQuestGroup,
-  getActivityQuests
+  getActivityQuests,
+  scanQuestQRCode,
+  confirmQuestQRCode
 };

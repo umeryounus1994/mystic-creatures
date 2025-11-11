@@ -113,4 +113,8 @@ router.post(
 );
 router.get("/purchase_quest_group/:qr_code", checkUserAuth, questController.purchaseQuestGroup);
 
+router.post("/scan_qr", checkUserAuth, questController.scanQuestQRCode);
+
+router.post("/confirm_qr_password", checkUserAuth, questController.confirmQuestQRCode);
+
 module.exports = router;
