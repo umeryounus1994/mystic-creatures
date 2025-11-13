@@ -1,6 +1,8 @@
+const mongoose = require('mongoose');
 const Activity = require('../models/activity.model');
 const ActivitySlot = require('../models/activityslot.model');
 const Booking = require('../models/booking.model');
+const Commission = require('../models/commission.model');
 const QuestModel = require('../models/quest.model');            
 const { generateResponse } = require('../utils/response');
 
@@ -398,7 +400,8 @@ const activityController = {
     // Get partner dashboard stats
     getPartnerStats: async (req, res) => {
         try {
-            const partnerId = req.user.id;
+            // Get revenue stats from commission records instead of bookings
+            const partnerId = new mongoose.Types.ObjectId(req.user.id);
 
             // Get partner's activities
             const totalActivities = await Activity.countDocuments({ partner_id: partnerId });
@@ -430,38 +433,42 @@ const activityController = {
                 booking_status: 'completed'
             });
 
-            // Get revenue stats
-            const revenueStats = await Booking.aggregate([
+
+
+            // Debug: Check if commission records exist for this partner
+            const commissionCount = await Commission.countDocuments({ partner_id: partnerId });
+
+            const revenueStats = await Commission.aggregate([
                 {
                     $match: {
-                        activity_id: { $in: activityIds },
-                        payment_status: 'paid'
+                        partner_id: partnerId,
+                        status: 'confirmed'
                     }
                 },
                 {
                     $group: {
                         _id: null,
-                        totalRevenue: { $sum: '$total_amount' },
-                        partnerEarnings: { $sum: '$partner_amount' },
+                        totalRevenue: { $sum: '$gross_amount' },
+                        partnerEarnings: { $sum: { $subtract: ['$gross_amount', '$commission_amount'] } },
                         commissionPaid: { $sum: '$commission_amount' }
                     }
                 }
             ]);
 
-            // Get this month's earnings
+            // Get this month's earnings from commission records
             const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-            const monthlyEarnings = await Booking.aggregate([
+            const monthlyEarnings = await Commission.aggregate([
                 {
                     $match: {
-                        activity_id: { $in: activityIds },
-                        payment_status: 'paid',
-                        created_at: { $gte: startOfMonth }
+                        partner_id: partnerId,
+                        status: 'confirmed',
+                        transaction_date: { $gte: startOfMonth }
                     }
                 },
                 {
                     $group: {
                         _id: null,
-                        monthlyRevenue: { $sum: '$partner_amount' }
+                        monthlyRevenue: { $sum: { $subtract: ['$gross_amount', '$commission_amount'] } }
                     }
                 }
             ]);
@@ -470,23 +477,50 @@ const activityController = {
             const recentBookings = await Booking.find({
                 activity_id: { $in: activityIds }
             })
-                .populate('user_id', 'first_name last_name')
-                .populate('activity_id', 'title price')
-                .populate('slot_id', 'date start_time end_time')
+                .populate('user_id', 'first_name last_name username')
+                .populate('activity_id', 'title')
                 .sort({ created_at: -1 })
-                .limit(5);
+                .limit(5)
+                .lean();
+
+            // Format recent bookings for dashboard
+            const formattedRecentBookings = recentBookings.map(booking => ({
+                id: booking._id,
+                customer: booking.user_id?.first_name && booking.user_id?.last_name 
+                    ? `${booking.user_id.first_name} ${booking.user_id.last_name}`
+                    : booking.user_id?.username || 'Customer',
+                activity_title: booking.activity_id?.title || 'Unknown Activity',
+                status: booking.booking_status,
+                participants: booking.participants,
+                total_amount: booking.total_amount,
+                booking_date: booking.created_at,
+                formatted_date: new Date(booking.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                })
+            }));
 
             // Get recent activities
             const recentActivities = await Activity.find({ partner_id: partnerId })
                 .sort({ created_at: -1 })
                 .limit(5)
-                .select('title status created_at price images')
+                .select('title status created_at images price')
                 .lean();
 
-            // Add first image to each activity
-            const recentActivitiesWithImage = recentActivities.map(activity => ({
-                ...activity,
-                image: activity.images && activity.images.length > 0 ? activity.images[0] : null
+            // Format recent activities for dashboard
+            const formattedRecentActivities = recentActivities.map(activity => ({
+                id: activity._id,
+                title: activity.title,
+                status: activity.status,
+                image: activity.images && activity.images.length > 0 ? activity.images[0] : null,
+                price: activity.price,
+                created_date: activity.created_at,
+                formatted_date: new Date(activity.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                })
             }));
 
             const revenue = revenueStats[0] || { totalRevenue: 0, partnerEarnings: 0, commissionPaid: 0 };
@@ -511,8 +545,8 @@ const activityController = {
                     commissionPaid: revenue.commissionPaid,
                     monthlyEarnings: monthly.monthlyRevenue
                 },
-                recentBookings,
-                recentActivities: recentActivitiesWithImage
+                recentBookings: formattedRecentBookings,
+                recentActivities: formattedRecentActivities
             };
 
             return generateResponse(res, 200, 'Partner stats retrieved successfully', stats);

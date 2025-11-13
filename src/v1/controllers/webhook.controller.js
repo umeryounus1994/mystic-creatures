@@ -1,7 +1,7 @@
 const stripe = require('../../../config/stripe');
 const Booking = require('../models/booking.model');
 const Commission = require('../models/commission.model');
-const { generateResponse } = require('../utils/response');
+const emailController = require('./email.controller');
 
 const handleStripeWebhook = async (req, res) => {
     const sig = req.headers['stripe-signature'];
@@ -56,7 +56,14 @@ const handlePaymentSuccess = async (paymentIntent) => {
                 { upsert: true, new: true }
             );
             
-            console.log(`Payment successful for booking ${booking_id}`);
+            // Send automated emails
+            
+            try {
+                await emailController.sendBookingConfirmation(booking_id);
+                await emailController.sendPartnerBookingNotification(booking_id);
+            } catch (emailError) {
+                console.error('❌ Webhook email sending failed:', emailError);
+            }
         }
     } catch (error) {
         console.error('Error handling payment success:', error);
@@ -72,7 +79,6 @@ const handlePaymentFailed = async (paymentIntent) => {
             status: 'cancelled'
         });
         
-        console.log(`Payment failed for booking ${booking_id}`);
     } catch (error) {
         console.error('Error handling payment failure:', error);
     }

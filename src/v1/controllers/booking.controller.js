@@ -107,7 +107,41 @@ const bookingController = {
                 return generateResponse(res, 404, 'Booking not found');
             }
             
-            return generateResponse(res, 200, 'Booking retrieved successfully', booking);
+            // Format time for email
+            const formatTime = (timeString) => {
+                if (!timeString) return 'TBD';
+                const date = new Date(timeString);
+                return date.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+            };
+
+            // Generate Google Maps link
+            const generateMapLink = (location) => {
+                if (location && location.coordinates && location.coordinates.length === 2) {
+                    const [lng, lat] = location.coordinates;
+                    return `https://maps.google.com/?q=${lat},${lng}`;
+                }
+                return '#';
+            };
+
+            const emailData = {
+                customerName: booking.user_id.first_name,
+                bookingId: booking.booking_id,
+                activityTitle: booking.activity_id.title,
+                date: booking.slot_id.date ? new Date(booking.slot_id.date).toDateString() : 'TBD',
+                formattedStartTime: formatTime(booking.slot_id.start_time),
+                formattedEndTime: formatTime(booking.slot_id.end_time),
+                googleMapLink: generateMapLink(booking.activity_id.location),
+                participants: booking.participants,
+                totalAmount: booking.total_amount,
+                partnerName: booking.activity_id.partner_id?.business_name || 'Partner',
+                useIonos: true
+            };
+
+            return generateResponse(res, 200, 'Booking retrieved successfully', { booking, emailData });
         } catch (error) {
             return generateResponse(res, 500, 'Error retrieving booking', null, error.message);
         }

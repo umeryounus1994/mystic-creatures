@@ -6,6 +6,9 @@ const Activity = require('../models/activity.model');
 const Commission = require('../models/commission.model');
 const { generateResponse } = require('../utils/response');
 
+// Send automated emails
+const emailController = require('./email.controller');
+
 // Create payment intent for booking
 const createPaymentIntent = async (req, res) => {
     try {
@@ -31,9 +34,7 @@ const createPaymentIntent = async (req, res) => {
             // Use existing customer ID
             try {
                 customer = await stripe.customers.retrieve(customerId);
-                console.log('📧 Using existing customer:', customer.id);
             } catch (error) {
-                console.log('❌ Existing customer not found, creating new one');
                 customerId = null;
             }
         }
@@ -54,7 +55,6 @@ const createPaymentIntent = async (req, res) => {
                     stripe_customer_id: customer.id
                 });
                 
-                console.log('👤 Created and saved new customer:', customer.id);
             } catch (customerError) {
                 console.error('Customer creation error:', customerError);
                 customer = null;
@@ -108,8 +108,6 @@ const confirmPayment = async (req, res) => {
         // Retrieve payment intent from Stripe
         const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
         
-        console.log('Payment Intent Status:', paymentIntent.status);
-        
         // Check if payment is successful
         if (paymentIntent.status !== 'succeeded') {
             return generateResponse(res, 400, `Payment not successful. Status: ${paymentIntent.status}`);
@@ -154,7 +152,14 @@ const confirmPayment = async (req, res) => {
         
         await commission.save();
         
-        console.log('✅ Payment confirmed for booking:', booking_id);
+ 
+        try {
+            await emailController.sendBookingConfirmation(booking_id);
+            await emailController.sendPartnerBookingNotification(booking_id);
+        } catch (emailError) {
+            console.error('❌ Email sending failed:', emailError);
+            // Don't fail the payment confirmation if emails fail
+        }
         
         return generateResponse(res, 200, 'Payment confirmed successfully', {
             booking_id,
@@ -226,8 +231,6 @@ const createPayPalOrder = async (req, res) => {
                 // Get approval URL
                 const approval_url = payment.links.find(link => link.rel === 'approval_url').href;
                 
-                console.log('✅ PayPal payment created:', payment.id);
-                
                 return generateResponse(res, 200, 'PayPal payment created', {
                     payment_id: payment.id,
                     approval_url: approval_url,
@@ -279,14 +282,7 @@ const executePayPalPayment = async (req, res) => {
                         payment_status: 'paid'
                     });
                 }
-                
-                // Update booking status
-                await Booking.findByIdAndUpdate(booking._id, {
-                    payment_status: 'paid',
-                    paid_at: new Date(),
-                    paypal_payment_data: payment,
-                    payment_method: 'paypal'
-                });
+            
                 
                 // Create commission record
                 const commission = new Commission({
@@ -302,8 +298,20 @@ const executePayPalPayment = async (req, res) => {
                 });
                 
                 await commission.save();
-                
-                console.log('✅ PayPal payment executed for booking:', booking._id);
+                await Booking.findByIdAndUpdate(booking._id, {
+                    payment_status: 'paid',
+                    paid_at: new Date(),
+                    paypal_payment_data: payment,
+                    payment_method: 'paypal'
+                });
+
+                try {
+                    await emailController.sendBookingConfirmation(booking._id);
+                    await emailController.sendPartnerBookingNotification(booking._id);
+                } catch (emailError) {
+                    console.error('❌ PayPal email sending failed:', emailError);
+                    // Don't fail the payment confirmation if emails fail
+                }
                 
                 return generateResponse(res, 200, 'PayPal payment executed successfully', {
                     booking_id: booking._id,

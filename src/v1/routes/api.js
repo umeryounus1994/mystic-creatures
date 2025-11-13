@@ -21,6 +21,8 @@ const paymentRoutes = require('./payment.route');
 const webhookRoutes = require('./webhook.route');
 const activityDropRoutes = require("./activitydrop.route");
 
+const partnerEarningRoutes = require("./partner-earnings.route");
+
 const filehandlingRoute = require("./filehandling.route");
 
 // End Points of Api
@@ -46,6 +48,9 @@ app.use("/activity-drop/", activityDropRoutes);
 // Add these route handlers
 app.use('/payment/', paymentRoutes);
 app.use('/webhook/', webhookRoutes);
+
+// Earning Routes
+app.use('/partner-earnings/', partnerEarningRoutes);
 
 
 

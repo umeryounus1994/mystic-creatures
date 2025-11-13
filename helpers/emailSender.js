@@ -32,7 +32,7 @@ module.exports.sendEmail = (toEmail, emailSubject, emailBody) => {
   sgMail
     .send({
       to: toEmail,
-      from: { name: "Mystic Creatures", email: "info@usquaresolutions.com" },
+      from: { name: "MyCre App", email: "info@mycrebooking.com" },
       subject: emailSubject,
       text: emailBody,
       html: `<br><br> ${emailBody}`,

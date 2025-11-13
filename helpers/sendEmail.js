@@ -10,7 +10,7 @@ module.exports.sendOtpEmail = (email, otp, res) => {
   sgMail
     .send({
       to: email,
-      from: {name: 'Eirportalen', email: 'huzaifa@creativeheads.no'},
+      from: { name: "MyCre App", email: "info@mycrebooking.com" },
       subject: 'Eirportalen Login OTP',
       text: `Hello. <br> Welocome to Eirportalen. <br> Your OTP is: ${otp} `,
       html: `<p>Hello. <br> Welocome to Eirportalen. <br>Your OTP is: <b>${otp}</b></p>`,
@@ -30,7 +30,7 @@ module.exports.sendOtpEmail = (email, otp, res) => {
 module.exports.sendPasswordResetEmail = async (email, dataObject, res) => {
   const msg = {
     to: email,
-    from: {name: 'Eirportalen', email: 'huzaifa@creativeheads.no'},
+    from: { name: "MyCre App", email: "info@mycrebooking.com" },
     subject: 'Eirportalen Reset Password',
     text: `Hello. <br> Welocome to Eirportalen. `,
     html: `<!DOCTYPE html>
@@ -310,7 +310,7 @@ module.exports.meetinginvitebyEmail = async (email, dataObject, req) => {
 
   const msg = {
     to: email,
-    from: {name: 'Eirportalen', email: 'huzaifa@creativeheads.no'},
+    from: { name: "MyCre App", email: "info@mycrebooking.com" },
     subject: 'Eirportalen Meeting Invitation',
     text: `Hello. <br> Welocome to Eirportalen. `,
     html: `<!DOCTYPE html>
@@ -613,7 +613,7 @@ module.exports.meetinginvitebyEmail = async (email, dataObject, req) => {
 module.exports.verifybyEmail = async (email, dataObject, res) => {
   const msg = {
     to: email,
-    from: {name: 'Eirportalen', email: 'huzaifa@creativeheads.no'},
+    from: { name: "MyCre App", email: "info@mycrebooking.com" },
     subject: 'Eirportalen Email Verification',
     text: `Hello. <br> Welocome to Eirportalen. `,
     html: `<!DOCTYPE html>
@@ -891,7 +891,7 @@ module.exports.verifybyEmail = async (email, dataObject, res) => {
 module.exports.joinplatformEmail = async (email, dataObject, req) => {
   const msg = {
     to: email,
-    from: {name: 'Eirportalen', email: 'huzaifa@creativeheads.no'},
+    from: { name: "MyCre App", email: "info@mycrebooking.com" },
     subject: 'Eirportalen Join Platform',
     text: `Hello. <br> Welocome to Eirportalen. `,
     html: `<!DOCTYPE html>
@@ -1173,7 +1173,7 @@ module.exports.joinplatformEmail = async (email, dataObject, req) => {
 module.exports.sendTemplate = (to, templateId, template_data) => {
   const msg = {
     to,
-    from: {name: 'Eirportalen', email: 'huzaifa@creativeheads.no'},
+    from: { name: "MyCre App", email: "info@mycrebooking.com" },
     templateId,
     template_data,
   }
