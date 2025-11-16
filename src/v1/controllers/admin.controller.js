@@ -30,7 +30,7 @@ const loginAdmin = async (req, res, next) => {
       );
     }
 
-    const email = req.body.email;
+    const email = req.body.email.toLowerCase();
     let user = null;
     let userType = null;
 
