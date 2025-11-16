@@ -433,30 +433,67 @@ const sendUserPasswordResetEmail = async (req, res, next) => {
 const adminPasswordReset = async (req, res, next) => {
   try {
     const { password, password_confirmation, id } = req.body;
-    const user = await AdminModel.findById(id);
-
-    if (password && password_confirmation) {
-      if (password !== password_confirmation) {
-        return apiResponse.ErrorResponse(
-          res,
-          "New Password and Confirm New Password doesn't match"
-        );
-      }
-      const salt = await bcrypt.genSalt(10);
-      const newHashPassword = await bcrypt.hash(password, salt);
-      await AdminModel.findByIdAndUpdate(id, {
-        $set: { password: newHashPassword },
-      });
-
-      return apiResponse.successResponse(
+    
+    if (!password || !password_confirmation) {
+      return apiResponse.ErrorResponse(
         res,
-        "Password Reset Successfully"
+        "All Fields are Required"
       );
     }
-    return apiResponse.ErrorResponse(
+
+    if (password !== password_confirmation) {
+      return apiResponse.ErrorResponse(
+        res,
+        "New Password and Confirm New Password doesn't match"
+      );
+    }
+
+    // First check if reset request exists in AdminPasswordResetModel
+    let resetRequest = await AdminPasswordResetModel.findById(id);
+    let user = null;
+    let UserModelToUpdate = null;
+
+    if (resetRequest) {
+      // Admin/Subadmin reset request
+      user = await AdminModel.findById(resetRequest.user_id);
+      UserModelToUpdate = AdminModel;
+    } else {
+      // Check UserPasswordResetModel for family/partner users
+      resetRequest = await UserPasswordResetModel.findById(id);
+      if (resetRequest) {
+        user = await UserModel.findById(resetRequest.user_id);
+        UserModelToUpdate = UserModel;
+      }
+    }
+
+    if (!resetRequest || !user) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid or expired reset request"
+      );
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const newHashPassword = await bcrypt.hash(password, salt);
+    
+    // Update password in appropriate model
+    await UserModelToUpdate.findByIdAndUpdate(resetRequest.user_id, {
+      $set: { password: newHashPassword },
+    });
+
+    // Delete the reset request after successful password update
+    if (UserModelToUpdate === AdminModel) {
+      await AdminPasswordResetModel.findByIdAndDelete(id);
+    } else {
+      await UserPasswordResetModel.findByIdAndDelete(id);
+    }
+
+    return apiResponse.successResponse(
       res,
-      "All Fields are Required"
+      "Password Reset Successfully"
     );
+
   } catch (err) {
     logger.error(err);
     next(err);
@@ -491,12 +528,20 @@ const getResetPasswordRequestDetails = async (req, res, next) => {
       );
     }
 
-    const requestDetail = await AdminPasswordResetModel.findById(
-      requestId
-    );
+    let requestDetail = null;
+
+    // First check AdminPasswordResetModel
+    requestDetail = await AdminPasswordResetModel.findById(requestId);
+    
+    // If not found in admin reset, check user reset model
+    if (!requestDetail) {
+      requestDetail = await UserPasswordResetModel.findById(requestId);
+    }
+
     if (!requestDetail) {
       return apiResponse.ErrorResponse(res, "Link Expired");
     }
+
     return apiResponse.successResponseWithData(
       res,
       "Detail Fetched",
