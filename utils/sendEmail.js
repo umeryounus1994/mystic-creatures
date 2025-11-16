@@ -19,6 +19,8 @@ const sendEmail = async (emailData) => {
             htmlContent = generateBookingCancellationHTML(data);
         } else if (template === 'partner-booking-notification') {
             htmlContent = generatePartnerNotificationHTML(data);
+        } else if (template === 'password-reset') {
+            htmlContent = generatePasswordResetHTML(data);
         }
         
         // Try IONOS first if specified, otherwise use SendGrid
@@ -168,6 +170,43 @@ const generateBookingCancellationHTML = (data) => {
             <p>If you have any questions, please contact our support team.</p>
             
             <p>Thank you,<br>MyCre App Team</p>
+        </div>
+    </body>
+    </html>`;
+};
+
+const generatePasswordResetHTML = (data) => {
+    return `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Reset Your Password</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #2196F3;">🔐 Reset Your Password</h2>
+            
+            <p>Hey ${data.userName},</p>
+            
+            <p>Follow the link below to enter a new password for your account:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${data.resetLink}" target="_blank" 
+                   style="background-color: #4CAF50; color: white; padding: 12px 24px; 
+                          text-decoration: none; border-radius: 5px; display: inline-block;">
+                    Reset Password
+                </a>
+            </div>
+            
+            <p>Or copy and paste this link in your browser:</p>
+            <p style="word-break: break-all; color: #666;">${data.resetLink}</p>
+            
+            <p>With best regards,<br>Team MyCre Booking</p>
+            
+            <hr style="margin: 30px 0;">
+            <p style="font-size: 12px; color: #666;">
+                If you didn't request this password reset, please ignore this email.
+            </p>
         </div>
     </body>
     </html>`;

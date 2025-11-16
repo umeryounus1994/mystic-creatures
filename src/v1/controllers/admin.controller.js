@@ -12,6 +12,7 @@ const AdminModel = require("../models/admin.model");
 const UserModel = require("../models/user.model");
 const CreatureModel = require("../models/creature.model");
 const AdminPasswordResetModel = require("../models/adminReset.model");
+const UserPasswordResetModel = require("../models/userReset.model");
 const {
   getPagination,
   softDelete,
@@ -20,6 +21,7 @@ const {
 } = require("../../../helpers/commonApis");
 const { sendEmail } = require("../../../helpers/emailSender");
 const logger = require('../../../middlewares/logger');
+const emailController = require('./email.controller');
 
 const loginAdmin = async (req, res, next) => {
   try {
@@ -361,34 +363,66 @@ const updateAdmin = async (req, res, next) => {
 const sendUserPasswordResetEmail = async (req, res, next) => {
   try {
     const { email } = req.body;
-    if (email) {
-      const user = await AdminModel.findOne({ email });
-      if (user) {
-        const passwordReset = await AdminPasswordResetModel.create({
-          user_id: user?.id,
-        });
-        const emailBody = `Hey ${user.first_name},
-        <br>Follow the link below to enter a new password for your account:
-        <br><a href=${process.env.ADMIN_RESET_PASSWORD}?id=${passwordReset.id} target="_blank">${process.env.ADMIN_RESET_PASSWORD}?id=${passwordReset.id}</a>
-        <br><br>With best regards,
-        <br>Team Mystic Creatures`;
-        sendEmail(user.email, "Reset your password", emailBody);
-        // await sendPasswordResetEmail(user.email, { user, link }, res);
+    if (!email) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Email Field is Required"
+      );
+    }
 
-        return apiResponse.successResponse(
-          res,
-          "Password Reset Email Sent... Please Check Your Email"
-        );
+    let user = null;
+    let resetModel = null;
+    let resetUrl = null;
+
+    // First check AdminModel for admin and subadmin users
+    const adminUser = await AdminModel.findOne({ 
+      email: email.toLowerCase(),
+      user_type: { $in: ["admin", "subadmin"] }
+    });
+
+    if (adminUser) {
+      user = adminUser;
+      resetModel = AdminPasswordResetModel;
+      resetUrl = process.env.ADMIN_RESET_PASSWORD;
+    } else {
+      // Check UserModel for family and partner users
+      const userModelUser = await UserModel.findOne({ 
+        email: email.toLowerCase(),
+        user_type: { $in: ["family", "partner"] }
+      });
+
+      if (userModelUser) {
+        user = userModelUser;
+        resetModel = UserPasswordResetModel;
+        resetUrl = process.env.ADMIN_RESET_PASSWORD || process.env.ORG_DOMAIN_URL;
       }
+    }
+
+    if (!user) {
       return apiResponse.notFoundResponse(
         res,
         "Email doesn't exists"
       );
     }
-    return apiResponse.ErrorResponse(
+
+    // Create password reset record
+    const passwordReset = await resetModel.create({
+      user_id: user._id,
+    });
+
+    const userName = user.first_name || user.username || 'User';
+    await emailController.sendPasswordResetEmail({
+      userEmail: user.email,
+      userName,
+      resetUrl,
+      resetId: passwordReset.id
+    });
+
+    return apiResponse.successResponse(
       res,
-      "Email Field is Required"
+      "Password Reset Email Sent... Please Check Your Email"
     );
+
   } catch (err) {
     logger.error(err);
     next(err);
