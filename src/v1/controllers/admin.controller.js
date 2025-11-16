@@ -449,19 +449,19 @@ const adminPasswordReset = async (req, res, next) => {
     }
 
     // First check if reset request exists in AdminPasswordResetModel
-    let resetRequest = await AdminPasswordResetModel.findById(id);
+    let resetRequest = await AdminPasswordResetModel.findOne({ user_id: id});
     let user = null;
     let UserModelToUpdate = null;
 
     if (resetRequest) {
       // Admin/Subadmin reset request
-      user = await AdminModel.findById(resetRequest.user_id);
+      user = await AdminModel.findById(id);
       UserModelToUpdate = AdminModel;
     } else {
       // Check UserPasswordResetModel for family/partner users
-      resetRequest = await UserPasswordResetModel.findById(id);
+      resetRequest = await UserPasswordResetModel.findOne({ user_id: id});
       if (resetRequest) {
-        user = await UserModel.findById(resetRequest.user_id);
+        user = await UserModel.findById(id);
         UserModelToUpdate = UserModel;
       }
     }
@@ -478,15 +478,15 @@ const adminPasswordReset = async (req, res, next) => {
     const newHashPassword = await bcrypt.hash(password, salt);
     
     // Update password in appropriate model
-    await UserModelToUpdate.findByIdAndUpdate(resetRequest.user_id, {
+    await UserModelToUpdate.findByIdAndUpdate(id, {
       $set: { password: newHashPassword },
     });
 
     // Delete the reset request after successful password update
     if (UserModelToUpdate === AdminModel) {
-      await AdminPasswordResetModel.findByIdAndDelete(id);
+      await AdminPasswordResetModel.findByIdAndDelete(resetRequest?._id);
     } else {
-      await UserPasswordResetModel.findByIdAndDelete(id);
+      await UserPasswordResetModel.findByIdAndDelete(resetRequest?._id);
     }
 
     return apiResponse.successResponse(
