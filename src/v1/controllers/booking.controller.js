@@ -3,6 +3,7 @@ const Activity = require('../models/activity.model');
 const ActivitySlot = require('../models/activityslot.model');
 const { generateResponse } = require('../utils/response');
 const { generateBookingId } = require('../utils/generators');
+const emailController = require('./email.controller');
 
 const bookingController = {
     // Create booking
@@ -178,6 +179,13 @@ const bookingController = {
                 }
             }
             
+            // Send cancellation email
+            try {
+                await emailController.sendBookingCancellation(booking_id);
+            } catch (emailError) {
+                console.error('❌ Cancellation email sending failed:', emailError);
+            }
+            
             return generateResponse(res, 200, 'Booking cancelled successfully', booking);
         } catch (error) {
             return generateResponse(res, 500, 'Error cancelling booking', null, error.message);
@@ -210,6 +218,13 @@ const bookingController = {
                     slot.status = 'full';
                 }
                 await slot.save();
+            }
+            
+            // Send confirmation emails
+            try {
+                await emailController.sendBookingConfirmation(booking_id);
+            } catch (emailError) {
+                console.error('❌ Confirmation email sending failed:', emailError);
             }
             
             return generateResponse(res, 200, 'Booking confirmed successfully', booking);
