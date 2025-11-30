@@ -30,6 +30,7 @@ router.get("/get_all_admin", checkAdminUserAuth, pictureController.getPictureMys
 router.post("/get_all", checkUserAuth, pictureController.getPictureMystery);
 router.post("/get_all_user_mysteries/:status", checkUserAuth, pictureController.getAllUserMysteries);
 router.get("/get_mystery_by_id/:id", checkUserAuth, pictureController.getMysteryById);
+router.get("/get_picture_mystery_by_id/:id", checkAdminUserAuth, pictureController.getMysteryByIdAdmin);
 router.get("/unlock_picture_mystery/:id", checkUserAuth, pictureController.unlockPictureMysteryForUser);
 router.post("/complete_mystery/:id", checkUserAuth, pictureController.completePictureMystery);
 

@@ -200,6 +200,27 @@ const getMysteryById = async (req, res, next) => {
   }
 };
 
+const getMysteryByIdAdmin = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    const mission = await PictureMysteryModel.findOne({ _id: new ObjectId(id) });
+    if (!mission) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Mystery not found"
+      );
+    }
+    return res.json({
+      status: true,
+      message: "Data Found",
+      data: mission
+    })
+  } catch (err) {
+    next(err);
+  }
+};
+
 const unlockPictureMysteryForUser = async (req, res, next) => {
   try {
     const id = req.params.id;
@@ -435,5 +456,6 @@ createPictureMystery,
   top10Players,
   getAllUserMysteries,
   getMysteryById,
-  getPictureMysteryAdmin
+  getPictureMysteryAdmin,
+  getMysteryByIdAdmin
 };

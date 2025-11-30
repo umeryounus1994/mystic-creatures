@@ -841,13 +841,6 @@ const updatePartnerApprovalStatus = async (req, res, next) => {
       );
     }
 
-    if (user.user_type !== 'partner' || user.user_type !== 'family') {
-      return apiResponse.ErrorResponse(
-        res,
-        "User is not a partner"
-      );
-    }
-
     // Update partner approval status
     const updateData = {
       'partner_profile.approval_status': approval_status
@@ -864,7 +857,7 @@ const updatePartnerApprovalStatus = async (req, res, next) => {
     if (!updatedUser) {
       return apiResponse.ErrorResponse(
         res,
-        "Failed to update partner status"
+        "Failed to update status"
       );
     }
 
@@ -876,6 +869,71 @@ const updatePartnerApprovalStatus = async (req, res, next) => {
         username: updatedUser.username,
         email: updatedUser.email,
         approval_status: updatedUser.partner_profile.approval_status,
+      }
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const updateUserStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Invalid user ID"
+      );
+    }
+
+    if (!status) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Status is required"
+      );
+    }
+
+    if (!['active', 'blocked'].includes(status)) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid status. Must be 'active' or 'blocked'"
+      );
+    }
+
+    // Find the user
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return apiResponse.notFoundResponse(
+        res,
+        "User not found"
+      );
+    }
+
+    // Update user status
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      id,
+      { status: status },
+      { new: true }
+    ).select('-password -access_token');
+
+    if (!updatedUser) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Failed to update user status"
+      );
+    }
+
+    return apiResponse.successResponseWithData(
+      res,
+      `User status updated to ${status} successfully`,
+      {
+        user_id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        status: updatedUser.status,
       }
     );
   } catch (err) {
@@ -979,5 +1037,6 @@ module.exports = {
   createUserPartner,
   updatePartnerApprovalStatus,
   createUserFamily,
-  getFamilyDashboard
+  getFamilyDashboard,
+  updateUserStatus
 };

@@ -216,6 +216,7 @@ const createDropQuiz = async (req, res, next) => {
 const getDrops = async (req, res, next) => {
   try {
     const drops = await DropModel.find({status: 'active'})
+    .sort({ created_at: -1 })
     .populate([
       {
           path: 'mythica_ID', select: { creature_name: 1 }
@@ -237,6 +238,7 @@ const getDrops = async (req, res, next) => {
 const getDropsSubAdmin = async (req, res, next) => {
   try {
     const drops = await DropModel.find({created_by: new ObjectId(req.user.id), status: 'active'})
+    .sort({ created_at: -1 })
     .populate([
       {
           path: 'mythica_ID', select: { creature_name: 1 }

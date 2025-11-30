@@ -87,6 +87,12 @@ router.delete(
   userController.deleteUser
 );
 
+router.patch(
+  "/:id",
+  checkAdminUserAuth,
+  userController.updateUserStatus
+);
+
 router.post(
   "/partner/:id/approval-status",
   checkAdminUserAuth,
