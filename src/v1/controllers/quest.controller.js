@@ -58,7 +58,26 @@ const createQuest = async (req, res, next) => {
       itemDetails.quest_context = "standalone";
     }
     
-    var questions = JSON.parse(req.body.questions);
+    // Safely parse questions with error handling
+    var questions = [];
+    if (req.body.questions) {
+      try {
+        // If it's already an object/array, use it directly
+        if (typeof req.body.questions === 'string') {
+          questions = JSON.parse(req.body.questions);
+        } else if (Array.isArray(req.body.questions)) {
+          questions = req.body.questions;
+        } else {
+          questions = [];
+        }
+      } catch (parseError) {
+        logger.error('Error parsing questions:', parseError);
+        return apiResponse.ErrorResponse(
+          res,
+          "Invalid questions format. Please provide valid JSON array."
+        );
+      }
+    }
  
     const createdItem = new QuestModel(itemDetails);
 
@@ -70,31 +89,118 @@ const createQuest = async (req, res, next) => {
         );
       }
       
-      // ... existing quiz creation logic ...
       const quizes = [];
       
       if(req?.files?.option1 && req.files.option1.length > 0){
-        let d = {
-          answer: questions[0].answer,
-          answer_image: req.files.option1[0].location,
-            correct_option: questions[0]?.correct_option == 'true' ? true : false,
-            quest_id: createdItem?._id
+        if(questions[0] != undefined){
+          let d = {
+            answer: questions[0]?.answer || "",
+            answer_image: req.files.option1[0].location,
+              correct_option: questions[0]?.correct_option == 'true' || questions[0]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
         }
-        quizes.push(d);
       }
       else {
-        let d = {
-          answer: questions[0]?.answer,
-          answer_image: questions[0]?.answer_image,
-            correct_option: questions[0]?.correct_option == 'true' ? true : false,
-            quest_id: createdItem?._id
-        }
         if(questions[0] != undefined){
+          let d = {
+            answer: questions[0]?.answer || "",
+            answer_image: questions[0]?.answer_image || "",
+              correct_option: questions[0]?.correct_option == 'true' || questions[0]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
           quizes.push(d);
         }
       }
       
-      // ... rest of quiz options logic ...
+      if(req?.files?.option2 && req.files.option2.length > 0){
+        if(questions[1] != undefined){
+          let d = {
+            answer: questions[1]?.answer || "",
+            answer_image: req.files.option2[0].location,
+              correct_option: questions[1]?.correct_option == 'true' || questions[1]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      } else {
+        if(questions[1] != undefined){
+          let d = {
+            answer: questions[1]?.answer || "",
+            answer_image: questions[1]?.answer_image || "",
+              correct_option: questions[1]?.correct_option == 'true' || questions[1]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      }
+      
+      if(req?.files?.option3 && req.files.option3.length > 0){
+        if(questions[2] != undefined){
+          let d = {
+            answer: questions[2]?.answer || "",
+            answer_image: req.files.option3[0].location,
+              correct_option: questions[2]?.correct_option == 'true' || questions[2]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      } else {
+        if(questions[2] != undefined){
+          let d = {
+            answer: questions[2]?.answer || "",
+            answer_image: questions[2]?.answer_image || "",
+              correct_option: questions[2]?.correct_option == 'true' || questions[2]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      }
+      
+      if(req?.files?.option4 && req.files.option4.length > 0){
+        if(questions[3] != undefined){
+          let d = {
+            answer: questions[3]?.answer || "",
+            answer_image: req.files.option4[0].location,
+              correct_option: questions[3]?.correct_option == 'true' || questions[3]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      } else {
+        if(questions[3] != undefined){
+          let d = {
+            answer: questions[3]?.answer || "",
+            answer_image: questions[3]?.answer_image || "",
+              correct_option: questions[3]?.correct_option == 'true' || questions[3]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      }
+      
+      if(req?.files?.option5 && req.files.option5.length > 0){
+        if(questions[4] != undefined){
+          let d = {
+            answer: questions[4]?.answer || "",
+            answer_image: req.files.option5[0].location,
+              correct_option: questions[4]?.correct_option == 'true' || questions[4]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      } else {
+        if(questions[4] != undefined){
+          let d = {
+            answer: questions[4]?.answer || "",
+            answer_image: questions[4]?.answer_image || "",
+              correct_option: questions[4]?.correct_option == 'true' || questions[4]?.correct_option === true ? true : false,
+              quest_id: createdItem?._id
+          }
+          quizes.push(d);
+        }
+      }
       
       QuestQuizModel.insertMany(quizes)
         .then(function () {
@@ -127,7 +233,28 @@ const updateQuestData = async (req, res, next) => {
     }
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
     itemDetails.quest_image = req.files['quest_file'] ? req.files['quest_file'][0].location : "";
-    var questions = JSON.parse(req.body.questions);
+    
+    // Safely parse questions with error handling
+    var questions = [];
+    if (req.body.questions) {
+      try {
+        // If it's already an object/array, use it directly
+        if (typeof req.body.questions === 'string') {
+          questions = JSON.parse(req.body.questions);
+        } else if (Array.isArray(req.body.questions)) {
+          questions = req.body.questions;
+        } else {
+          questions = [];
+        }
+      } catch (parseError) {
+        logger.error('Error parsing questions:', parseError);
+        return apiResponse.ErrorResponse(
+          res,
+          "Invalid questions format. Please provide valid JSON array."
+        );
+      }
+    }
+    
     const updatedAdmin = await QuestModel.findByIdAndUpdate(
       req.params.id,
       itemDetails,
@@ -147,13 +274,15 @@ const updateQuestData = async (req, res, next) => {
       await QuestQuizModel.deleteMany({quest_id: new ObjectId(req.params.id)});
       var quizes = [];
     if(req?.files?.option1 && req.files.option1.length > 0){
-      let d = {
-        answer: questions[0]?.answer || "",
-        answer_image: req.files.option1[0].location,
-          correct_option: questions[0]?.correct_option == 'true' || questions[0]?.correct_option === true ? true : false,
-          quest_id: req.params.id
+      if(questions[0] != undefined){
+        let d = {
+          answer: questions[0]?.answer || "",
+          answer_image: req.files.option1[0].location,
+            correct_option: questions[0]?.correct_option == 'true' || questions[0]?.correct_option === true ? true : false,
+            quest_id: req.params.id
+        }
+        quizes.push(d);
       }
-      quizes.push(d);
     } else {
       if(questions[0] != undefined){
         let d = {

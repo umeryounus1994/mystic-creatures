@@ -15,12 +15,49 @@ const app = express();
 // Apply the rate limiting middleware to all requests
 //app.use(rateLimiter);
 
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(cors());
-app.use(bodyParser.urlencoded({
-    extended: false
+// Configure body parser with increased limits and error handling
+// Use express.json() OR bodyParser.json(), not both (express.json() is recommended)
+app.use(express.json({ 
+  limit: '300mb',
+  verify: (req, res, buf) => {
+    // Only parse if Content-Type is JSON
+    const contentType = req.headers['content-type'] || '';
+    if (contentType.includes('application/json')) {
+      try {
+        JSON.parse(buf);
+      } catch (e) {
+        // If JSON is invalid, don't throw here - let it be handled by error middleware
+      }
+    }
+  }
 }));
+
+app.use(express.urlencoded({ 
+  limit: '250mb', 
+  extended: true 
+}));
+
+// Remove bodyParser.json() - express.json() already handles this
+// Only keep bodyParser.urlencoded if you need it for form submissions
+// app.use(bodyParser.json({ limit: '300mb' }));
+// app.use(bodyParser.urlencoded({
+//     extended: true,
+//     limit: '250mb'
+// }));
+
+// Error handling middleware for JSON parsing errors
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      status: false,
+      message: 'Invalid JSON in request body',
+      error: err.message
+    });
+  }
+  next(err);
+});
+
+app.use(cors());
 
 // Apply security headers using helmet middleware
 // app.use(
@@ -47,9 +84,6 @@ app.use((req, res, next) => {
   res.set("Expires", "0");
   next();
 });
-
-app.use(express.json({limit: '300mb', extended: true}));
-app.use(express.urlencoded({limit: '250mb', extended: true }));
 
 // Attach sanitizer middleware
 //app.use(sanitize);
