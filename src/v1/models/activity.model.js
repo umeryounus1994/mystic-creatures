@@ -27,9 +27,9 @@ const activitySchema = new mongoose.Schema({
     status: { 
         type: String, 
         enum: ["draft", "pending", "approved", "rejected", "inactive"],
-        default: "pending" 
+        default: "approved" 
     },
-    approved_at: { type: Date },
+    approved_at: { type: Date, default: Date.now },
     rejected_at: { type: Date },
     rejection_reason: { type: String }
 }, {

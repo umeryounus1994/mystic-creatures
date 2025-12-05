@@ -72,11 +72,27 @@ const getAllActivityDrops = async (req, res) => {
             status: 'active',
             created_by: req.user.id 
         })
-            .populate('activity_id', 'title partner_id')
+            .populate('activity_id', 'title partner_id images')
             .populate('created_by', 'username')
             .sort({ created_at: -1 });
 
-        return generateResponse(res, 200, 'All activity drops retrieved successfully', drops);
+        // Map through drops and extract images to root level
+        const dropsWithImages = drops.map(drop => {
+            const dropData = drop.toObject();
+            const activityImages = dropData.activity_id?.images || [];
+            
+            // Remove images from activity_id
+            if (dropData.activity_id) {
+                delete dropData.activity_id.images;
+            }
+            
+            // Add images as separate field at root level
+            dropData.activity_images = activityImages;
+            
+            return dropData;
+        });
+
+        return generateResponse(res, 200, 'All activity drops retrieved successfully', dropsWithImages);
 
     } catch (error) {
         logger.error('Get all activity drops error:', error);
@@ -193,14 +209,26 @@ const getActivityDrop = async (req, res) => {
         const { id } = req.params;
 
         const activityDrop = await ActivityDrop.findById(id)
-            .populate('activity_id', 'title partner_id')
+            .populate('activity_id', 'title partner_id images')
             .populate('created_by', 'username');
 
         if (!activityDrop) {
             return generateResponse(res, 404, 'Activity drop not found');
         }
 
-        return generateResponse(res, 200, 'Activity drop retrieved successfully', activityDrop);
+        // Convert to plain object and extract images
+        const dropData = activityDrop.toObject();
+        const activityImages = dropData.activity_id?.images || [];
+        
+        // Remove images from activity_id
+        if (dropData.activity_id) {
+            delete dropData.activity_id.images;
+        }
+        
+        // Add images as separate field at root level
+        dropData.activity_images = activityImages;
+
+        return generateResponse(res, 200, 'Activity drop retrieved successfully', dropData);
 
     } catch (error) {
         logger.error('Get activity drop error:', error);

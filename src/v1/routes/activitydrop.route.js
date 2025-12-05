@@ -18,7 +18,7 @@ router.post(
 router.get("/activity/:activity_id", activityDropController.getActivityDrops);
 
 // Get all activity drops
-router.get("/all", checkPartnerUserAuth, activityDropController.getAllActivityDrops);
+router.get("/all", checkAuthOrigins, activityDropController.getAllActivityDrops);
 
 // Get nearby activity drops
 router.post("/nearby", checkUserAuth, activityDropController.getNearbyActivityDrops);
