@@ -24,6 +24,7 @@ const activityDropRoutes = require("./activitydrop.route");
 const partnerEarningRoutes = require("./partner-earnings.route");
 
 const filehandlingRoute = require("./filehandling.route");
+const modelBagRoutes = require('./modelbag.route');
 
 // End Points of Api
 app.use("/user/", userRoute);
@@ -52,6 +53,7 @@ app.use('/webhook/', webhookRoutes);
 // Earning Routes
 app.use('/partner-earnings/', partnerEarningRoutes);
 
-
+// Model Bag Routes
+app.use('/model-bag/', modelBagRoutes);
 
 module.exports = app;

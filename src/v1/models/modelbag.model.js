@@ -1,0 +1,54 @@
+const mongoose = require("mongoose");
+const mongooseDelete = require("mongoose-delete");
+
+const pointSchema = new mongoose.Schema({
+    type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+        required: true,
+    },
+    coordinates: {
+        type: [Number],
+        required: true,
+    },
+});
+
+const modelBagSchema = new mongoose.Schema(
+    {
+        title: { type: String, required: true },
+        model_number: { 
+            type: String, 
+            required: true 
+        },
+        reward_file: { type: String },
+        location: {
+            type: pointSchema,
+            required: true,
+        },
+        status: {
+            type: String,
+            enum: ["active", "deleted"],
+            default: "active",
+        },
+        created_by: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        visibility_radius: {
+            type: Number,
+            default: 70 // km
+        }
+    },
+    {
+        timestamps: {
+            createdAt: "created_at",
+            updatedAt: "updated_at",
+        },
+    }
+);
+
+modelBagSchema.plugin(mongooseDelete, { overrideMethods: "all" });
+
+module.exports = mongoose.model("ModelBag", modelBagSchema);
