@@ -114,10 +114,43 @@ const getNearbyModelBags = async (req, res, next) => {
             return locationDistance <= (bag.visibility_radius || 70);
         });
         
+        // Add quiz questions and user interaction status to each bag
+        const bagsWithQuiz = await Promise.all(nearbyBags.map(async (bag) => {
+            // Get quiz questions for this bag
+            const quizQuestions = await ModelBagQuizModel.find({ 
+                model_bag_id: new ObjectId(bag._id) 
+            });
+            
+            // Check if user already interacted
+            const userInteraction = await UserModelBagModel.findOne({ 
+                model_bag_id: new ObjectId(bag._id),
+                user_id: new ObjectId(req.user.id) 
+            });
+            
+            // Calculate distance
+            let endLocation = {
+                latitude: bag.location.coordinates[0],
+                longitude: bag.location.coordinates[1]
+            };
+            const userLocation = {
+                latitude: latitude,
+                longitude: longitude
+            };
+            const locationDistance = haversine(userLocation, endLocation, { unit: 'km' });
+            
+            return {
+                ...bag.toObject(),
+                clues: quizQuestions,
+                interaction_status: userInteraction ? userInteraction.status : null,
+                can_interact: !userInteraction,
+                distance: locationDistance
+            };
+        }));
+        
         return res.json({
-            status: nearbyBags.length > 0 ? true : false,
-            message: nearbyBags.length > 0 ? "Data Found" : "No model bags found",
-            data: nearbyBags
+            status: bagsWithQuiz.length > 0 ? true : false,
+            message: bagsWithQuiz.length > 0 ? "Data Found" : "No model bags found",
+            data: bagsWithQuiz
         });
     } catch (err) {
         next(err);
@@ -143,6 +176,11 @@ const interactWithModelBag = async (req, res, next) => {
         
         if (existingInteraction) {
             return apiResponse.ErrorResponse(res, "Already interacted with this model bag");
+        }
+        
+        // Validate action based on bag type
+        if (modelBag.bag_type === "view-only" && action === "collect") {
+            return apiResponse.ErrorResponse(res, "This model bag is view-only");
         }
         
         let status = action === "collect" ? "collected" : "viewed";
@@ -184,6 +222,7 @@ const interactWithModelBag = async (req, res, next) => {
                 title: modelBag.title,
                 model_number: modelBag.model_number,
                 reward_file: modelBag.reward_file,
+                bag_type: modelBag.bag_type,
                 action: status,
                 is_correct: isCorrect
             }
@@ -398,6 +437,7 @@ const getSingleModelBag = async (req, res, next) => {
             title: modelBag.title,
             model_number: modelBag.model_number,
             reward_file: modelBag.reward_file,
+            bag_type: modelBag.bag_type,
             location: modelBag.location,
             visibility_radius: modelBag.visibility_radius,
             created_by: modelBag.created_by?.username,

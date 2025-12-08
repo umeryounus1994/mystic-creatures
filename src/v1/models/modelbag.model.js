@@ -22,6 +22,11 @@ const modelBagSchema = new mongoose.Schema(
             required: true 
         },
         reward_file: { type: String },
+        bag_type: {
+            type: String,
+            enum: ["collectible", "view-only"],
+            default: "collectible"
+        },
         location: {
             type: pointSchema,
             required: true,
