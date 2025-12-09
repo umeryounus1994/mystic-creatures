@@ -15,7 +15,7 @@ const createModelBag = async (req, res, next) => {
         };
         
         bagDetails.location = location;
-        bagDetails.reward_file = req.files['reward_file'] ? req.files['reward_file'][0].location : "";
+        bagDetails.reward_file = req.files && req.files['reward_file'] && req.files['reward_file'][0] ? req.files['reward_file'][0].location : "";
         bagDetails.created_by = req.user.id;
         
         var questions = [];
@@ -285,7 +285,7 @@ const editModelBag = async (req, res, next) => {
         }
         
         // Update files if new ones uploaded
-        if (req.files && req.files['reward_file']) { 
+        if (req.files && req.files['reward_file'] && req.files['reward_file'][0]) { 
             bagDetails.reward_file = req.files['reward_file'][0].location;
         }
         
