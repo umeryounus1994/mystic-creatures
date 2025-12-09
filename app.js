@@ -15,6 +15,39 @@ const app = express();
 // Apply the rate limiting middleware to all requests
 //app.use(rateLimiter);
 
+// Configure CORS with explicit origins
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      'https://app.mycrebooking.com',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      // Add other allowed origins here
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      // In production, you might want to be more strict
+      // For now, allow all origins (you can change this)
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Authorization'],
+  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+app.use(cors(corsOptions));
+
 // Configure body parser with increased limits and error handling
 // Use express.json() OR bodyParser.json(), not both (express.json() is recommended)
 app.use(express.json({ 
@@ -37,14 +70,6 @@ app.use(express.urlencoded({
   extended: true 
 }));
 
-// Remove bodyParser.json() - express.json() already handles this
-// Only keep bodyParser.urlencoded if you need it for form submissions
-// app.use(bodyParser.json({ limit: '300mb' }));
-// app.use(bodyParser.urlencoded({
-//     extended: true,
-//     limit: '250mb'
-// }));
-
 // Error handling middleware for JSON parsing errors
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
@@ -56,8 +81,6 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-
-app.use(cors());
 
 // Apply security headers using helmet middleware
 // app.use(
@@ -76,9 +99,31 @@ app.use(cors());
 //   next();
 // });
 
+// Additional CORS headers (backup - cors middleware should handle this, but keeping for compatibility)
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://app.mycrebooking.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ];
+  
+  if (origin && (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development')) {
+    res.header("Access-Control-Allow-Origin", origin);
+  } else {
+    res.header("Access-Control-Allow-Origin", "*");
+  }
+  
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Expose-Headers", "Authorization");
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
   res.set("Cache-Control", "no-cache, no-store, must-revalidate");
   res.set("Pragma", "no-cache");
   res.set("Expires", "0");
