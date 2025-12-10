@@ -8,6 +8,7 @@ const {
   generateToken,
 } = require("../../../middlewares/authMiddleware");
 const UserModel = require("../models/user.model");
+const AdminModel = require("../models/admin.model");
 const QuestModel = require("../models/quest.model");
 const MissionModel = require("../models/mission.model");
 const HuntModel = require("../models/treasure.model");
@@ -592,9 +593,12 @@ const sendUserPasswordResetEmail = async (req, res, next) => {
       );
     }
 
-    const user = await UserModel.findOne({ 
-      email: email.toLowerCase(),
-      user_type: { $in: ["family", "partner", "user", "subadmin", "admin"] }
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Try User collection first (exclude soft-deleted)
+    let user = await UserModel.findOne({ 
+      email: normalizedEmail,
+      deleted: { $ne: true }
     });
 
     if (!user) {

@@ -121,10 +121,26 @@ const getNearbyActivityDrops = async (req, res) => {
                 }
             }
         })
-        .populate('activity_id', 'title partner_id')
+        .populate('activity_id', 'title partner_id images')
         .populate('created_by', 'username');
 
-        return generateResponse(res, 200, 'Nearby activity drops retrieved successfully', drops);
+        // Map through drops and extract images to root level
+        const dropsWithImages = drops.map(drop => {
+            const dropData = drop.toObject();
+            const activityImages = dropData.activity_id?.images || [];
+            
+            // Remove images from activity_id
+            if (dropData.activity_id) {
+                delete dropData.activity_id.images;
+            }
+            
+            // Add images as separate field at root level
+            dropData.activity_images = activityImages;
+            
+            return dropData;
+        });
+
+        return generateResponse(res, 200, 'Nearby activity drops retrieved successfully', dropsWithImages);
 
     } catch (error) {
         logger.error('Get nearby activity drops error:', error);
