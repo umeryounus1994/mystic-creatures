@@ -49,22 +49,24 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Configure body parser with increased limits and error handling
-// Use express.json() OR bodyParser.json(), not both (express.json() is recommended)
-app.use(express.json({ 
-  limit: '300mb',
-  verify: (req, res, buf) => {
-    // Only parse if Content-Type is JSON
-    const contentType = req.headers['content-type'] || '';
-    if (contentType.includes('application/json')) {
-      try {
-        JSON.parse(buf);
-      } catch (e) {
-        // If JSON is invalid, don't throw here - let it be handled by error middleware
-      }
-    }
+// Conditionally apply JSON parser only for JSON content-type
+app.use((req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  
+  // Only parse as JSON if content-type is explicitly application/json
+  if (contentType.includes('application/json')) {
+    return express.json({ 
+      limit: '300mb'
+    })(req, res, next);
   }
-}));
+  
+  // Skip JSON parsing for multipart/form-data (multer middleware in routes will handle it)
+  // Skip for other non-JSON content types
+  return next();
+});
 
+// URL encoded form data parser (for application/x-www-form-urlencoded requests)
+// Note: This does NOT handle multipart/form-data - multer handles that at route level
 app.use(express.urlencoded({ 
   limit: '250mb', 
   extended: true 
@@ -72,7 +74,15 @@ app.use(express.urlencoded({
 
 // Error handling middleware for JSON parsing errors
 app.use((err, req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  
+  // Only handle JSON parsing errors if the request was supposed to be JSON
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    // If it's not a JSON content-type, ignore the error (might be form-data)
+    if (!contentType.includes('application/json')) {
+      return next(); // Continue to next middleware (multer will handle it)
+    }
+    
     return res.status(400).json({
       status: false,
       message: 'Invalid JSON in request body',
