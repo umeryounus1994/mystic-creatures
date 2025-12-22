@@ -599,6 +599,15 @@ const activityController = {
                 };
             }
 
+            // Get activities that have at least one slot with end_time > current time
+            const currentTime = new Date();
+            const activeSlots = await ActivitySlot.find({
+                end_time: { $gt: currentTime }
+            }).distinct('activity_id');
+            
+            // Only include activities that have active slots
+            filter._id = { $in: activeSlots };
+
             let activities = await Activity.find(filter)
                 .populate('partner_id', 'first_name last_name partner_profile.business_name')
                 .limit(limit * 1)
@@ -625,7 +634,7 @@ const activityController = {
                 );
             }
 
-            const total = activities.length;
+            const total = await Activity.countDocuments(filter);
 
             return generateResponse(res, 200, 'Activities retrieved successfully', {
                 activities,
