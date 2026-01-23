@@ -175,7 +175,23 @@ const confirmPayment = async (req, res) => {
 // Create PayPal payment
 const createPayPalOrder = async (req, res) => {
     try {
+        // Check if PayPal is configured
+        if (!paypal.isConfigured()) {
+            const configStatus = paypal.getConfigStatus();
+            console.error('PayPal configuration status:', configStatus);
+            return generateResponse(res, 500, 'PayPal is not properly configured. Please check your environment variables.', null, {
+                configured: configStatus.configured,
+                hasClientId: configStatus.hasClientId,
+                hasClientSecret: configStatus.hasClientSecret,
+                mode: configStatus.mode
+            });
+        }
+        
         const { booking_id } = req.body;
+        
+        if (!booking_id) {
+            return generateResponse(res, 400, 'Booking ID is required');
+        }
         
         const booking = await Booking.findById(booking_id)
             .populate('activity_id', 'title partner_id')
@@ -189,14 +205,21 @@ const createPayPalOrder = async (req, res) => {
             return generateResponse(res, 400, 'Booking already paid');
         }
         
+        // Validate amount
+        if (!booking.total_amount || booking.total_amount <= 0) {
+            return generateResponse(res, 400, 'Invalid booking amount');
+        }
+        
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        
         const create_payment_json = {
             "intent": "sale",
             "payer": {
                 "payment_method": "paypal"
             },
             "redirect_urls": {
-                "return_url": `${process.env.FRONTEND_URL}/payment/paypal/success`,
-                "cancel_url": `${process.env.FRONTEND_URL}/payment/paypal/cancel`
+                "return_url": `${frontendUrl}/payment/paypal/success`,
+                "cancel_url": `${frontendUrl}/payment/paypal/cancel`
             },
             "transactions": [{
                 "item_list": {
@@ -217,26 +240,59 @@ const createPayPalOrder = async (req, res) => {
             }]
         };
         
-        paypal.payment.create(create_payment_json, async (error, payment) => {
-            if (error) {
-                console.error('PayPal payment creation error:', error);
-                return generateResponse(res, 500, 'Error creating PayPal payment', null, error.message);
-            } else {
-                // Update booking with PayPal payment ID
-                await Booking.findByIdAndUpdate(booking_id, {
-                    paypal_payment_id: payment.id,
-                    payment_status: 'pending'
-                });
+        // Wrap callback in Promise for better error handling
+        return new Promise((resolve) => {
+            paypal.payment.create(create_payment_json, async (error, payment) => {
+                if (error) {
+                    console.error('PayPal payment creation error:', error);
+                    
+                    // Provide more detailed error information
+                    let errorMessage = error.message || 'Unknown error';
+                    let errorDetails = null;
+                    
+                    if (error.response) {
+                        errorDetails = {
+                            httpStatusCode: error.httpStatusCode,
+                            error: error.response.error,
+                            error_description: error.response.error_description
+                        };
+                        
+                        if (error.httpStatusCode === 401) {
+                            errorMessage = 'PayPal authentication failed. Please check your PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in your .env file.';
+                        }
+                    }
+                    
+                    return resolve(generateResponse(res, 500, 'Error creating PayPal payment', null, {
+                        message: errorMessage,
+                        details: errorDetails,
+                        config_status: paypal.getConfigStatus()
+                    }));
+                }
                 
-                // Get approval URL
-                const approval_url = payment.links.find(link => link.rel === 'approval_url').href;
-                
-                return generateResponse(res, 200, 'PayPal payment created', {
-                    payment_id: payment.id,
-                    approval_url: approval_url,
-                    amount: booking.total_amount
-                });
-            }
+                try {
+                    // Update booking with PayPal payment ID
+                    await Booking.findByIdAndUpdate(booking_id, {
+                        paypal_payment_id: payment.id,
+                        payment_status: 'pending'
+                    });
+                    
+                    // Get approval URL
+                    const approvalLink = payment.links.find(link => link.rel === 'approval_url');
+                    
+                    if (!approvalLink) {
+                        return resolve(generateResponse(res, 500, 'PayPal payment created but approval URL not found', null, payment));
+                    }
+                    
+                    return resolve(generateResponse(res, 200, 'PayPal payment created', {
+                        payment_id: payment.id,
+                        approval_url: approvalLink.href,
+                        amount: booking.total_amount
+                    }));
+                } catch (updateError) {
+                    console.error('Error updating booking:', updateError);
+                    return resolve(generateResponse(res, 500, 'Payment created but failed to update booking', null, updateError.message));
+                }
+            });
         });
         
     } catch (error) {
@@ -347,10 +403,39 @@ const getPayPalPaymentDetails = async (req, res) => {
     }
 };
 
+// Check PayPal configuration status (for debugging)
+const checkPayPalConfig = async (req, res) => {
+    try {
+        const configStatus = paypal.getConfigStatus();
+        
+        // Don't expose actual credentials, just status
+        return generateResponse(res, 200, 'PayPal configuration status', {
+            configured: configStatus.configured,
+            mode: configStatus.mode,
+            hasClientId: configStatus.hasClientId,
+            hasClientSecret: configStatus.hasClientSecret,
+            environment: process.env.NODE_ENV,
+            recommendations: !configStatus.configured ? [
+                'Set PAYPAL_CLIENT_ID in your .env file',
+                'Set PAYPAL_CLIENT_SECRET in your .env file',
+                'Ensure credentials match the environment (sandbox for development, live for production)',
+                'Restart the server after updating .env file'
+            ] : [
+                'PayPal is configured correctly',
+                `Using ${configStatus.mode} mode`,
+                'If you still get 401 errors, verify your credentials are correct in PayPal Developer Dashboard'
+            ]
+        });
+    } catch (error) {
+        return generateResponse(res, 500, 'Error checking PayPal configuration', null, error.message);
+    }
+};
+
 module.exports = {
     createPaymentIntent,
     confirmPayment,
     createPayPalOrder,
     executePayPalPayment,
-    getPayPalPaymentDetails
+    getPayPalPaymentDetails,
+    checkPayPalConfig
 };

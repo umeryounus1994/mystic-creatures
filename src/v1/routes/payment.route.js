@@ -11,5 +11,6 @@ router.post('/confirm-payment', checkAuthOrigins, paymentController.confirmPayme
 router.post('/create-paypal-order', checkAuthOrigins, paymentController.createPayPalOrder);
 router.post('/execute-paypal-payment', checkAuthOrigins, paymentController.executePayPalPayment);
 router.get('/paypal-payment/:payment_id', checkAuthOrigins, paymentController.getPayPalPaymentDetails);
+router.get('/check-paypal-config', checkAuthOrigins, paymentController.checkPayPalConfig);
 
 module.exports = router;
