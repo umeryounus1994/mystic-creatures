@@ -50,7 +50,7 @@ const emailController = {
 
             const emailData = {
                 to: booking.user_id.email,
-                subject: `Booking Confirmed - ${booking.activity_id.title}`,
+                subject: `Buchung bestätigt - ${booking.activity_id.title}`,
                 template: 'booking-confirmation',
                 useIonos: true,
                 data: {
@@ -85,25 +85,28 @@ const emailController = {
         try {
             const booking = await Booking.findById(bookingId)
                 .populate('user_id', 'username email')
-                .populate('activity_id', 'title partner_id')
+                .populate('activity_id', 'title location partner_id')
                 .populate('slot_id');
 
             if (!booking) return false;
 
-            const bookingDate = booking.slot_id?.date || booking.booking_date;
-            const startTime = booking.slot_id?.start_time || booking.start_time;
+            const bookingDate = booking.slot_id?.start_time || booking.booking_date || booking.created_at || new Date();
+            const startTime = formatTime(booking.slot_id?.start_time || booking.start_time);
+            const endTime = formatTime(booking.slot_id?.end_time || booking.end_time);
 
             const emailData = {
                 to: booking.user_id.email,
-                subject: `Booking Cancelled - ${booking.activity_id.title}`,
+                subject: `Buchung storniert - ${booking.activity_id.title}`,
                 template: 'booking-cancellation',
                 useIonos: true,
                 data: {
                     customerName: booking.user_id.username || 'Customer',
                     bookingId: booking.booking_id || booking._id,
                     activityTitle: booking.activity_id.title,
-                    date: bookingDate ? bookingDate.toDateString() : 'TBD',
-                    startTime: startTime || 'TBD',
+                    date: new Date(bookingDate).toDateString(),
+                    formattedStartTime: startTime,
+                    formattedEndTime: endTime,
+                    googleMapLink: generateMapLink(booking.activity_id.location),
                     cancellationReason: booking.cancellation_reason,
                     refundAmount: booking.refund_amount || 0
                 }
@@ -143,7 +146,7 @@ const emailController = {
 
             const emailData = {
                 to: booking.activity_id.partner_id.email,
-                subject: `New Booking Received - ${booking.activity_id.title}`,
+                subject: `Neue Buchung erhalten - ${booking.activity_id.title}`,
                 template: 'partner-booking-notification',
                 useIonos: true,
                 data: {
@@ -178,7 +181,7 @@ const emailController = {
             
             const emailContent = {
                 to: userEmail,
-                subject: 'Reset your password',
+                subject: 'Passwort zurücksetzen',
                 template: 'password-reset',
                 useIonos: true,
                 data: {

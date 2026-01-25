@@ -60,41 +60,41 @@ const generateBookingConfirmationHTML = (data) => {
     <html>
     <head>
         <meta charset="utf-8">
-        <title>Booking Confirmed</title>
+        <title>Buchung bestätigt</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #4CAF50;">🎉 Booking Confirmed!</h2>
+            <h2 style="color: #4CAF50;">🎉 Buchung bestätigt!</h2>
             
-            <p>Hi ${data.customerName},</p>
+            <p>Hallo ${data.customerName},</p>
             
-            <p>Great news! Your booking has been confirmed and payment processed successfully.</p>
+            <p>Großartige Neuigkeiten! Ihre Buchung wurde bestätigt und die Zahlung erfolgreich bearbeitet.</p>
             
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3>Booking Details</h3>
-                <p><strong>Booking ID:</strong> ${data.bookingId}</p>
-                <p><strong>Activity:</strong> ${data.activityTitle}</p>
-                <p><strong>Date:</strong> ${data.date}</p>
-                <p><strong>Time:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
-                <p><strong>Location:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 View on Google Maps</a></p>
-                <p><strong>Participants:</strong> ${data.participants}</p>
-                <p><strong>Total Paid:</strong> €${data.totalAmount}</p>
-                ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
+                <h3>Buchungsdetails</h3>
+                <p><strong>Buchungs-ID:</strong> ${data.bookingId}</p>
+                <p><strong>Aktivität:</strong> ${data.activityTitle}</p>
+                <p><strong>Datum:</strong> ${data.date}</p>
+                <p><strong>Uhrzeit:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
+                <p><strong>Standort:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 Auf Google Maps anzeigen</a></p>
+                <p><strong>Teilnehmer:</strong> ${data.participants}</p>
+                <p><strong>Gesamtbetrag:</strong> €${data.totalAmount}</p>
+                ${data.specialRequests ? `<p><strong>Besondere Wünsche:</strong> ${data.specialRequests}</p>` : ''}
             </div>
             
             <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h4>Partner Contact</h4>
+                <h4>Partner-Kontakt</h4>
                 <p><strong>${data.partnerName}</strong></p>
-                ${data.partnerContact ? `<p>Contact: ${data.partnerContact}</p>` : ''}
+                ${data.partnerContact ? `<p>Kontakt: ${data.partnerContact}</p>` : ''}
             </div>
             
-            <p>Please arrive 15 minutes before your scheduled time. If you need to make any changes, contact us immediately.</p>
+            <p>Bitte kommen Sie 15 Minuten vor Ihrer geplanten Zeit an. Wenn Sie Änderungen vornehmen müssen, kontaktieren Sie uns bitte sofort.</p>
             
-            <p>Thank you for choosing MyCre App!</p>
+            <p>Vielen Dank, dass Sie MyCre App gewählt haben!</p>
             
             <hr style="margin: 30px 0;">
             <p style="font-size: 12px; color: #666;">
-                This is an automated confirmation email. Please do not reply to this email.
+                Dies ist eine automatische Bestätigungs-E-Mail. Bitte antworten Sie nicht auf diese E-Mail.
             </p>
         </div>
     </body>
@@ -107,34 +107,34 @@ const generatePartnerNotificationHTML = (data) => {
     <html>
     <head>
         <meta charset="utf-8">
-        <title>New Booking Received</title>
+        <title>Neue Buchung erhalten</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #2196F3;">📅 New Booking Received!</h2>
+            <h2 style="color: #2196F3;">📅 Neue Buchung erhalten!</h2>
             
-            <p>Hi ${data.partnerName},</p>
+            <p>Hallo ${data.partnerName},</p>
             
-            <p>You have received a new booking for your activity!</p>
+            <p>Sie haben eine neue Buchung für Ihre Aktivität erhalten!</p>
             
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3>Booking Details</h3>
-                <p><strong>Booking ID:</strong> ${data.bookingId}</p>
-                <p><strong>Activity:</strong> ${data.activityTitle}</p>
-                <p><strong>Customer:</strong> ${data.customerName}</p>
-                <p><strong>Customer Email:</strong> ${data.customerEmail}</p>
-                <p><strong>Date:</strong> ${data.date}</p>
-                <p><strong>Time:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
-                <p><strong>Location:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 View on Google Maps</a></p>
-                <p><strong>Participants:</strong> ${data.participants}</p>
-                <p><strong>Total Amount:</strong> €${data.totalAmount}</p>
-                <p><strong>Your Earnings:</strong> €${data.partnerEarnings}</p>
-                ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
+                <h3>Buchungsdetails</h3>
+                <p><strong>Buchungs-ID:</strong> ${data.bookingId}</p>
+                <p><strong>Aktivität:</strong> ${data.activityTitle}</p>
+                <p><strong>Kunde:</strong> ${data.customerName}</p>
+                <p><strong>Kunden-E-Mail:</strong> ${data.customerEmail}</p>
+                <p><strong>Datum:</strong> ${data.date}</p>
+                <p><strong>Uhrzeit:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
+                <p><strong>Standort:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 Auf Google Maps anzeigen</a></p>
+                <p><strong>Teilnehmer:</strong> ${data.participants}</p>
+                <p><strong>Gesamtbetrag:</strong> €${data.totalAmount}</p>
+                <p><strong>Ihr Verdienst:</strong> €${data.partnerEarnings}</p>
+                ${data.specialRequests ? `<p><strong>Besondere Wünsche:</strong> ${data.specialRequests}</p>` : ''}
             </div>
             
-            <p>Please prepare for this booking and contact the customer if needed.</p>
+            <p>Bitte bereiten Sie sich auf diese Buchung vor und kontaktieren Sie den Kunden bei Bedarf.</p>
             
-            <p>Best regards,<br>MyCre App Team</p>
+            <p>Mit freundlichen Grüßen,<br>MyCre App Team</p>
         </div>
     </body>
     </html>`;
@@ -146,30 +146,30 @@ const generateBookingCancellationHTML = (data) => {
     <html>
     <head>
         <meta charset="utf-8">
-        <title>Booking Cancelled</title>
+        <title>Buchung storniert</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #f44336;">❌ Booking Cancelled</h2>
+            <h2 style="color: #f44336;">❌ Buchung storniert</h2>
             
-            <p>Hi ${data.customerName},</p>
+            <p>Hallo ${data.customerName},</p>
             
-            <p>Your booking has been cancelled.</p>
+            <p>Ihre Buchung wurde storniert.</p>
             
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3>Cancelled Booking Details</h3>
-                <p><strong>Booking ID:</strong> ${data.bookingId}</p>
-                <p><strong>Activity:</strong> ${data.activityTitle}</p>
-                <p><strong>Date:</strong> ${data.date}</p>
-                <p><strong>Time:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
-                <p><strong>Location:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 View on Google Maps</a></p>
-                ${data.cancellationReason ? `<p><strong>Reason:</strong> ${data.cancellationReason}</p>` : ''}
-                ${data.refundAmount > 0 ? `<p><strong>Refund Amount:</strong> €${data.refundAmount}</p>` : ''}
+                <h3>Stornierte Buchungsdetails</h3>
+                <p><strong>Buchungs-ID:</strong> ${data.bookingId}</p>
+                <p><strong>Aktivität:</strong> ${data.activityTitle}</p>
+                <p><strong>Datum:</strong> ${data.date}</p>
+                <p><strong>Uhrzeit:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
+                <p><strong>Standort:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 Auf Google Maps anzeigen</a></p>
+                ${data.cancellationReason ? `<p><strong>Grund:</strong> ${data.cancellationReason}</p>` : ''}
+                ${data.refundAmount > 0 ? `<p><strong>Rückerstattungsbetrag:</strong> €${data.refundAmount}</p>` : ''}
             </div>
             
-            <p>If you have any questions, please contact our support team.</p>
+            <p>Wenn Sie Fragen haben, kontaktieren Sie bitte unser Support-Team.</p>
             
-            <p>Thank you,<br>MyCre App Team</p>
+            <p>Vielen Dank,<br>MyCre App Team</p>
         </div>
     </body>
     </html>`;
@@ -180,32 +180,32 @@ const generatePasswordResetHTML = (data) => {
     <html>
     <head>
         <meta charset="utf-8">
-        <title>Reset Your Password</title>
+        <title>Passwort zurücksetzen</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #2196F3;">🔐 Reset Your Password</h2>
+            <h2 style="color: #2196F3;">🔐 Passwort zurücksetzen</h2>
             
-            <p>Hey ${data.userName},</p>
+            <p>Hallo ${data.userName},</p>
             
-            <p>Follow the link below to enter a new password for your account:</p>
+            <p>Folgen Sie dem untenstehenden Link, um ein neues Passwort für Ihr Konto einzugeben:</p>
             
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${data.resetLink}" target="_blank" 
                    style="background-color: #4CAF50; color: white; padding: 12px 24px; 
                           text-decoration: none; border-radius: 5px; display: inline-block;">
-                    Reset Password
+                    Passwort zurücksetzen
                 </a>
             </div>
             
-            <p>Or copy and paste this link in your browser:</p>
+            <p>Oder kopieren Sie diesen Link und fügen Sie ihn in Ihren Browser ein:</p>
             <p style="word-break: break-all; color: #666;">${data.resetLink}</p>
             
-            <p>With best regards,<br>Team MyCre Booking</p>
+            <p>Mit freundlichen Grüßen,<br>Team MyCre Booking</p>
             
             <hr style="margin: 30px 0;">
             <p style="font-size: 12px; color: #666;">
-                If you didn't request this password reset, please ignore this email.
+                Wenn Sie diese Passwort-Zurücksetzung nicht angefordert haben, ignorieren Sie bitte diese E-Mail.
             </p>
         </div>
     </body>
