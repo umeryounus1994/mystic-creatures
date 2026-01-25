@@ -356,6 +356,7 @@ const executePayPalPayment = async (req, res) => {
                 await commission.save();
                 await Booking.findByIdAndUpdate(booking._id, {
                     payment_status: 'paid',
+                    booking_status: 'confirmed',
                     paid_at: new Date(),
                     paypal_payment_data: payment,
                     payment_method: 'paypal'

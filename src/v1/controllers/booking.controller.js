@@ -362,7 +362,8 @@ const bookingController = {
                 {
                     stripe_payment_data,
                     paid_at: new Date(),
-                    payment_status: 'paid'
+                    payment_status: 'paid',
+                    booking_status: 'confirmed'
                 },
                 { new: true }
             );
@@ -393,7 +394,8 @@ const bookingController = {
                 {
                     paypal_payment_data,
                     paid_at: new Date(),
-                    payment_status: 'paid'
+                    payment_status: 'paid',
+                    booking_status: 'confirmed'
                 },
                 { new: true }
             );

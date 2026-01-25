@@ -151,9 +151,12 @@ const { connectDB } = require("./config/connectDB.config");
 const indexRouter = require("./src/v1/routes");
 const apiRouter = require("./src/v1/routes/api");
 const apiResponse = require("./helpers/apiResponse");
+const { initializeCronJobs } = require("./config/cronJobs.config");
 
 connectDB();
 
+// Initialize cron jobs after database connection
+initializeCronJobs();
 
 app.use("/", indexRouter);
 app.use("/api/v1/", apiRouter);
