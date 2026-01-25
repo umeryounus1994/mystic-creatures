@@ -78,7 +78,7 @@ const generateBookingConfirmationHTML = (data) => {
                 <p><strong>Time:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
                 <p><strong>Location:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 View on Google Maps</a></p>
                 <p><strong>Participants:</strong> ${data.participants}</p>
-                <p><strong>Total Paid:</strong> $${data.totalAmount}</p>
+                <p><strong>Total Paid:</strong> €${data.totalAmount}</p>
                 ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
             </div>
             
@@ -127,8 +127,8 @@ const generatePartnerNotificationHTML = (data) => {
                 <p><strong>Time:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
                 <p><strong>Location:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 View on Google Maps</a></p>
                 <p><strong>Participants:</strong> ${data.participants}</p>
-                <p><strong>Total Amount:</strong> $${data.totalAmount}</p>
-                <p><strong>Your Earnings:</strong> $${data.partnerEarnings}</p>
+                <p><strong>Total Amount:</strong> €${data.totalAmount}</p>
+                <p><strong>Your Earnings:</strong> €${data.partnerEarnings}</p>
                 ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
             </div>
             
@@ -164,7 +164,7 @@ const generateBookingCancellationHTML = (data) => {
                 <p><strong>Time:</strong> ${data.formattedStartTime} - ${data.formattedEndTime}</p>
                 <p><strong>Location:</strong> <a href="${data.googleMapLink}" target="_blank" style="color: #e91e63; text-decoration: none;">📍 View on Google Maps</a></p>
                 ${data.cancellationReason ? `<p><strong>Reason:</strong> ${data.cancellationReason}</p>` : ''}
-                ${data.refundAmount > 0 ? `<p><strong>Refund Amount:</strong> $${data.refundAmount}</p>` : ''}
+                ${data.refundAmount > 0 ? `<p><strong>Refund Amount:</strong> €${data.refundAmount}</p>` : ''}
             </div>
             
             <p>If you have any questions, please contact our support team.</p>

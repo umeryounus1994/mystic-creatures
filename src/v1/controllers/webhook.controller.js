@@ -35,7 +35,7 @@ const handlePaymentSuccess = async (paymentIntent) => {
         
         const booking = await Booking.findByIdAndUpdate(booking_id, {
             payment_status: 'paid',
-            status: 'confirmed',
+            booking_status: 'confirmed',
             paid_at: new Date()
         }, { new: true }).populate('activity_id', 'partner_id');
 

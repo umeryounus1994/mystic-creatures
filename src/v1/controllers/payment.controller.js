@@ -64,7 +64,7 @@ const createPaymentIntent = async (req, res) => {
         // Create payment intent
         const paymentIntentData = {
             amount: Math.round(booking.total_amount * 100),
-            currency: 'usd',
+            currency: 'eur',
             metadata: {
                 booking_id: booking._id.toString(),
                 user_id: booking.user_id._id.toString(),
@@ -227,12 +227,12 @@ const createPayPalOrder = async (req, res) => {
                         "name": booking.activity_id.title,
                         "sku": booking._id.toString(),
                         "price": booking.total_amount.toFixed(2),
-                        "currency": "USD",
+                        "currency": "EUR",
                         "quantity": 1
                     }]
                 },
                 "amount": {
-                    "currency": "USD",
+                    "currency": "EUR",
                     "total": booking.total_amount.toFixed(2)
                 },
                 "description": `Booking for ${booking.activity_id.title}`,
