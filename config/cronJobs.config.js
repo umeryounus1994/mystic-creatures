@@ -1,5 +1,7 @@
 const { CronJob } = require('cron');
 const cleanupUnpaidBookings = require('../src/v1/jobs/cleanupUnpaidBookings.job');
+const processAutomaticPayouts = require('../src/v1/jobs/automaticPayouts.job');
+const payoutConfig = require('./automaticPayouts.config');
 
 /**
  * Initialize all cron jobs
@@ -20,11 +22,28 @@ const initializeCronJobs = () => {
         'Europe/Berlin' // Germany timezone
     );
     
+    // Automatic payouts - load schedule from config file
+    const payoutConfigData = payoutConfig.getConfig();
+    const payoutSchedule = payoutConfigData.schedule || '0 2 * * *';
+    
+    const payoutJob = new CronJob(
+        payoutSchedule,
+        async () => {
+            console.log(`\n💰 [${new Date().toISOString()}] Running automatic payouts job...`);
+            await processAutomaticPayouts();
+        },
+        null,
+        true, // start immediately
+        'Europe/Berlin' // Germany timezone
+    );
+    
     console.log('✅ Cron jobs initialized:');
     console.log('   - Cleanup unpaid bookings: Every 2 hours');
+    console.log(`   - Automatic payouts: ${payoutSchedule} (from config file)`);
     
     return {
-        cleanupJob
+        cleanupJob,
+        payoutJob
     };
 };
 

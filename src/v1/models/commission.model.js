@@ -39,9 +39,17 @@ const commissionSchema = new mongoose.Schema({
     },
     payout_status: {
         type: String,
-        enum: ['unpaid', 'pending', 'paid'],
+        enum: ['unpaid', 'pending', 'paid', 'failed'],
         default: 'unpaid'
     },
+    payout_method: {
+        type: String,
+        enum: ['stripe', 'paypal', 'bank_transfer'],
+    },
+    payout_date: Date,
+    payout_transaction_id: String,  // Stripe transfer ID or PayPal batch ID
+    payout_batch_id: String,  // For batch payouts
+    payout_error: String,  // Error message if payout failed
     transaction_date: {
         type: Date,
         default: Date.now

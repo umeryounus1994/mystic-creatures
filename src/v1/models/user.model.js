@@ -64,6 +64,35 @@ const userSchema = new mongoose.Schema(
         routing_number: String,
         account_holder: String
       },
+      // Stripe Connect account details
+      stripe_connect: {
+        account_id: String,  // Stripe Connect account ID
+        onboarding_completed: { type: Boolean, default: false },
+        charges_enabled: { type: Boolean, default: false },
+        payouts_enabled: { type: Boolean, default: false },
+        onboarding_url: String,  // URL for partner to complete onboarding
+        account_type: {
+          type: String,
+          enum: ['express', 'standard', 'custom'],
+          default: 'express'
+        }
+      },
+      // PayPal payout details
+      paypal_payout: {
+        paypal_email: String,  // Partner's PayPal email
+        payout_method: {
+          type: String,
+          enum: ['paypal', 'bank'],
+          default: 'paypal'
+        },
+        verified: { type: Boolean, default: false }
+      },
+      // Preferred payout method
+      preferred_payout_method: {
+        type: String,
+        enum: ['stripe', 'paypal', 'bank_transfer'],
+        default: 'stripe'
+      },
       approval_status: {
         type: String,
         enum: ["pending", "approved", "rejected", "suspended"],

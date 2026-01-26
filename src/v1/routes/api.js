@@ -25,6 +25,10 @@ const partnerEarningRoutes = require("./partner-earnings.route");
 
 const filehandlingRoute = require("./filehandling.route");
 const modelBagRoutes = require('./modelbag.route');
+const stripeConnectRoutes = require('./stripeConnect.route');
+const paypalPayoutRoutes = require('./paypalPayout.route');
+const payoutRoutes = require('./payout.route');
+const commissionRoutes = require('./commission.routes');
 
 // End Points of Api
 app.use("/user/", userRoute);
@@ -55,5 +59,13 @@ app.use('/partner-earnings/', partnerEarningRoutes);
 
 // Model Bag Routes
 app.use('/model-bag/', modelBagRoutes);
+
+// Payout Routes
+app.use('/stripe-connect/', stripeConnectRoutes);
+app.use('/paypal-payout/', paypalPayoutRoutes);
+app.use('/payout/', payoutRoutes);
+
+// Commission Routes
+app.use('/commission/', commissionRoutes);
 
 module.exports = app;

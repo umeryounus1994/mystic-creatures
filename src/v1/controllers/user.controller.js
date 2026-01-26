@@ -86,7 +86,13 @@ const createUser = async (req, res, next) => {
 
 const createUserPartner = async (req, res, next) => {
   try {
-    const { ...itemDetails } = req.body;
+    const { 
+      payout_preference,
+      paypal_details,
+      stripe_details,
+      ...itemDetails 
+    } = req.body;
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return apiResponse.validationErrorWithData(
@@ -95,7 +101,7 @@ const createUserPartner = async (req, res, next) => {
       );
     }
 
-    // Parse partner_profile from JSON string
+    // Parse partner_profile from JSON string if provided
     if (req.body.partner_profile) {
       try {
         itemDetails.partner_profile = JSON.parse(req.body.partner_profile);
@@ -105,6 +111,76 @@ const createUserPartner = async (req, res, next) => {
           "Invalid partner profile data"
         );
       }
+    }
+
+    // Initialize partner_profile if not exists
+    if (!itemDetails.partner_profile) {
+      itemDetails.partner_profile = {};
+    }
+
+    // Handle payout preference from registration form
+    if (payout_preference) {
+      // Map payout_preference to preferred_payout_method
+      // Frontend sends: "bank_transfer" | "paypal" | "stripe"
+      // Backend expects: "bank_transfer" | "paypal" | "stripe"
+      itemDetails.partner_profile.preferred_payout_method = payout_preference;
+
+      // Handle PayPal details
+      if (payout_preference === 'paypal') {
+        if (!paypal_details || !paypal_details.paypal_email) {
+          return apiResponse.validationErrorWithData(
+            res,
+            "PayPal email is required when PayPal is selected as payout method"
+          );
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(paypal_details.paypal_email)) {
+          return apiResponse.validationErrorWithData(
+            res,
+            "Invalid PayPal email format"
+          );
+        }
+
+        // Set PayPal payout details
+        itemDetails.partner_profile.paypal_payout = {
+          paypal_email: paypal_details.paypal_email.toLowerCase().trim(),
+          payout_method: 'paypal',
+          verified: false
+        };
+      }
+
+      // Handle Stripe details
+      if (payout_preference === 'stripe') {
+        if (!stripe_details || !stripe_details.stripe_account_id) {
+          return apiResponse.validationErrorWithData(
+            res,
+            "Stripe Account ID is required when Stripe is selected as payout method"
+          );
+        }
+
+        // Validate Stripe account ID format (should start with "acct_")
+        if (!stripe_details.stripe_account_id.startsWith('acct_')) {
+          return apiResponse.validationErrorWithData(
+            res,
+            "Invalid Stripe Account ID format. Must start with 'acct_'"
+          );
+        }
+
+        // Set Stripe Connect details
+        // Note: If partner provides their own Stripe account ID, we'll verify it after registration
+        itemDetails.partner_profile.stripe_connect = {
+          account_id: stripe_details.stripe_account_id.trim(),
+          onboarding_completed: false, // Will be verified after save
+          charges_enabled: false, // Will be verified after save
+          payouts_enabled: false, // Will be verified after save
+          account_type: 'express'
+        };
+      }
+
+      // For bank_transfer, use existing bank_details (already in partner_profile)
+      // No additional setup needed
     }
 
     // Handle image upload if present
@@ -135,6 +211,29 @@ const createUserPartner = async (req, res, next) => {
           res,
           "System went wrong, Kindly try again later"
         );
+      }
+      
+      // Verify Stripe account status if Stripe account ID was provided
+      if (payout_preference === 'stripe' && stripe_details?.stripe_account_id) {
+        try {
+          const stripe = require('../../../config/stripe');
+          stripe.accounts.retrieve(stripe_details.stripe_account_id)
+            .then(account => {
+              // Update partner with verified status
+              UserModel.findByIdAndUpdate(createdItem._id, {
+                'partner_profile.stripe_connect.onboarding_completed': account.details_submitted || false,
+                'partner_profile.stripe_connect.charges_enabled': account.charges_enabled || false,
+                'partner_profile.stripe_connect.payouts_enabled': account.payouts_enabled || false
+              }).catch(err => console.error('Error updating Stripe status:', err));
+            })
+            .catch(err => {
+              console.error('Error verifying Stripe account:', err);
+              // Don't fail registration, just log the error
+            });
+        } catch (stripeError) {
+          console.error('Stripe verification error:', stripeError);
+          // Don't fail registration if Stripe verification fails
+        }
       }
       
       // Remove sensitive data from response

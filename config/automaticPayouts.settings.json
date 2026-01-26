@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "minAmount": 10.00,
+  "minDays": 7,
+  "batchSize": 100,
+  "schedule": "0 2 * * *"
+}
