@@ -18,8 +18,8 @@ router.get('/search-activities', checkFamilyUserAuth, activityController.browseA
 router.get('/:id', checkAuthOrigins, activityController.getById);
 
 // Partner routes (require authentication)
-router.post('/', checkPartnerUserAuth, mediaUpload.array('images', 5), activityController.create);
-router.post('/:id', checkPartnerUserAuth, mediaUpload.array('images', 5), activityController.update);
+router.post('/', checkPartnerUserAuth, mediaUpload.array('images', 20), activityController.create);
+router.post('/:id', checkPartnerUserAuth, mediaUpload.array('images', 20), activityController.update);
 router.delete('/:id', checkPartnerUserAuth, activityController.delete);
 
 // Admin routes
