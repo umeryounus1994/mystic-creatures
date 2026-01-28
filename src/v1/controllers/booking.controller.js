@@ -1,6 +1,7 @@
 const Booking = require('../models/booking.model');
 const Activity = require('../models/activity.model');
 const ActivitySlot = require('../models/activityslot.model');
+const CommissionRate = require("../models/commissionrate.model");
 const { generateResponse } = require('../utils/response');
 const { generateBookingId } = require('../utils/generators');
 const emailController = require('./email.controller');
@@ -29,7 +30,9 @@ const bookingController = {
 
             // Calculate amounts
             const total_amount = activity.price * participants;
-            const commission_rate = 15;
+            // Use global commission rate from DB (fallback to 15%)
+            const rateDoc = await CommissionRate.findOne({ key: "global" }).select("rate").lean();
+            const commission_rate = Number.isFinite(Number(rateDoc?.rate)) ? Number(rateDoc.rate) : 15;
             const commission_amount = (total_amount * commission_rate) / 100;
             const partner_amount = total_amount - commission_amount;
             

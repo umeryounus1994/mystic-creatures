@@ -29,6 +29,7 @@ const stripeConnectRoutes = require('./stripeConnect.route');
 const paypalPayoutRoutes = require('./paypalPayout.route');
 const payoutRoutes = require('./payout.route');
 const commissionRoutes = require('./commission.routes');
+const commissionRateRoutes = require("./commissionRate.route");
 
 // End Points of Api
 app.use("/user/", userRoute);
@@ -67,5 +68,6 @@ app.use('/payout/', payoutRoutes);
 
 // Commission Routes
 app.use('/commission/', commissionRoutes);
+app.use("/commission-rate/", commissionRateRoutes);
 
 module.exports = app;
