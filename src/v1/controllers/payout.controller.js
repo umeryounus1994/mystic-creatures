@@ -434,13 +434,13 @@ const updateBankDetails = async (req, res) => {
     }
     
     // Validate account number (should be numeric, typically 8-17 digits)
-    if (!/^\d{8,17}$/.test(account_number.replace(/\s+/g, ''))) {
-      return generateResponse(res, 400, 'Invalid account number format. Must be 8-17 digits');
+    if (!/^\d{8,40}$/.test(account_number.replace(/\s+/g, ''))) {
+      return generateResponse(res, 400, 'Invalid account number format. Must be 8-40 digits');
     }
     
     // Validate routing number (should be 9 digits for US banks)
-    if (!/^\d{9}$/.test(routing_number.replace(/\s+/g, ''))) {
-      return generateResponse(res, 400, 'Invalid routing number format. Must be 9 digits');
+    if (!/^\d{9-15}$/.test(routing_number.replace(/\s+/g, ''))) {
+      return generateResponse(res, 400, 'Invalid routing number format. Must be 9-15 digits');
     }
     
     // Validate account holder name (should not be empty and have reasonable length)
