@@ -9,6 +9,7 @@ const {
 const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
+const { checkAuthOrigins } = require("#middlewares/authMiddlewareGenericAll");
 
 router.post(
   "/createPictureMystery",
@@ -26,7 +27,7 @@ router.post(
   }]),
   pictureController.createPictureMystery
 );
-router.get("/get_all_admin", checkAdminUserAuth, pictureController.getPictureMysteryAdmin);
+router.get("/get_all_admin", checkAuthOrigins, pictureController.getPictureMysteryAdmin);
 router.post("/get_all", checkUserAuth, pictureController.getPictureMystery);
 router.post("/get_all_user_mysteries/:status", checkUserAuth, pictureController.getAllUserMysteries);
 router.get("/get_mystery_by_id/:id", checkUserAuth, pictureController.getMysteryById);

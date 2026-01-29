@@ -3,10 +3,11 @@ const router = express.Router();
 
 const commissionRateController = require("../controllers/commissionRate.controller");
 const { checkAdminUserAuth } = require("../../../middlewares/authMiddlewareAdminPanel");
+const { checkAuthOrigins } = require("#middlewares/authMiddlewareGenericAll");
 
 // Admin-only endpoints
-router.get("/", checkAdminUserAuth, commissionRateController.getCurrent);
-router.put("/", checkAdminUserAuth, commissionRateController.setCurrent);
+router.get("/", checkAuthOrigins, commissionRateController.getCurrent);
+router.put("/", checkAuthOrigins, commissionRateController.setCurrent);
 
 module.exports = router;
 

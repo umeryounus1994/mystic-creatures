@@ -45,12 +45,11 @@ const loginAdmin = async (req, res, next) => {
       user = adminUser;
       userType = adminUser.user_type;
     }
-
     // Check UserModel for subadmin, partner, and family users
     if (!user) {
       const userModelUser = await UserModel.findOne({ 
         email, 
-        user_type: { $in: ["partner", "family"] }
+        user_type: { $in: ["partner", "family", 'subadmin'] }
       }).exec();
       if (userModelUser) {
         user = userModelUser;
@@ -62,7 +61,7 @@ const loginAdmin = async (req, res, next) => {
     if (!user) {
       return apiResponse.notFoundResponse(
         res,
-        "Invalid Credentials"
+        "Invalid Credentials1"
       );
     }
 
@@ -71,7 +70,7 @@ const loginAdmin = async (req, res, next) => {
     if (!match) {
       return apiResponse.notFoundResponse(
         res,
-        "Invalid Credentials"
+        "Invalid Credentials2"
       );
     }
 
