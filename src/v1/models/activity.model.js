@@ -11,7 +11,7 @@ const activitySchema = new mongoose.Schema({
     description: { type: String, required: true },
     category: { 
         type: String, 
-        enum: ["outdoor", "indoor", "educational", "sports", "arts", "adventure"],
+        enum: ["outdoor", "indoor", "educational", "sports", "arts", "adventure", "others"],
         required: true 
     },
     price: { type: Number, required: true, min: 0 },
