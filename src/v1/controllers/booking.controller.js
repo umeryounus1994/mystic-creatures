@@ -1,7 +1,7 @@
 const Booking = require('../models/booking.model');
 const Activity = require('../models/activity.model');
 const ActivitySlot = require('../models/activityslot.model');
-const CommissionRate = require("../models/commissionrate.model");
+const User = require('../models/user.model');
 const { generateResponse } = require('../utils/response');
 const { generateBookingId } = require('../utils/generators');
 const emailController = require('./email.controller');
@@ -28,11 +28,14 @@ const bookingController = {
                 return generateResponse(res, 400, 'Not enough spots available');
             }
 
-            // Calculate amounts
+            // Calculate amounts – use this partner's commission rate
             const total_amount = activity.price * participants;
-            // Use global commission rate from DB (fallback to 15%)
-            const rateDoc = await CommissionRate.findOne({ key: "global" }).select("rate").lean();
-            const commission_rate = Number.isFinite(Number(rateDoc?.rate)) ? Number(rateDoc.rate) : 15;
+            const partner = await User
+              .findById(activity.partner_id)
+              .select("partner_profile.commission_rate")
+              .lean();
+            const rawRate = partner?.partner_profile?.commission_rate ?? 15;
+            const commission_rate = Number.isFinite(Number(rawRate)) ? Math.max(0, Math.min(100, Number(rawRate))) : 15;
             const commission_amount = (total_amount * commission_rate) / 100;
             const partner_amount = total_amount - commission_amount;
             

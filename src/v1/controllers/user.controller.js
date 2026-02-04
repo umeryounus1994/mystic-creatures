@@ -1128,6 +1128,236 @@ const getFamilyDashboard = async (req, res, next) => {
   }
 };
 
+// Admin: set a partner's commission rate (per-partner)
+const updatePartnerCommissionRate = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { commission_rate } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid user ID");
+    }
+    const rate = Number(commission_rate);
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+      return apiResponse.ErrorResponse(res, "commission_rate must be a number between 0 and 100");
+    }
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: id, user_type: "partner" },
+      { $set: { "partner_profile.commission_rate": rate } },
+      { new: true }
+    )
+      .select("-password -access_token")
+      .lean();
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    return apiResponse.successResponseWithData(res, "Partner commission rate updated", {
+      partner_id: updated._id,
+      commission_rate: updated.partner_profile?.commission_rate ?? rate,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+// Partner: set own commission rate
+const updateMyCommissionRate = async (req, res, next) => {
+  try {
+    const { commission_rate } = req.body;
+    const rate = Number(commission_rate);
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+      return apiResponse.ErrorResponse(res, "commission_rate must be a number between 0 and 100");
+    }
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: req.user.id, user_type: "partner" },
+      { $set: { "partner_profile.commission_rate": rate } },
+      { new: true }
+    )
+      .select("-password -access_token")
+      .lean();
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    return apiResponse.successResponseWithData(res, "Commission rate updated", {
+      commission_rate: updated.partner_profile?.commission_rate ?? rate,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+// Get a specific partner's profile by id (about, gallery, map, layout, etc.) – for admin or profile display
+const getPartnerProfileById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid partner ID");
+    }
+    const partner = await UserModel.findOne({
+      _id: id,
+      user_type: "partner",
+    })
+      .select("-password -access_token -partner_profile.bank_details -partner_profile.stripe_connect -partner_profile.paypal_payout")
+      .lean();
+    if (!partner) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    const pp = partner.partner_profile || {};
+    const profile = {
+      _id: partner._id,
+      username: partner.username,
+      email: partner.email,
+      image: partner.image || "",
+      created_at: partner.created_at,
+      partner_profile: {
+        business_name: pp.business_name || "",
+        business_description: pp.business_description || "",
+        phone: pp.phone || "",
+        about: pp.about != null ? pp.about : "",
+        gallery: Array.isArray(pp.gallery) ? pp.gallery : [],
+        map_location: pp.map_location && Array.isArray(pp.map_location.coordinates) && pp.map_location.coordinates.length >= 2
+          ? { type: "Point", coordinates: pp.map_location.coordinates }
+          : null,
+        layout_options: {
+          background: (pp.layout_options && pp.layout_options.background) || "",
+        },
+        commission_rate: pp.commission_rate != null ? pp.commission_rate : 15,
+        approval_status: pp.approval_status || "pending",
+      },
+    };
+    return apiResponse.successResponseWithData(
+      res,
+      "Partner profile retrieved successfully",
+      profile
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+// Partner: get own profile (including partner_profile for provider display)
+const getPartnerProfile = async (req, res, next) => {
+  try {
+    const partner = await UserModel.findOne({
+      _id: req.user.id,
+      user_type: "partner",
+    })
+      .select("-password -access_token")
+      .lean();
+    if (!partner) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    return apiResponse.successResponseWithData(
+      res,
+      "Partner profile retrieved successfully",
+      partner
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+// Partner: update profile (about, gallery, map_location, layout_options)
+const updatePartnerProfile = async (req, res, next) => {
+  try {
+    const updates = {};
+    if (req.body.about !== undefined) updates["partner_profile.about"] = String(req.body.about);
+    if (req.body.gallery !== undefined) {
+      const gallery = Array.isArray(req.body.gallery) ? req.body.gallery : [];
+      updates["partner_profile.gallery"] = gallery.filter((u) => typeof u === "string");
+    }
+    if (req.body.map_location !== undefined) {
+      const loc = req.body.map_location;
+      if (loc && loc.type === "Point" && Array.isArray(loc.coordinates) && loc.coordinates.length >= 2) {
+        updates["partner_profile.map_location"] = {
+          type: "Point",
+          coordinates: [Number(loc.coordinates[0]), Number(loc.coordinates[1])],
+        };
+      }
+    }
+    if (req.body.layout_options !== undefined) {
+      const lo = req.body.layout_options;
+      if (lo && typeof lo === "object") {
+        if (lo.background !== undefined) updates["partner_profile.layout_options.background"] = String(lo.background);
+      }
+    }
+    if (Object.keys(updates).length === 0) {
+      return apiResponse.ErrorResponse(res, "No valid fields to update");
+    }
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: req.user.id, user_type: "partner" },
+      { $set: updates },
+      { new: true }
+    )
+      .select("-password -access_token")
+      .lean();
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    return apiResponse.successResponseWithData(
+      res,
+      "Partner profile updated successfully",
+      updated
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+// Partner: upload gallery images (append URLs to partner_profile.gallery)
+const uploadPartnerGallery = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return apiResponse.ErrorResponse(res, "No images uploaded");
+    }
+    const urls = req.files.map((f) => f.location).filter(Boolean);
+    const partner = await UserModel.findOne({ _id: req.user.id, user_type: "partner" });
+    if (!partner) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    const currentGallery = Array.isArray(partner.partner_profile?.gallery) ? partner.partner_profile.gallery : [];
+    const newGallery = [...currentGallery, ...urls];
+    partner.partner_profile = partner.partner_profile || {};
+    partner.partner_profile.gallery = newGallery;
+    await partner.save();
+    return apiResponse.successResponseWithData(res, "Gallery images added", {
+      gallery: partner.partner_profile.gallery,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+// Partner: upload profile background (sets layout_options.background)
+const uploadPartnerBackground = async (req, res, next) => {
+  try {
+    if (!req.file || !req.file.location) {
+      return apiResponse.ErrorResponse(res, "No background image uploaded");
+    }
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: req.user.id, user_type: "partner" },
+      { $set: { "partner_profile.layout_options.background": req.file.location } },
+      { new: true }
+    )
+      .select("-password -access_token")
+      .lean();
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    return apiResponse.successResponseWithData(res, "Background updated successfully", {
+      layout_options: updated.partner_profile?.layout_options || { background: req.file.location },
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -1150,5 +1380,12 @@ module.exports = {
   updatePartnerApprovalStatus,
   createUserFamily,
   getFamilyDashboard,
-  updateUserStatus
+  updateUserStatus,
+  updatePartnerCommissionRate,
+  updateMyCommissionRate,
+  getPartnerProfileById,
+  getPartnerProfile,
+  updatePartnerProfile,
+  uploadPartnerGallery,
+  uploadPartnerBackground,
 };

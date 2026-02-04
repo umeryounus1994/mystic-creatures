@@ -5,6 +5,7 @@ const userController = require("../controllers/user.controller");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
 const { checkUserAuth } = require("../../../middlewares/authMiddleware");
 const { checkFamilyUserAuth } = require("../../../middlewares/authMiddlewareFamilyPanel");
+const { checkPartnerUserAuth } = require("../../../middlewares/authMiddlewarePartnerPanel");
 const { checkAuthOrigins } = require("../../../middlewares/authMiddlewareGenericAll");
 const {
   checkAdminUserAuth,
@@ -98,11 +99,38 @@ router.post(
   checkAdminUserAuth,
   userController.updatePartnerApprovalStatus
 );
+router.patch(
+  "/partner/:id/commission-rate",
+  checkAdminUserAuth,
+  userController.updatePartnerCommissionRate
+);
+router.patch(
+  "/partner/commission-rate",
+  checkPartnerUserAuth,
+  userController.updateMyCommissionRate
+);
 
 router.get(
   "/family-dashboard",
   checkFamilyUserAuth,
   userController.getFamilyDashboard
+);
+
+// Partner profile (provider display: about, gallery, map, layout)
+router.get("/partner/profile", checkPartnerUserAuth, userController.getPartnerProfile);
+router.get("/partner/:id/profile", checkAuthOrigins, userController.getPartnerProfileById);
+router.patch("/partner/profile", checkPartnerUserAuth, userController.updatePartnerProfile);
+router.post(
+  "/partner/profile/gallery",
+  checkPartnerUserAuth,
+  mediaUpload.array("gallery", 20),
+  userController.uploadPartnerGallery
+);
+router.post(
+  "/partner/profile/background",
+  checkPartnerUserAuth,
+  mediaUpload.single("background"),
+  userController.uploadPartnerBackground
 );
 
 module.exports = router;

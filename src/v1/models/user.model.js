@@ -55,10 +55,20 @@ const userSchema = new mongoose.Schema(
     allowed_quest: { type: Number, default: 0 },
     allowed_hunt: { type: Number, default: 0 },
     partner_profile: {
-      business_name: String, 
+      business_name: String,
       business_description: String,
       phone: String,
       commission_rate: { type: Number, default: 15 },
+      // Profile for provider display
+      about: { type: String, default: "" },
+      gallery: [{ type: String }],
+      map_location: {
+        type: { type: String, enum: ["Point"], default: "Point" },
+        coordinates: { type: [Number], default: undefined },
+      },
+      layout_options: {
+        background: { type: String, default: "" },
+      },
       bank_details: {
         account_number: String,
         routing_number: String,

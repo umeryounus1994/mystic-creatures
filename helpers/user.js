@@ -162,6 +162,9 @@ module.exports.getAllUsersAdmin = async function (data) {
                         created_at: element.created_at,
                         type: element?.user_type ? element?.user_type : "user",
                         approval_status: element?.partner_profile?.approval_status || null
+                    };
+                    if (element?.user_type === "partner") {
+                        el.commission_rate = element?.partner_profile?.commission_rate ?? 15;
                     }
                     result.push(el);
                     resolvve(result);
