@@ -197,7 +197,11 @@ const activityController = {
     getSingleActivity: async (req, res) => {
         try {
             const activity = await Activity.findById(req.params.id)
-                .populate('partner_id', 'first_name last_name partner_profile.business_name');
+                .populate(
+                    'partner_id',
+                    'first_name last_name partner_profile.business_name partner_profile.about ' +
+                    'partner_profile.gallery partner_profile.map_location partner_profile.layout_options'
+                );
 
             if (!activity) {
                 return generateResponse(res, 404, 'Activity not found');
@@ -236,8 +240,23 @@ const activityController = {
                 };
             });
 
+            const activityObj = activity.toObject();
+            if (activityObj.partner_id && activityObj.partner_id.partner_profile) {
+                const pp = activityObj.partner_id.partner_profile;
+                activityObj.partner_id.partner_profile = {
+                    ...pp,
+                    about: pp.about != null ? pp.about : '',
+                    gallery: Array.isArray(pp.gallery) ? pp.gallery : [],
+                    map_location: pp.map_location && Array.isArray(pp.map_location.coordinates) && pp.map_location.coordinates.length >= 2
+                        ? { type: 'Point', coordinates: pp.map_location.coordinates }
+                        : null,
+                    layout_options: pp.layout_options && typeof pp.layout_options === 'object'
+                        ? { background: pp.layout_options.background || '' }
+                        : { background: '' }
+                };
+            }
             const activityWithSlots = {
-                ...activity.toObject(),
+                ...activityObj,
                 slots: slotsWithReservation
             };
 
