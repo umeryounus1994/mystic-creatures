@@ -118,6 +118,7 @@ router.get(
 
 // Partner profile (provider display: about, gallery, map, layout)
 router.get("/partner/profile", checkPartnerUserAuth, userController.getPartnerProfile);
+router.get("/partner/:id/profile-with-activities", userController.getPartnerProfileWithActivities);
 router.get("/partner/:id/profile", checkAuthOrigins, userController.getPartnerProfileById);
 router.patch("/partner/profile", checkPartnerUserAuth, userController.updatePartnerProfile);
 router.post(

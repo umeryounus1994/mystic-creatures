@@ -28,6 +28,7 @@ const moment = require('moment');
 const logger = require('../../../middlewares/logger');
 const userskygiftsModel = require("../models/userskygifts.model");
 const Activity = require("../models/activity.model");
+const ActivitySlot = require("../models/activityslot.model");
 const Booking = require("../models/booking.model");
 
 const createUser = async (req, res, next) => {
@@ -1237,6 +1238,94 @@ const getPartnerProfileById = async (req, res, next) => {
   }
 };
 
+// Get partner profile + all their activities (for partner profile page)
+const getPartnerProfileWithActivities = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid partner ID");
+    }
+    const partner = await UserModel.findOne({
+      _id: id,
+      user_type: "partner",
+    })
+      .select("-password -access_token -partner_profile.bank_details -partner_profile.stripe_connect -partner_profile.paypal_payout")
+      .lean();
+    if (!partner) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    const pp = partner.partner_profile || {};
+    const profile = {
+      _id: partner._id,
+      username: partner.username,
+      email: partner.email,
+      image: partner.image || "",
+      created_at: partner.created_at,
+      partner_profile: {
+        business_name: pp.business_name || "",
+        business_description: pp.business_description || "",
+        phone: pp.phone || "",
+        about: pp.about != null ? pp.about : "",
+        gallery: Array.isArray(pp.gallery) ? pp.gallery : [],
+        map_location: pp.map_location && Array.isArray(pp.map_location.coordinates) && pp.map_location.coordinates.length >= 2
+          ? { type: "Point", coordinates: pp.map_location.coordinates }
+          : null,
+        layout_options: {
+          background: (pp.layout_options && pp.layout_options.background) || "",
+        },
+        commission_rate: pp.commission_rate != null ? pp.commission_rate : 15,
+        approval_status: pp.approval_status || "pending",
+      },
+    };
+
+    const activities = await Activity.find({ partner_id: id, status: "approved" })
+      .select("title description category price images location address duration max_participants status created_at")
+      .sort({ created_at: -1 })
+      .lean();
+
+    const activityIds = activities.map((a) => a._id);
+    const allSlots = await ActivitySlot.find({ activity_id: { $in: activityIds } })
+      .sort({ start_time: 1 })
+      .lean();
+
+    const pendingBookings = await Booking.find({
+      slot_id: { $in: allSlots.map((s) => s._id) },
+      booking_status: "pending",
+      payment_status: "pending",
+    });
+
+    const slotsByActivity = {};
+    allSlots.forEach((slot) => {
+      const aid = slot.activity_id.toString();
+      if (!slotsByActivity[aid]) slotsByActivity[aid] = [];
+      const pendingForSlot = pendingBookings.filter(
+        (b) => b.slot_id.toString() === slot._id.toString()
+      );
+      const reservedSpots = pendingForSlot.reduce((t, b) => t + b.participants, 0);
+      const actualAvailable = Math.max(0, slot.available_spots - slot.booked_spots - reservedSpots);
+      slotsByActivity[aid].push({
+        ...slot,
+        reserved_spots: reservedSpots,
+        actual_available_spots: actualAvailable,
+        slot_status: actualAvailable <= 0 ? "full" : slot.status === "cancelled" ? "cancelled" : "available",
+      });
+    });
+
+    const activitiesWithSlots = activities.map((a) => ({
+      ...a,
+      slots: slotsByActivity[a._id.toString()] || [],
+    }));
+
+    return apiResponse.successResponseWithData(res, "Partner profile and activities retrieved successfully", {
+      partner: profile,
+      activities: activitiesWithSlots,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 // Partner: get own profile (including partner_profile for provider display)
 const getPartnerProfile = async (req, res, next) => {
   try {
@@ -1384,6 +1473,7 @@ module.exports = {
   updatePartnerCommissionRate,
   updateMyCommissionRate,
   getPartnerProfileById,
+  getPartnerProfileWithActivities,
   getPartnerProfile,
   updatePartnerProfile,
   uploadPartnerGallery,
