@@ -51,6 +51,7 @@ const userSchema = new mongoose.Schema(
       enum: ["family", "partner", "admin", "user", "subadmin"],
       default: "user"
     },
+    slug: { type: String, trim: true, lowercase: true, sparse: true, unique: true },
     permissions: [String],
     allowed_quest: { type: Number, default: 0 },
     allowed_hunt: { type: Number, default: 0 },

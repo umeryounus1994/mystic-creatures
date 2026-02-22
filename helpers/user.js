@@ -165,6 +165,7 @@ module.exports.getAllUsersAdmin = async function (data) {
                     };
                     if (element?.user_type === "partner") {
                         el.commission_rate = element?.partner_profile?.commission_rate ?? 15;
+                        el.slug = element?.slug || null;
                     }
                     result.push(el);
                     resolvve(result);
