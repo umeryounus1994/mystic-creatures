@@ -61,10 +61,11 @@ const createPaymentIntent = async (req, res) => {
             }
         }
         
-        // Create payment intent
+        // Create payment intent (automatic_payment_methods lets Stripe show card, Klarna, SEPA, etc. per Dashboard)
         const paymentIntentData = {
             amount: Math.round(booking.total_amount * 100),
             currency: 'eur',
+            automatic_payment_methods: { enabled: true },
             metadata: {
                 booking_id: booking._id.toString(),
                 user_id: booking.user_id._id.toString(),
