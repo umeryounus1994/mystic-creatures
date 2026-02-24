@@ -1555,6 +1555,31 @@ const uploadPartnerBackground = async (req, res, next) => {
   }
 };
 
+// Partner: upload profile image (sets user.image – used as profile/avatar)
+const uploadPartnerProfileImage = async (req, res, next) => {
+  try {
+    if (!req.file || !req.file.location) {
+      return apiResponse.ErrorResponse(res, "No profile image uploaded");
+    }
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: req.user.id, user_type: "partner" },
+      { $set: { image: req.file.location } },
+      { new: true }
+    )
+      .select("-password -access_token")
+      .lean();
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+    return apiResponse.successResponseWithData(res, "Profile image updated successfully", {
+      image: updated.image,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -1588,4 +1613,5 @@ module.exports = {
   updatePartnerProfile,
   uploadPartnerGallery,
   uploadPartnerBackground,
+  uploadPartnerProfileImage,
 };

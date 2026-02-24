@@ -135,5 +135,11 @@ router.post(
   mediaUpload.single("background"),
   userController.uploadPartnerBackground
 );
+router.post(
+  "/partner/profile/image",
+  checkPartnerUserAuth,
+  mediaUpload.single("image"),
+  userController.uploadPartnerProfileImage
+);
 
 module.exports = router;
