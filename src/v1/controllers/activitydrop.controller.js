@@ -1,7 +1,15 @@
 const ActivityDrop = require("../models/activitydrop.model");
 const Activity = require("../models/activity.model");
+const ActivitySlot = require("../models/activityslot.model");
 const { generateResponse } = require("../utils/response");
 const logger = require('../../../middlewares/logger');
+
+// Returns activity IDs that have at least one slot with end_time in the future (drops linked to these are visible)
+const getActivityIdsWithFutureSlots = async () => {
+    const now = new Date();
+    const ids = await ActivitySlot.find({ end_time: { $gt: now } }).distinct('activity_id');
+    return ids;
+};
 
 // Create activity drop
 const createActivityDrop = async (req, res) => {
@@ -44,10 +52,15 @@ const createActivityDrop = async (req, res) => {
     }
 };
 
-// Get drops for specific activity
+// Get drops for specific activity (only when activity has at least one slot with end_time in the future)
 const getActivityDrops = async (req, res) => {
     try {
         const { activity_id } = req.params;
+        const now = new Date();
+        const hasFutureSlot = await ActivitySlot.exists({ activity_id, end_time: { $gt: now } });
+        if (!hasFutureSlot) {
+            return generateResponse(res, 200, 'Activity drops retrieved successfully', []);
+        }
 
         const drops = await ActivityDrop.find({ 
             activity_id, 
@@ -65,12 +78,14 @@ const getActivityDrops = async (req, res) => {
     }
 };
 
-// Get all activity drops
+// Get all activity drops (only for activities that have at least one slot with end_time in the future)
 const getAllActivityDrops = async (req, res) => {
     try {
+        const activityIdsWithFutureSlots = await getActivityIdsWithFutureSlots();
         const drops = await ActivityDrop.find({ 
             status: 'active',
-            created_by: req.user.id 
+            created_by: req.user.id,
+            activity_id: { $in: activityIdsWithFutureSlots }
         })
             .populate('activity_id', 'title partner_id images')
             .populate('created_by', 'username')
@@ -109,8 +124,10 @@ const getNearbyActivityDrops = async (req, res) => {
             return generateResponse(res, 400, 'Latitude and longitude are required');
         }
 
+        const activityIdsWithFutureSlots = await getActivityIdsWithFutureSlots();
         const drops = await ActivityDrop.find({
             status: 'active',
+            activity_id: { $in: activityIdsWithFutureSlots },
             location: {
                 $near: {
                     $geometry: {
@@ -219,7 +236,7 @@ const deleteActivityDrop = async (req, res) => {
     }
 };
 
-// Get single activity drop
+// Get single activity drop (includes activity_has_future_slots so client can show as inactive when slots are past)
 const getActivityDrop = async (req, res) => {
     try {
         const { id } = req.params;
@@ -232,6 +249,12 @@ const getActivityDrop = async (req, res) => {
             return generateResponse(res, 404, 'Activity drop not found');
         }
 
+        const activityId = activityDrop.activity_id?._id || activityDrop.activity_id;
+        const now = new Date();
+        const hasFutureSlot = activityId
+            ? await ActivitySlot.exists({ activity_id: activityId, end_time: { $gt: now } })
+            : false;
+
         // Convert to plain object and extract images
         const dropData = activityDrop.toObject();
         const activityImages = dropData.activity_id?.images || [];
@@ -243,6 +266,7 @@ const getActivityDrop = async (req, res) => {
         
         // Add images as separate field at root level
         dropData.activity_images = activityImages;
+        dropData.activity_has_future_slots = !!hasFutureSlot;
 
         return generateResponse(res, 200, 'Activity drop retrieved successfully', dropData);
 
