@@ -1457,7 +1457,7 @@ const getPartnerProfile = async (req, res, next) => {
   }
 };
 
-// Partner: update profile (about, gallery, map_location, layout_options)
+// Partner: update profile (about, gallery, map_location, layout_options, slug)
 const updatePartnerProfile = async (req, res, next) => {
   try {
     const updates = {};
@@ -1479,6 +1479,14 @@ const updatePartnerProfile = async (req, res, next) => {
       const lo = req.body.layout_options;
       if (lo && typeof lo === "object") {
         if (lo.background !== undefined) updates["partner_profile.layout_options.background"] = String(lo.background);
+      }
+    }
+    if (req.body.slug !== undefined) {
+      const slugInput = typeof req.body.slug === "string" ? req.body.slug.trim() : "";
+      const baseSlug = slugify(slugInput) || "";
+      if (baseSlug) {
+        const resolvedSlug = await ensureUniquePartnerSlug(UserModel, baseSlug, req.user.id);
+        updates.slug = resolvedSlug;
       }
     }
     if (Object.keys(updates).length === 0) {
