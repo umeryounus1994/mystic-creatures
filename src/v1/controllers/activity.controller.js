@@ -79,7 +79,7 @@ const activityController = {
 
             filter._id = { $in: activeSlots };
             const activities = await Activity.find(filter)
-                .populate('partner_id', 'first_name last_name partner_profile.business_name')
+                .populate('partner_id', 'first_name last_name image partner_profile.business_name')
                 .limit(limit * 1)
                 .skip((page - 1) * limit)
                 .sort({ created_at: -1 });
@@ -647,7 +647,7 @@ const activityController = {
             filter._id = { $in: activeSlots };
 
             let activities = await Activity.find(filter)
-                .populate('partner_id', 'first_name last_name partner_profile.business_name')
+                .populate('partner_id', 'first_name last_name image partner_profile.business_name')
                 .limit(limit * 1)
                 .skip((page - 1) * limit)
                 .sort({ created_at: -1 });
@@ -692,7 +692,7 @@ const activityController = {
             const { date } = req.query;
 
             const activity = await Activity.findById(id)
-                .populate('partner_id', 'first_name last_name partner_profile.business_name partner_profile.contact_info');
+                .populate('partner_id', 'first_name last_name image partner_profile.business_name partner_profile.contact_info');
 
             if (!activity || activity.status !== 'approved') {
                 return generateResponse(res, 404, 'Activity not found or not available');
