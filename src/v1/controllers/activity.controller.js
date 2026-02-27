@@ -539,8 +539,11 @@ const activityController = {
                 })
             }));
 
-            // Get recent activities
-            const recentActivities = await Activity.find({ partner_id: partnerId })
+            // Get recent activities (exclude soft-deleted)
+            const recentActivities = await Activity.find({
+                partner_id: partnerId,
+                deleted: { $ne: true }
+            })
                 .sort({ created_at: -1 })
                 .limit(5)
                 .select('title status created_at images price')
