@@ -539,8 +539,15 @@ const activityController = {
                 })
             }));
 
-            // Get recent activities (exclude soft-deleted: filter in app in case plugin scope differs)
-            const recentActivitiesRaw = await Activity.find({ partner_id: partnerId })
+            // Get recent activities: same logic as GET /activity/ - only activities with at least one slot end_time in future, and exclude soft-deleted
+            const currentTime = new Date();
+            const activityIdsWithFutureSlots = await ActivitySlot.find({
+                end_time: { $gt: currentTime }
+            }).distinct('activity_id');
+            const recentActivitiesRaw = await Activity.find({
+                partner_id: partnerId,
+                _id: { $in: activityIdsWithFutureSlots }
+            })
                 .sort({ created_at: -1 })
                 .limit(20)
                 .select('title status created_at images price deleted')
