@@ -539,15 +539,15 @@ const activityController = {
                 })
             }));
 
-            // Get recent activities (exclude soft-deleted)
-            const recentActivities = await Activity.find({
-                partner_id: partnerId,
-                deleted: { $ne: true }
-            })
+            // Get recent activities (exclude soft-deleted: filter in app in case plugin scope differs)
+            const recentActivitiesRaw = await Activity.find({ partner_id: partnerId })
                 .sort({ created_at: -1 })
-                .limit(5)
-                .select('title status created_at images price')
+                .limit(20)
+                .select('title status created_at images price deleted')
                 .lean();
+            const recentActivities = recentActivitiesRaw
+                .filter(activity => activity.deleted !== true)
+                .slice(0, 5);
 
             // Format recent activities for dashboard
             const formattedRecentActivities = recentActivities.map(activity => ({
