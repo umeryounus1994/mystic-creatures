@@ -3,7 +3,6 @@ const adminController = require("../controllers/admin.controller");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
 const {
   passwordValidation,
-  validateRequest,
 } = require("./authValidation/authValidation");
 const {
   checkAdminUserAuth,

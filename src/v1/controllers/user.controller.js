@@ -1212,6 +1212,82 @@ const updateMyCommissionRate = async (req, res, next) => {
   }
 };
 
+// Admin: update partner basic contact info
+const updatePartnerContact = async (req, res, next) => {
+  try {
+    const { partnerId } = req.params;
+    const { email, partner_profile } = req.body || {};
+
+    if (!mongoose.Types.ObjectId.isValid(partnerId)) {
+      return apiResponse.validationErrorWithData(res, "Validation Error", "Invalid partner id");
+    }
+
+    const updates = {};
+    if (email !== undefined) {
+      updates.email = String(email).trim().toLowerCase();
+    }
+    if (partner_profile && typeof partner_profile === "object" && partner_profile.phone !== undefined) {
+      updates["partner_profile.phone"] = String(partner_profile.phone).trim();
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return apiResponse.ErrorResponse(res, "No valid fields to update");
+    }
+
+    const updated = await UserModel.findOneAndUpdate(
+      { _id: partnerId, user_type: "partner" },
+      { $set: updates },
+      { new: true }
+    )
+      .select("-password -access_token")
+      .lean();
+
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+
+    return apiResponse.successResponseWithData(res, "Partner updated successfully", updated);
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+// Partner: change password using current password and new password
+// Payload: { password: "<currentPassword>", password_confirmation: "<newPassword>" }
+const changePartnerPassword = async (req, res, next) => {
+  try {
+    const { password, password_confirmation } = req.body || {};
+    const partnerId = req.user?.id || req.user?._id;
+
+    if (!password || !password_confirmation) {
+      return apiResponse.ErrorResponse(res, "All Fields are Required");
+    }
+    if (String(password_confirmation).trim().length < 6) {
+      return apiResponse.ErrorResponse(res, "New password must be at least 6 characters");
+    }
+
+    const partner = await UserModel.findOne({ _id: partnerId, user_type: "partner" });
+    if (!partner) {
+      return apiResponse.notFoundResponse(res, "Partner not found");
+    }
+
+    const isCurrentValid = await partner.checkPassword(password, partner.password);
+    if (!isCurrentValid) {
+      return apiResponse.ErrorResponse(res, "Current password is incorrect");
+    }
+
+    const newHashPassword = await hashPassord({ password: password_confirmation });
+    partner.password = newHashPassword;
+    await partner.save();
+
+    return apiResponse.successResponse(res, "Password changed successfully");
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 // Helper: build normalized profile object from partner doc
 function buildPartnerProfileResponse(partner) {
   const pp = partner.partner_profile || {};
@@ -1613,6 +1689,8 @@ module.exports = {
   updateUserStatus,
   updatePartnerCommissionRate,
   updateMyCommissionRate,
+  updatePartnerContact,
+  changePartnerPassword,
   getPartnerProfileById,
   getPartnerProfileBySlug,
   getPartnerProfileWithActivities,

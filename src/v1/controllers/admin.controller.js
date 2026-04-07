@@ -499,6 +499,7 @@ const adminPasswordReset = async (req, res, next) => {
   }
 };
 
+
 const loggedUser = async (req, res, next) => {
   try {
     if (req.user) {

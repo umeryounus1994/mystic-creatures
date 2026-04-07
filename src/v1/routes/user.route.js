@@ -109,6 +109,16 @@ router.patch(
   checkPartnerUserAuth,
   userController.updateMyCommissionRate
 );
+router.patch(
+  "/partner/:partnerId",
+  checkPartnerUserAuth,
+  userController.updatePartnerContact
+);
+router.post(
+  "/partner/change-password",
+  checkPartnerUserAuth,
+  userController.changePartnerPassword
+);
 
 router.get(
   "/family-dashboard",
