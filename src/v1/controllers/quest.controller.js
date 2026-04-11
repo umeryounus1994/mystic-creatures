@@ -1178,6 +1178,52 @@ const getActivityQuests = async (req, res, next) => {
     next(err);
   }
 };
+
+/** All active quests belonging to a quest group (by QuestGroup _id). */
+const getQuestsByGroupId = async (req, res, next) => {
+  try {
+    const { questGroupId } = req.params;
+    if (!questGroupId || !ObjectId.isValid(questGroupId)) {
+      return apiResponse.ErrorResponse(res, "Valid questGroupId is required");
+    }
+
+    const groupExists = await QuestGroupModel.findById(questGroupId).select("_id");
+    if (!groupExists) {
+      return apiResponse.notFoundResponse(res, "Quest group not found");
+    }
+
+    const quests = await QuestModel.find({
+      quest_group_id: new ObjectId(questGroupId),
+      status: "active",
+    })
+      .sort({ created_at: -1 })
+      .populate([
+        { path: "mythica_ID" },
+        { path: "quest_group_id", select: { quest_group_name: 1 } },
+        {
+          path: "activity_id",
+          select: { title: 1, partner_id: 1 },
+          populate: {
+            path: "partner_id",
+            select: "first_name last_name partner_profile.business_name",
+          },
+        },
+        {
+          path: "created_by",
+          select: "first_name last_name partner_profile.business_name",
+        },
+      ]);
+
+    return res.json({
+      status: true,
+      message: quests.length ? "Quests found" : "No quests in this group",
+      data: await questHelper.getAllQuests(quests),
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
 const scanQuestQRCode = async (req, res, next) => {
   try {
     const { qr_code } = req.body;
@@ -1326,6 +1372,7 @@ module.exports = {
   addQuestToGroup,
   purchaseQuestGroup,
   getActivityQuests,
+  getQuestsByGroupId,
   scanQuestQRCode,
   confirmQuestQRCode
 };

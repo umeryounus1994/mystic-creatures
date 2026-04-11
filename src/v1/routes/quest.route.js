@@ -78,6 +78,11 @@ router.post(
 );
 router.get("/get_all", checkAuthOrigins, questController.getQuests); // ?activity_id=xxx&quest_context=activity_linked
 router.get("/get_activity_quests/:activity_id", questController.getActivityQuests);
+router.get(
+  "/get_quests_by_group/:questGroupId",
+  checkAuthOrigins,
+  questController.getQuestsByGroupId
+);
 router.get("/get_all_subadmin", checkUserAuth, questController.getQuestsSubAdmin);
 router.post("/unlock_quest", checkUserAuth, questController.unlockQuestForUser);
 router.get("/get_player_quest/:status", checkUserAuth, questController.getPlayerQuests);
