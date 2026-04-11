@@ -1,3 +1,5 @@
+const moment = require('moment');
+const mongoose = require('mongoose');
 const Booking = require('../models/booking.model');
 const Activity = require('../models/activity.model');
 const ActivitySlot = require('../models/activityslot.model');
@@ -5,6 +7,7 @@ const User = require('../models/user.model');
 const { generateResponse } = require('../utils/response');
 const { generateBookingId } = require('../utils/generators');
 const emailController = require('./email.controller');
+const { buildPartnerMonthlyFinancialPdfBuffer } = require('../../../helpers/partnerFinancialReportPdf.helper');
 
 const bookingController = {
     // Create booking
@@ -410,7 +413,161 @@ const bookingController = {
         } catch (error) {
             return generateResponse(res, 500, 'Error updating PayPal payment data', null, error.message);
         }
-    }
+    },
+
+    /**
+     * Partner: download PDF monthly financial report (gross, commission, net per booking).
+     * Params: partnerId — must match the logged-in partner.
+     * Query: year (e.g. 2026), month (1–12). Uses paid_at if set, else created_at, for period filtering.
+     */
+    downloadPartnerMonthlyFinancialReportPdf: async (req, res) => {
+        try {
+            const year = parseInt(req.query.year, 10);
+            const month = parseInt(req.query.month, 10);
+            if (!year || !month || month < 1 || month > 12) {
+                return generateResponse(res, 400, 'Query params year and month (1-12) are required');
+            }
+
+            const { partnerId } = req.params;
+            if (!partnerId || !mongoose.Types.ObjectId.isValid(partnerId)) {
+                return generateResponse(res, 400, 'Valid partnerId is required');
+            }
+            const sessionPartnerId = String(req.user._id || req.user.id);
+            if (String(partnerId) !== sessionPartnerId) {
+                return generateResponse(res, 403, 'partnerId must match the logged-in partner');
+            }
+            const partnerActivities = await Activity.find({ partner_id: partnerId }).select('_id');
+            const activityIds = partnerActivities.map((a) => a._id);
+
+            const start = moment({ year, month: month - 1 }).startOf('month').toDate();
+            const end = moment({ year, month: month - 1 }).endOf('month').toDate();
+            const periodLabel = moment({ year, month: month - 1 }).format('MMMM YYYY');
+
+            const paidBookings = await Booking.find({
+                activity_id: { $in: activityIds },
+                payment_status: 'paid',
+                $expr: {
+                    $and: [
+                        { $gte: [{ $ifNull: ['$paid_at', '$created_at'] }, start] },
+                        { $lte: [{ $ifNull: ['$paid_at', '$created_at'] }, end] },
+                    ],
+                },
+            })
+                .populate('activity_id', 'title')
+                .populate('slot_id', 'date start_time end_time')
+                .populate('user_id', 'username email partner_profile')
+                .sort({ created_at: 1 })
+                .lean();
+
+            const refundBookings = await Booking.find({
+                activity_id: { $in: activityIds },
+                payment_status: 'refunded',
+                refund_amount: { $gt: 0 },
+                $expr: {
+                    $and: [
+                        {
+                            $gte: [
+                                { $ifNull: ['$cancelled_at', { $ifNull: ['$updated_at', '$created_at'] }] },
+                                start,
+                            ],
+                        },
+                        {
+                            $lte: [
+                                { $ifNull: ['$cancelled_at', { $ifNull: ['$updated_at', '$created_at'] }] },
+                                end,
+                            ],
+                        },
+                    ],
+                },
+            })
+                .populate('activity_id', 'title')
+                .lean();
+
+            let grossTotal = 0;
+            let commissionTotal = 0;
+            let netToPartner = 0;
+            let refundTotal = 0;
+
+            const bookingRows = paidBookings.map((b) => {
+                const gross = Number(b.total_amount) || 0;
+                const comm = Number(b.commission_amount) || 0;
+                const net = Number(b.partner_amount) || 0;
+                grossTotal += gross;
+                commissionTotal += comm;
+                netToPartner += net;
+
+                const refDate = b.paid_at || b.created_at;
+                const dateStr = refDate
+                    ? moment(refDate).format('DD.MM.YYYY HH:mm')
+                    : '—';
+                const cust =
+                    b.user_id?.partner_profile?.business_name ||
+                    b.user_id?.username ||
+                    '—';
+                return {
+                    dateStr,
+                    bookingRef: b.booking_id || String(b._id),
+                    activityTitle: b.activity_id?.title || '—',
+                    customerName: cust,
+                    participants: b.participants,
+                    gross,
+                    commissionRatePct:
+                        b.commission_rate != null ? String(b.commission_rate) : '',
+                    commission: comm,
+                    netPartner: net,
+                    paymentMethod: b.payment_method || '—',
+                    status: b.booking_status || '—',
+                };
+            });
+
+            refundBookings.forEach((b) => {
+                refundTotal += Number(b.refund_amount) || 0;
+            });
+
+            const refundRows = refundBookings.map((b) => {
+                const d = b.cancelled_at || b.updated_at || b.created_at;
+                return {
+                    dateStr: d ? moment(d).format('DD.MM.YYYY HH:mm') : '—',
+                    bookingRef: b.booking_id || String(b._id),
+                    activityTitle: b.activity_id?.title || '—',
+                    refundAmount: Number(b.refund_amount) || 0,
+                    note: b.cancellation_reason || '',
+                };
+            });
+
+            const partnerUser = await User.findById(partnerId)
+                .select('email username partner_profile.business_name')
+                .lean();
+            const partnerDisplayName =
+                partnerUser?.partner_profile?.business_name || partnerUser?.username || 'Partner';
+
+            const pdfBuffer = await buildPartnerMonthlyFinancialPdfBuffer({
+                partnerDisplayName,
+                partnerEmail: partnerUser?.email || '',
+                periodLabel,
+                periodStart: start,
+                periodEnd: end,
+                generatedAt: new Date(),
+                summary: {
+                    grossTotal,
+                    commissionTotal,
+                    netToPartner,
+                    refundTotal,
+                    tipsTotal: 0,
+                    discountTotal: 0,
+                },
+                bookingRows,
+                refundRows,
+            });
+
+            const filename = `mystic-partner-report-${year}-${String(month).padStart(2, '0')}.pdf`;
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            return res.status(200).send(pdfBuffer);
+        } catch (error) {
+            return generateResponse(res, 500, 'Error generating financial report', null, error.message);
+        }
+    },
 };
 
 module.exports = bookingController;

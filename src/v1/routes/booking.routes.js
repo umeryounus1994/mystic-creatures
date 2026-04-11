@@ -15,6 +15,11 @@ router.post('/update-payment-data', checkFamilyUserAuth, bookingController.updat
 
 // Partner booking routes
 router.get('/partner/my-bookings', checkPartnerUserAuth, bookingController.getPartnerBookings);
+router.get(
+    '/partner/:partnerId/monthly-financial-report/pdf',
+    checkPartnerUserAuth,
+    bookingController.downloadPartnerMonthlyFinancialReportPdf
+);
 
 // Admin booking routes
 router.get('/admin/all-bookings', checkAdminUserAuth, bookingController.getAllBookings);
