@@ -105,7 +105,7 @@ const activityController = {
             const activity = await Activity.findById(req.params.id)
                 .populate(
                     'partner_id',
-                    'first_name last_name partner_profile.business_name partner_profile.about ' +
+                    'first_name last_name image partner_profile.business_name partner_profile.about ' +
                     'partner_profile.gallery partner_profile.map_location partner_profile.layout_options'
                 );
 
@@ -218,7 +218,7 @@ const activityController = {
             const activity = await Activity.findById(req.params.id)
                 .populate(
                     'partner_id',
-                    'first_name last_name partner_profile.business_name partner_profile.about ' +
+                    'first_name last_name image partner_profile.business_name partner_profile.about ' +
                     'partner_profile.gallery partner_profile.map_location partner_profile.layout_options'
                 );
 
