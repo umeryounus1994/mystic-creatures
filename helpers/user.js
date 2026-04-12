@@ -157,6 +157,11 @@ module.exports.getAllUsersAdmin = async function (data) {
                     var el = {
                         id: element?._id,
                         username: element?.username,
+                        first_name: element?.first_name != null ? element.first_name : "",
+                        last_name: element?.last_name != null ? element.last_name : "",
+                        business_name: element?.partner_profile?.business_name != null
+                            ? element.partner_profile.business_name
+                            : "",
                         image: element?.image,
                         status: element?.status,
                         created_at: element.created_at,

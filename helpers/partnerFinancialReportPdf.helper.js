@@ -6,6 +6,8 @@ const PDFDocument = require("pdfkit");
  */
 function buildPartnerMonthlyFinancialPdfBuffer({
   partnerDisplayName = "Partner",
+  /** Partner profile business name (shown on its own line when set). */
+  businessName = "",
   partnerEmail = "",
   periodLabel = "",
   periodStart = null,
@@ -58,7 +60,10 @@ function buildPartnerMonthlyFinancialPdfBuffer({
     doc.fontSize(9).fillColor("#444444").text(`Erstellt: ${fmtDateTime(generatedAt)}`, { align: "right" });
     doc.fillColor("#000000");
     doc.moveDown(0.8);
-    doc.fontSize(11).text(`Partner: ${partnerDisplayName}`);
+    doc.fontSize(11).text(`Partner (Konto): ${partnerDisplayName}`);
+    if (businessName && String(businessName).trim()) {
+      doc.fontSize(11).text(`Geschäft / Business name: ${String(businessName).trim()}`);
+    }
     if (partnerEmail) {
       doc.fontSize(10).text(`E-Mail: ${partnerEmail}`);
     }

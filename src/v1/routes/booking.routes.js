@@ -17,11 +17,16 @@ router.post('/update-payment-data', checkFamilyUserAuth, bookingController.updat
 router.get('/partner/my-bookings', checkPartnerUserAuth, bookingController.getPartnerBookings);
 router.get(
     '/partner/:partnerId/monthly-financial-report/pdf',
-    checkPartnerUserAuth,
+    checkAdminUserAuth,
     bookingController.downloadPartnerMonthlyFinancialReportPdf
 );
 
 // Admin booking routes
 router.get('/admin/all-bookings', checkAdminUserAuth, bookingController.getAllBookings);
+router.get(
+    '/admin/partner/:partnerId/monthly-financial-report/pdf',
+    checkAdminUserAuth,
+    bookingController.downloadAdminPartnerMonthlyFinancialReportPdf
+);
 
 module.exports = router;

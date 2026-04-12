@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    first_name: { type: String, default: "", trim: true },
+    last_name: { type: String, default: "", trim: true },
     email: {
       type: String,
       unique: true,
