@@ -32,6 +32,18 @@ const ActivitySlot = require("../models/activityslot.model");
 const Booking = require("../models/booking.model");
 const { slugify, ensureUniquePartnerSlug } = require("../utils/slug");
 const { PARTNER_PROFILE_BASE_URL, PARTNER_PROFILE_PAGE_PATH } = require("../../../utils/constants");
+const {
+  generateVerificationToken,
+  hashVerificationToken,
+} = require("../../../helpers/emailVerification");
+
+const EMAIL_VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
+
+function buildEmailVerificationLink(rawToken) {
+  const base = (process.env.FRONTEND_URL || "https://mycrebooking.com").replace(/\/$/, "");
+  const pathSegment = (process.env.FRONTEND_EMAIL_VERIFY_PATH || "verify-email").replace(/^\/|\/$/g, "");
+  return `${base}/${pathSegment}?token=${encodeURIComponent(rawToken)}`;
+}
 
 const createUser = async (req, res, next) => {
   try {
@@ -89,186 +101,77 @@ const createUser = async (req, res, next) => {
 
 const createUserPartner = async (req, res, next) => {
   try {
-    const { 
-      payout_preference,
-      paypal_details,
-      stripe_details,
-      ...itemDetails 
-    } = req.body;
-    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return apiResponse.validationErrorWithData(
         res,
-        "Invalid Data"
+        errors.array()[0]?.msg || "Invalid Data",
+        errors.array()
       );
     }
 
-    // Parse partner_profile from JSON string if provided
-    if (req.body.partner_profile) {
-      try {
-        itemDetails.partner_profile = JSON.parse(req.body.partner_profile);
-      } catch (parseError) {
-        return apiResponse.ErrorResponse(
-          res,
-          "Invalid partner profile data"
-        );
-      }
-    }
+    const { first_name, last_name, email, password } = req.body;
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const { raw, hash } = generateVerificationToken();
+    const expires = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
 
-    // Initialize partner_profile if not exists
-    if (!itemDetails.partner_profile) {
-      itemDetails.partner_profile = {};
-    }
-
-    // Handle payout preference from registration form
-    if (payout_preference) {
-      // Map payout_preference to preferred_payout_method
-      // Frontend sends: "bank_transfer" | "paypal" | "stripe"
-      // Backend expects: "bank_transfer" | "paypal" | "stripe"
-      itemDetails.partner_profile.preferred_payout_method = payout_preference;
-
-      // Handle PayPal details
-      if (payout_preference === 'paypal') {
-        if (!paypal_details || !paypal_details.paypal_email) {
-          return apiResponse.validationErrorWithData(
-            res,
-            "PayPal email is required when PayPal is selected as payout method"
-          );
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(paypal_details.paypal_email)) {
-          return apiResponse.validationErrorWithData(
-            res,
-            "Invalid PayPal email format"
-          );
-        }
-
-        // Set PayPal payout details
-        itemDetails.partner_profile.paypal_payout = {
-          paypal_email: paypal_details.paypal_email.toLowerCase().trim(),
-          payout_method: 'paypal',
-          verified: false
-        };
-      }
-
-      // Handle Stripe details
-      if (payout_preference === 'stripe') {
-        if (!stripe_details || !stripe_details.stripe_account_id) {
-          return apiResponse.validationErrorWithData(
-            res,
-            "Stripe Account ID is required when Stripe is selected as payout method"
-          );
-        }
-
-        // Validate Stripe account ID format (should start with "acct_")
-        if (!stripe_details.stripe_account_id.startsWith('acct_')) {
-          return apiResponse.validationErrorWithData(
-            res,
-            "Invalid Stripe Account ID format. Must start with 'acct_'"
-          );
-        }
-
-        // Set Stripe Connect details
-        // Note: If partner provides their own Stripe account ID, we'll verify it after registration
-        itemDetails.partner_profile.stripe_connect = {
-          account_id: stripe_details.stripe_account_id.trim(),
-          onboarding_completed: false, // Will be verified after save
-          charges_enabled: false, // Will be verified after save
-          payouts_enabled: false, // Will be verified after save
-          account_type: 'express'
-        };
-      }
-
-      // For bank_transfer, use existing bank_details (already in partner_profile)
-      // No additional setup needed
-    }
-
-    // Handle image upload if present
-    if (req?.file?.location) {
-      itemDetails.image = req.file.location;
-    }
-
-    // Set user_role to partner
-    itemDetails.user_type = 'partner';
+    const itemDetails = {
+      first_name: String(first_name).trim(),
+      last_name: String(last_name).trim(),
+      email: normalizedEmail,
+      password,
+      user_type: "partner",
+      email_verified: false,
+      email_verification_token_hash: hash,
+      email_verification_expires: expires,
+      partner_profile: {
+        approval_status: "pending",
+        commission_rate: 15,
+        preferred_payout_method: "stripe",
+      },
+    };
 
     const createdItem = new UserModel(itemDetails);
+    await createdItem.save();
 
-    createdItem.save(async (err) => {
-      if (err) {
-        if (err?.keyValue?.email != null && err?.code === 11000) {
-          return apiResponse.ErrorResponse(
-            res,
-            "Email already in use"
-          );
-        }
-        if (err?.keyValue?.username != null && err?.code === 11000) {
-          return apiResponse.ErrorResponse(
-            res,
-            "Username already in use"
-          );
-        }
-        return apiResponse.ErrorResponse(
-          res,
-          "System went wrong, Kindly try again later"
-        );
-      }
-      
-      // Verify Stripe account status if Stripe account ID was provided
-      if (payout_preference === 'stripe' && stripe_details?.stripe_account_id) {
-        try {
-          const stripe = require('../../../config/stripe');
-          stripe.accounts.retrieve(stripe_details.stripe_account_id)
-            .then(account => {
-              // Update partner with verified status
-              UserModel.findByIdAndUpdate(createdItem._id, {
-                'partner_profile.stripe_connect.onboarding_completed': account.details_submitted || false,
-                'partner_profile.stripe_connect.charges_enabled': account.charges_enabled || false,
-                'partner_profile.stripe_connect.payouts_enabled': account.payouts_enabled || false
-              }).catch(err => console.error('Error updating Stripe status:', err));
-            })
-            .catch(err => {
-              console.error('Error verifying Stripe account:', err);
-              // Don't fail registration, just log the error
-            });
-        } catch (stripeError) {
-          console.error('Stripe verification error:', stripeError);
-          // Don't fail registration if Stripe verification fails
-        }
-      }
+    try {
+      const baseSlug = slugify(`${itemDetails.first_name}-${itemDetails.last_name}`) || "partner";
+      const slug = await ensureUniquePartnerSlug(UserModel, baseSlug, createdItem._id);
+      await UserModel.findByIdAndUpdate(createdItem._id, { slug });
+    } catch (slugErr) {
+      logger.error("Partner slug generation error:", slugErr);
+    }
 
-      // Set partner slug from business_name for personalized profile URLs
-      try {
-        const baseSlug = slugify(createdItem.partner_profile?.business_name) || "partner";
-        const slug = await ensureUniquePartnerSlug(UserModel, baseSlug, createdItem._id);
-        await UserModel.findByIdAndUpdate(createdItem._id, { slug });
-        createdItem.slug = slug;
-      } catch (slugErr) {
-        logger.error("Partner slug generation error:", slugErr);
-      }
-      
-      // Remove sensitive data from response
-      createdItem.password = undefined;
-      createdItem.current_level = undefined;
-      createdItem.current_xp = 0;
+    await LevelModel.create({ user_id: createdItem._id, level: 1 });
 
-      // Create initial level for partner
-      const level = {
-        user_id: createdItem?._id,
-        level: 1
-      }
-      const item = new LevelModel(level);
-      item.save();
-
-      return apiResponse.successResponseWithData(
-        res,
-        "Partner created successfully",
-        createdItem
-      );
+    const verifyLink = buildEmailVerificationLink(raw);
+    const sendResult = await emailController.sendEmailVerificationEmail({
+      userEmail: normalizedEmail,
+      userName: `${itemDetails.first_name} ${itemDetails.last_name}`.trim(),
+      verifyLink,
     });
+    if (!sendResult.success) {
+      logger.error("Partner signup: verification email failed", sendResult.error);
+    }
+
+    const userOut = await UserModel.findById(createdItem._id)
+      .select("-password -email_verification_token_hash -email_verification_expires")
+      .lean();
+
+    return apiResponse.successResponseWithData(
+      res,
+      sendResult.success
+        ? "Account created. Please check your email to verify your address before signing in."
+        : "Account created but we could not send the verification email. Please use resend verification.",
+      { user: userOut }
+    );
   } catch (err) {
+    if (err?.keyValue?.email != null && err?.code === 11000) {
+      return apiResponse.ErrorResponse(res, "Email already in use");
+    }
+    if (err?.keyValue?.username != null && err?.code === 11000) {
+      return apiResponse.ErrorResponse(res, "Username already in use");
+    }
     logger.error(err);
     next(err);
   }
@@ -276,64 +179,146 @@ const createUserPartner = async (req, res, next) => {
 
 const createUserFamily = async (req, res, next) => {
   try {
-    const { ...itemDetails } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return apiResponse.validationErrorWithData(
         res,
-        "Invalid Data"
+        errors.array()[0]?.msg || "Invalid Data",
+        errors.array()
       );
     }
 
-    // Handle image upload if present
-    if (req?.file?.location) {
-      itemDetails.image = req.file.location;
-    }
+    const { first_name, last_name, email, password } = req.body;
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const { raw, hash } = generateVerificationToken();
+    const expires = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
 
-    // Set user_role to partner
-    itemDetails.user_type = 'family';
+    const itemDetails = {
+      first_name: String(first_name).trim(),
+      last_name: String(last_name).trim(),
+      email: normalizedEmail,
+      password,
+      user_type: "family",
+      email_verified: false,
+      email_verification_token_hash: hash,
+      email_verification_expires: expires,
+    };
 
     const createdItem = new UserModel(itemDetails);
+    await createdItem.save();
+    await LevelModel.create({ user_id: createdItem._id, level: 1 });
 
-    createdItem.save(async (err) => {
-      if (err) {
-        if (err?.keyValue?.email != null && err?.code === 11000) {
-          return apiResponse.ErrorResponse(
-            res,
-            "Email already in use"
-          );
-        }
-        if (err?.keyValue?.username != null && err?.code === 11000) {
-          return apiResponse.ErrorResponse(
-            res,
-            "Username already in use"
-          );
-        }
-        return apiResponse.ErrorResponse(
-          res,
-          "System went wrong, Kindly try again later"
-        );
-      }
-      
-      // Remove sensitive data from response
-      createdItem.password = undefined;
-      createdItem.current_level = undefined;
-      createdItem.current_xp = 0;
-
-      // Create initial level for partner
-      const level = {
-        user_id: createdItem?._id,
-        level: 1
-      }
-      const item = new LevelModel(level);
-      item.save();
-
-      return apiResponse.successResponseWithData(
-        res,
-        "Family created successfully",
-        createdItem
-      );
+    const verifyLink = buildEmailVerificationLink(raw);
+    const sendResult = await emailController.sendEmailVerificationEmail({
+      userEmail: normalizedEmail,
+      userName: `${itemDetails.first_name} ${itemDetails.last_name}`.trim(),
+      verifyLink,
     });
+    if (!sendResult.success) {
+      logger.error("Family signup: verification email failed", sendResult.error);
+    }
+
+    const userOut = await UserModel.findById(createdItem._id)
+      .select("-password -email_verification_token_hash -email_verification_expires")
+      .lean();
+
+    return apiResponse.successResponseWithData(
+      res,
+      sendResult.success
+        ? "Account created. Please check your email to verify your address before signing in."
+        : "Account created but we could not send the verification email. Please use resend verification.",
+      { user: userOut }
+    );
+  } catch (err) {
+    if (err?.keyValue?.email != null && err?.code === 11000) {
+      return apiResponse.ErrorResponse(res, "Email already in use");
+    }
+    if (err?.keyValue?.username != null && err?.code === 11000) {
+      return apiResponse.ErrorResponse(res, "Username already in use");
+    }
+    logger.error(err);
+    next(err);
+  }
+};
+
+const verifyEmail = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.validationErrorWithData(
+        res,
+        errors.array()[0]?.msg || "Invalid Data",
+        errors.array()
+      );
+    }
+    const { token } = req.body;
+    const tokenHash = hashVerificationToken(token);
+    const user = await UserModel.findOne({
+      email_verification_token_hash: tokenHash,
+      email_verification_expires: { $gt: new Date() },
+    }).exec();
+    if (!user) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Invalid or expired verification link"
+      );
+    }
+    user.email_verified = true;
+    user.email_verification_token_hash = "";
+    user.email_verification_expires = undefined;
+    await user.save();
+    return apiResponse.successResponse(
+      res,
+      "Email verified. You can sign in now."
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const resendVerificationEmail = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return apiResponse.validationErrorWithData(
+        res,
+        errors.array()[0]?.msg || "Invalid Data",
+        errors.array()
+      );
+    }
+    const normalizedEmail = String(req.body.email).toLowerCase().trim();
+    const genericMsg =
+      "If an account exists that still needs verification, a new email has been sent.";
+
+    const user = await UserModel.findOne({
+      email: normalizedEmail,
+      deleted: { $ne: true },
+    }).exec();
+
+    if (!user || (user.user_type !== "partner" && user.user_type !== "family")) {
+      return apiResponse.successResponse(res, genericMsg);
+    }
+    if (user.email_verified !== false) {
+      return apiResponse.successResponse(res, genericMsg);
+    }
+
+    const { raw, hash } = generateVerificationToken();
+    user.email_verification_token_hash = hash;
+    user.email_verification_expires = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
+    await user.save();
+
+    const verifyLink = buildEmailVerificationLink(raw);
+    const sendResult = await emailController.sendEmailVerificationEmail({
+      userEmail: normalizedEmail,
+      userName: `${user.first_name || ""} ${user.last_name || ""}`.trim() || "User",
+      verifyLink,
+    });
+    if (!sendResult.success) {
+      logger.error("Resend verification email failed", sendResult.error);
+    }
+
+    return apiResponse.successResponse(res, genericMsg);
   } catch (err) {
     logger.error(err);
     next(err);
@@ -659,12 +644,9 @@ const loginUser = async (req, res, next) => {
         "need email and password"
       );
     }
-    // eslint-disable-next-line prefer-const
-    let findParams = {
-      email: req.body.email,
-    };
-    // eslint-disable-next-line prefer-const
-    let user = await UserModel.findOne(findParams).exec();
+    const normalizedEmail = String(req.body.email).toLowerCase().trim();
+    const findParams = { email: normalizedEmail };
+    const user = await UserModel.findOne(findParams).exec();
     if (!user) {
       return apiResponse.notFoundResponse(
         res,
@@ -676,6 +658,16 @@ const loginUser = async (req, res, next) => {
       return apiResponse.notFoundResponse(
         res,
         "Invalid Credentials"
+      );
+    }
+
+    if (
+      (user.user_type === "partner" || user.user_type === "family") &&
+      user.email_verified === false
+    ) {
+      return apiResponse.unauthorizedResponse(
+        res,
+        "Please verify your email before signing in. Check your inbox or request a new verification email."
       );
     }
 
@@ -695,7 +687,7 @@ const loginUser = async (req, res, next) => {
     logger.info('user login success');
     return apiResponse.successResponseWithData(
       res,
-      `Welcome ${user.username}, Authenticated Successfully`,
+      `Welcome ${user.username || user.first_name || "User"}, Authenticated Successfully`,
       {
         user,
       }
@@ -705,7 +697,6 @@ const loginUser = async (req, res, next) => {
     next(err);
   }
 };
-
 
 const sendUserPasswordResetEmail = async (req, res, next) => {
   try {
@@ -1533,10 +1524,54 @@ const getPartnerProfile = async (req, res, next) => {
   }
 };
 
-// Partner: update profile (about, gallery, map_location, layout_options, slug)
+// Partner: update profile (business, bank, about, gallery, map_location, layout_options, slug, username)
 const updatePartnerProfile = async (req, res, next) => {
   try {
     const updates = {};
+
+    if (req.body.username !== undefined) {
+      const u = String(req.body.username).trim();
+      if (u) {
+        const taken = await UserModel.findOne({
+          username: u,
+          _id: { $ne: req.user.id },
+          deleted: { $ne: true },
+        })
+          .select("_id")
+          .lean();
+        if (taken) {
+          return apiResponse.ErrorResponse(res, "Username already in use");
+        }
+        updates.username = u;
+      }
+    }
+
+    if (req.body.business_name !== undefined) {
+      updates["partner_profile.business_name"] = String(req.body.business_name).trim();
+    }
+    if (req.body.business_description !== undefined) {
+      updates["partner_profile.business_description"] = String(req.body.business_description).trim();
+    }
+    if (req.body.phone !== undefined) {
+      updates["partner_profile.phone"] = String(req.body.phone).trim();
+    }
+
+    if (req.body.bank_details !== undefined && req.body.bank_details !== null && typeof req.body.bank_details === "object") {
+      const bd = req.body.bank_details;
+      if (bd.account_holder !== undefined) {
+        updates["partner_profile.bank_details.account_holder"] = String(bd.account_holder).trim();
+      }
+      if (bd.account_number !== undefined) {
+        updates["partner_profile.bank_details.account_number"] = String(bd.account_number).replace(/\s+/g, "").trim();
+      }
+      if (bd.routing_number !== undefined) {
+        updates["partner_profile.bank_details.routing_number"] = String(bd.routing_number).replace(/\s+/g, "").trim();
+      }
+      if (bd.iban !== undefined) {
+        updates["partner_profile.bank_details.iban"] = String(bd.iban).replace(/\s+/g, "").toUpperCase();
+      }
+    }
+
     if (req.body.about !== undefined) updates["partner_profile.about"] = String(req.body.about);
     if (req.body.gallery !== undefined) {
       const gallery = Array.isArray(req.body.gallery) ? req.body.gallery : [];
@@ -1557,6 +1592,7 @@ const updatePartnerProfile = async (req, res, next) => {
         if (lo.background !== undefined) updates["partner_profile.layout_options.background"] = String(lo.background);
       }
     }
+
     if (req.body.slug !== undefined) {
       const slugInput = typeof req.body.slug === "string" ? req.body.slug.trim() : "";
       const baseSlug = slugify(slugInput) || "";
@@ -1564,10 +1600,16 @@ const updatePartnerProfile = async (req, res, next) => {
         const resolvedSlug = await ensureUniquePartnerSlug(UserModel, baseSlug, req.user.id);
         updates.slug = resolvedSlug;
       }
+    } else if (updates["partner_profile.business_name"] !== undefined) {
+      const baseSlug = slugify(updates["partner_profile.business_name"]) || "partner";
+      const resolvedSlug = await ensureUniquePartnerSlug(UserModel, baseSlug, req.user.id);
+      updates.slug = resolvedSlug;
     }
+
     if (Object.keys(updates).length === 0) {
       return apiResponse.ErrorResponse(res, "No valid fields to update");
     }
+
     const updated = await UserModel.findOneAndUpdate(
       { _id: req.user.id, user_type: "partner" },
       { $set: updates },
@@ -1578,6 +1620,7 @@ const updatePartnerProfile = async (req, res, next) => {
     if (!updated) {
       return apiResponse.notFoundResponse(res, "Partner not found");
     }
+
     return apiResponse.successResponseWithData(
       res,
       "Partner profile updated successfully",
@@ -1672,6 +1715,8 @@ module.exports = {
   deleteUser,
   totalUsers,
   loginUser,
+  verifyEmail,
+  resendVerificationEmail,
   logout,
   sendUserPasswordResetEmail,
   getResetPasswordRequestDetails,

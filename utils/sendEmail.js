@@ -21,6 +21,8 @@ const sendEmail = async (emailData) => {
             htmlContent = generatePartnerNotificationHTML(data);
         } else if (template === 'password-reset') {
             htmlContent = generatePasswordResetHTML(data);
+        } else if (template === 'email-verification') {
+            htmlContent = generateEmailVerificationHTML(data);
         }
         
         // Try IONOS first if specified, otherwise use SendGrid
@@ -170,6 +172,37 @@ const generateBookingCancellationHTML = (data) => {
             <p>Wenn Sie Fragen haben, kontaktieren Sie bitte unser Support-Team.</p>
             
             <p>Vielen Dank,<br>MyCre App Team</p>
+        </div>
+    </body>
+    </html>`;
+};
+
+const generateEmailVerificationHTML = (data) => {
+    return `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>E-Mail bestätigen</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #2196F3;">E-Mail-Adresse bestätigen</h2>
+            <p>Hallo ${data.userName || "User"},</p>
+            <p>Bitte bestätigen Sie Ihre E-Mail-Adresse, um Ihr Konto zu aktivieren.</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${data.verifyLink}" target="_blank"
+                   style="background-color: #4CAF50; color: white; padding: 12px 24px;
+                          text-decoration: none; border-radius: 5px; display: inline-block;">
+                    E-Mail bestätigen
+                </a>
+            </div>
+            <p>Oder kopieren Sie diesen Link in Ihren Browser:</p>
+            <p style="word-break: break-all; color: #666;">${data.verifyLink}</p>
+            <p>Mit freundlichen Grüßen,<br>Team MyCre Booking</p>
+            <hr style="margin: 30px 0;">
+            <p style="font-size: 12px; color: #666;">
+                Wenn Sie kein Konto erstellt haben, ignorieren Sie diese E-Mail.
+            </p>
         </div>
     </body>
     </html>`;

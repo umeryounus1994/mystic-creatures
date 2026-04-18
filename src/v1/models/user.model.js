@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    email_verified: {
+      type: Boolean,
+    },
+    email_verification_token_hash: { type: String, default: "" },
+    email_verification_expires: { type: Date },
     password: {
       type: String,
       required: true,
@@ -75,7 +80,8 @@ const userSchema = new mongoose.Schema(
       bank_details: {
         account_number: String,
         routing_number: String,
-        account_holder: String
+        account_holder: String,
+        iban: { type: String, default: "" },
       },
       // Stripe Connect account details
       stripe_connect: {

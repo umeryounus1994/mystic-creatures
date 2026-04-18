@@ -13,6 +13,10 @@ const {
 const {
   passwordValidation,
   validateRequest,
+  partnerFamilySignupValidation,
+  validateSignupRequest,
+  verifyEmailTokenValidation,
+  resendVerificationValidation,
 } = require("./authValidation/authValidation");
 
 router.post(
@@ -22,13 +26,27 @@ router.post(
 
 router.post(
   "/partner-signup",
-  mediaUpload.single("image"),
+  partnerFamilySignupValidation,
+  validateSignupRequest,
   userController.createUserPartner
 );
 router.post(
   "/family-signup",
-  mediaUpload.single("image"),
+  partnerFamilySignupValidation,
+  validateSignupRequest,
   userController.createUserFamily
+);
+router.post(
+  "/verify-email",
+  verifyEmailTokenValidation,
+  validateSignupRequest,
+  userController.verifyEmail
+);
+router.post(
+  "/resend-verification-email",
+  resendVerificationValidation,
+  validateSignupRequest,
+  userController.resendVerificationEmail
 );
 router.post(
   "/signup_subadmin",
@@ -109,6 +127,8 @@ router.patch(
   checkPartnerUserAuth,
   userController.updateMyCommissionRate
 );
+// Register before /partner/:partnerId so `profile` is not treated as an ObjectId param
+router.patch("/partner/profile", checkPartnerUserAuth, userController.updatePartnerProfile);
 router.patch(
   "/partner/:partnerId",
   checkPartnerUserAuth,
@@ -132,7 +152,6 @@ router.get("/partner/by-slug/:slug/profile", checkAuthOrigins, userController.ge
 router.get("/partner/by-slug/:slug/profile-with-activities", userController.getPartnerProfileWithActivitiesBySlug);
 router.get("/partner/:id/profile-with-activities", userController.getPartnerProfileWithActivities);
 router.get("/partner/:id/profile", checkAuthOrigins, userController.getPartnerProfileById);
-router.patch("/partner/profile", checkPartnerUserAuth, userController.updatePartnerProfile);
 router.post(
   "/partner/profile/gallery",
   checkPartnerUserAuth,

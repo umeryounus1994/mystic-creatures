@@ -196,6 +196,27 @@ const emailController = {
             console.error('Error sending password reset email:', error);
             return { success: false, error: error.message };
         }
+    },
+
+    sendEmailVerificationEmail: async (emailData) => {
+        try {
+            const { userEmail, userName, verifyLink } = emailData;
+            const emailContent = {
+                to: userEmail,
+                subject: 'E-Mail-Adresse bestätigen',
+                template: 'email-verification',
+                useIonos: true,
+                data: {
+                    userName,
+                    verifyLink,
+                }
+            };
+            const ok = await sendEmail(emailContent);
+            return { success: !!ok };
+        } catch (error) {
+            console.error('Error sending verification email:', error);
+            return { success: false, error: error.message };
+        }
     }
 };
 
