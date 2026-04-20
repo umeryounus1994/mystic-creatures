@@ -432,19 +432,23 @@ const updateBankDetails = async (req, res) => {
     if (!account_number || !routing_number || !account_holder) {
       return generateResponse(res, 400, 'Account number, routing number, and account holder name are required');
     }
+
+    const normalizedAccountNumber = String(account_number).trim().replace(/\s+/g, '');
+    const normalizedRoutingNumber = String(routing_number).trim().replace(/\s+/g, '');
+    const normalizedAccountHolder = String(account_holder).trim();
     
     // Validate account number (should be numeric, typically 8-17 digits)
-    if (!/^\d{8,40}$/.test(account_number.replace(/\s+/g, ''))) {
+    if (!/^\d{8,40}$/.test(normalizedAccountNumber)) {
       return generateResponse(res, 400, 'Invalid account number format. Must be 8-40 digits');
     }
     
     // Validate routing number (should be 9 digits for US banks)
-    if (!/^\d{9-15}$/.test(routing_number.replace(/\s+/g, ''))) {
+    if (!/^\d{9,15}$/.test(normalizedRoutingNumber)) {
       return generateResponse(res, 400, 'Invalid routing number format. Must be 9-15 digits');
     }
     
     // Validate account holder name (should not be empty and have reasonable length)
-    if (account_holder.trim().length < 2 || account_holder.trim().length > 100) {
+    if (normalizedAccountHolder.length < 2 || normalizedAccountHolder.length > 100) {
       return generateResponse(res, 400, 'Account holder name must be between 2 and 100 characters');
     }
     
@@ -469,22 +473,22 @@ const updateBankDetails = async (req, res) => {
     }
     
     // Update bank details (remove spaces from account and routing numbers)
-    partner.partner_profile.bank_details.account_number = account_number.replace(/\s+/g, '');
-    partner.partner_profile.bank_details.routing_number = routing_number.replace(/\s+/g, '');
-    partner.partner_profile.bank_details.account_holder = account_holder.trim();
+    partner.partner_profile.bank_details.account_number = normalizedAccountNumber;
+    partner.partner_profile.bank_details.routing_number = normalizedRoutingNumber;
+    partner.partner_profile.bank_details.account_holder = normalizedAccountHolder;
     
     await partner.save();
     
     // Return masked account details for security
-    const maskedAccountNumber = account_number.replace(/\s+/g, '').slice(-4).padStart(account_number.replace(/\s+/g, '').length, '*');
-    const maskedRoutingNumber = routing_number.replace(/\s+/g, '').slice(-4).padStart(routing_number.replace(/\s+/g, '').length, '*');
+    const maskedAccountNumber = normalizedAccountNumber.slice(-4).padStart(normalizedAccountNumber.length, '*');
+    const maskedRoutingNumber = normalizedRoutingNumber.slice(-4).padStart(normalizedRoutingNumber.length, '*');
     
     return generateResponse(res, 200, 'Bank details updated successfully', {
       partner_id: partner._id,
-      account_holder: account_holder.trim(),
+      account_holder: normalizedAccountHolder,
       account_number: maskedAccountNumber, // Return masked version
       routing_number: maskedRoutingNumber, // Return masked version
-      message: 'Bank details have been updated. Last 4 digits: ' + account_number.replace(/\s+/g, '').slice(-4)
+      message: 'Bank details have been updated. Last 4 digits: ' + normalizedAccountNumber.slice(-4)
     });
     
   } catch (error) {
