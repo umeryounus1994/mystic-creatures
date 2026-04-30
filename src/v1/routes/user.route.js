@@ -101,6 +101,11 @@ router.post(
 router.get("/analytics", checkAdminUserAuth, userController.getAnalytics);
 router.get("/user_analytics", checkAdminUserAuth, userController.getUserAnalytics);
 router.delete(
+  "/me",
+  checkUserAuth,
+  userController.deleteMyAccount
+);
+router.delete(
   "/:id",
   checkAdminUserAuth,
   userController.deleteUser

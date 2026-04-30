@@ -543,6 +543,45 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+const deleteMyAccount = async (req, res, next) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Validation Error"
+      );
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return apiResponse.notFoundResponse(
+        res,
+        "Not found!"
+      );
+    }
+
+    user.access_token = "";
+    await user.save();
+    user.delete((err, data) => {
+      if (err) {
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      return apiResponse.successResponseWithData(
+        res,
+        "Account deleted successfully",
+        data
+      );
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 const updateUser = async (req, res, next) => {
   try {
     if (req.body.password) {
@@ -1713,6 +1752,7 @@ module.exports = {
   getUser,
   updateUser,
   deleteUser,
+  deleteMyAccount,
   totalUsers,
   loginUser,
   verifyEmail,
