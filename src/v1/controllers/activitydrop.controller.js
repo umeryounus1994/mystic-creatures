@@ -4,6 +4,28 @@ const ActivitySlot = require("../models/activityslot.model");
 const { generateResponse } = require("../utils/response");
 const logger = require('../../../middlewares/logger');
 
+function getRequestUserId(user) {
+    return String(user?._id || user?.id || '');
+}
+
+function isAdminRequestUser(user) {
+    if (!user) return false;
+    return (
+        user.role === 'admin' ||
+        user.user_type === 'admin' ||
+        user.user_type === 'manager' ||
+        user.user_type === 'subadmin'
+    );
+}
+
+function canManageActivityDrop(req, activityPartnerId) {
+    const partnerId = String(activityPartnerId || '');
+    return (
+        getRequestUserId(req.user) === partnerId ||
+        isAdminRequestUser(req.user)
+    );
+}
+
 // Returns activity IDs that have at least one slot with end_time in the future (drops linked to these are visible)
 const getActivityIdsWithFutureSlots = async () => {
     const now = new Date();
@@ -22,8 +44,7 @@ const createActivityDrop = async (req, res) => {
             return generateResponse(res, 404, 'Activity not found');
         }
 
-        // Check if user is the activity owner or admin
-        if (activity.partner_id.toString() !== req.user.id && req.user.role !== 'admin') {
+        if (!canManageActivityDrop(req, activity.partner_id)) {
             return generateResponse(res, 403, 'Not authorized to create drops for this activity');
         }
 
@@ -176,8 +197,7 @@ const updateActivityDrop = async (req, res) => {
             return generateResponse(res, 404, 'Activity drop not found');
         }
 
-        // Check authorization
-        if (activityDrop.activity_id.partner_id.toString() !== req.user.id && req.user.role !== 'admin') {
+        if (!canManageActivityDrop(req, activityDrop.activity_id.partner_id)) {
             return generateResponse(res, 403, 'Not authorized to update this drop');
         }
 
@@ -221,8 +241,7 @@ const deleteActivityDrop = async (req, res) => {
             return generateResponse(res, 404, 'Activity drop not found');
         }
 
-        // Check authorization
-        if (activityDrop.activity_id.partner_id.toString() !== req.user.id && req.user.role !== 'admin') {
+        if (!canManageActivityDrop(req, activityDrop.activity_id.partner_id)) {
             return generateResponse(res, 403, 'Not authorized to delete this drop');
         }
 
