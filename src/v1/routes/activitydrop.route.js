@@ -35,6 +35,6 @@ router.patch(
 );
 
 // Delete activity drop
-router.delete("/:id", checkPartnerUserAuth, activityDropController.deleteActivityDrop);
+router.delete("/:id", checkAuthOrigins, activityDropController.deleteActivityDrop);
 
 module.exports = router;
