@@ -5,9 +5,10 @@ const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
   {
-    username: {       
+    username: {
       type: String,
       unique: true,
+      sparse: true,
       trim: true,
     },
     first_name: { type: String, default: "", trim: true },
@@ -142,6 +143,13 @@ const userSchema = new mongoose.Schema(
   }
 );
 //so current xp will be = total xp - sum series formula of all xp requirement from levels 1 to 2, 2 to 3, 3 to current level
+
+userSchema.pre("save", function (next) {
+  if (this.isModified("username") && (!this.username || !String(this.username).trim())) {
+    this.username = undefined;
+  }
+  next();
+});
 
 userSchema.pre("save", function (next) {
   if (!this.isModified("password")) {

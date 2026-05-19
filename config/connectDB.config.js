@@ -14,8 +14,19 @@ exports.connectDB = async () => {
     })
     .catch((err) => console.log(err.message));
 
-  mongoose.connection.on("connected", () => {
+  mongoose.connection.on("connected", async () => {
     console.log("Mongoose connected to db");
+    try {
+      const UserModel = require("../src/v1/models/user.model");
+      await UserModel.collection.updateMany(
+        { $or: [{ username: null }, { username: "" }] },
+        { $unset: { username: "" } }
+      );
+      await UserModel.syncIndexes();
+      console.log("User indexes synced (username sparse unique)");
+    } catch (indexErr) {
+      console.error("User index sync failed:", indexErr.message);
+    }
   });
 
   mongoose.connection.on("error", (err) => {

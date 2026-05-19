@@ -65,7 +65,7 @@ const createUser = async (req, res, next) => {
             "Email already in use"
           );
         }
-        if (err?.keyValue?.username != null && err?.code === 11000) {
+        if (err?.code === 11000 && err?.keyPattern?.username) {
           return apiResponse.ErrorResponse(
             res,
             "Username already in use"
@@ -169,7 +169,7 @@ const createUserPartner = async (req, res, next) => {
     if (err?.keyValue?.email != null && err?.code === 11000) {
       return apiResponse.ErrorResponse(res, "Email already in use");
     }
-    if (err?.keyValue?.username != null && err?.code === 11000) {
+    if (err?.code === 11000 && err?.keyPattern?.username) {
       return apiResponse.ErrorResponse(res, "Username already in use");
     }
     logger.error(err);
@@ -233,7 +233,7 @@ const createUserFamily = async (req, res, next) => {
     if (err?.keyValue?.email != null && err?.code === 11000) {
       return apiResponse.ErrorResponse(res, "Email already in use");
     }
-    if (err?.keyValue?.username != null && err?.code === 11000) {
+    if (err?.code === 11000 && err?.keyPattern?.username) {
       return apiResponse.ErrorResponse(res, "Username already in use");
     }
     logger.error(err);
