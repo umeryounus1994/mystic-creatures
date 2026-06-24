@@ -14,6 +14,7 @@ router.post(
 
 router.get("/available-users", checkUserAuth, friendController.getAvailableUsers);
 router.get("/get_all/:status", checkUserAuth, friendController.getFriends);
+router.delete("/cancel-request/:id", checkUserAuth, friendController.cancelFriendRequest);
 router.get("/change-status/:id/:status", checkUserAuth, friendController.changeStatus);
 
 module.exports = router;

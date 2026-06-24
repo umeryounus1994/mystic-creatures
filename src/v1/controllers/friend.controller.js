@@ -178,6 +178,41 @@ const getAvailableUsers = async (req, res, next) => {
   }
 };
 
+const cancelFriendRequest = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid request id");
+    }
+
+    const friend = await FriendModel.findOne({ _id: new ObjectId(id) });
+    if (!friend) {
+      return apiResponse.notFoundResponse(res, "Friend request not found");
+    }
+
+    const currentUserId = String(req.user.id);
+    if (String(friend.user_id) !== currentUserId) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Only the sender can cancel this friend request"
+      );
+    }
+
+    if (friend.status !== "requested") {
+      return apiResponse.ErrorResponse(
+        res,
+        "Only pending requests can be cancelled"
+      );
+    }
+
+    await FriendModel.findByIdAndUpdate(id, { status: "deleted" });
+
+    return apiResponse.successResponse(res, "Friend request cancelled");
+  } catch (err) {
+    next(err);
+  }
+};
+
 const changeStatus = async (req, res, next) => {
   try {
     const id = req.params.id;
@@ -190,10 +225,10 @@ const changeStatus = async (req, res, next) => {
         "Add Friend first"
       );
     }
-    if(friend?.user_id == req.user.id){
+    if (String(friend.user_id) === String(req.user.id)) {
       return apiResponse.ErrorResponse(
         res,
-        "You can not " + status + " this request"
+        "You can not " + status + " this request. Use cancel-request to withdraw a sent request."
       );
     }
     if(friend?.status == "accepted"){
@@ -237,5 +272,6 @@ module.exports = {
     addFriend,
     getFriends,
     getAvailableUsers,
+    cancelFriendRequest,
     changeStatus
 };
