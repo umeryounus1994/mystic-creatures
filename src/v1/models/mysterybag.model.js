@@ -25,6 +25,7 @@ const mysteryBagSchema = new mongoose.Schema(
             enum: ["collectible", "view-only"],
             default: "collectible"
         },
+        expires_at: { type: Date },
         location: {
             type: pointSchema,
             required: true,

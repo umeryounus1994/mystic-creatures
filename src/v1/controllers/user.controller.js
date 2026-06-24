@@ -16,6 +16,7 @@ const LevelModel = require("../models/level.model");
 const TransactionModel = require("../models/transactions.model");
 const UserPasswordResetModel = require("../models/userReset.model");
 const UserRewardModel = require("../models/userreward.model");
+const FriendModel = require("../models/friends.model");
 const {
   softDelete,
   totalItems,
@@ -38,6 +39,18 @@ const {
 } = require("../../../helpers/emailVerification");
 
 const EMAIL_VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
+
+async function removeFriendRecordsForUser(userId) {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return;
+  }
+  await FriendModel.deleteMany({
+    $or: [
+      { user_id: new ObjectId(userId) },
+      { friend_id: new ObjectId(userId) },
+    ],
+  });
+}
 
 function buildEmailVerificationLink(rawToken) {
   const base = (process.env.FRONTEND_URL || "https://mycrebooking.com").replace(/\/$/, "");
@@ -531,6 +544,7 @@ const getAllUsers = async (req, res, next) => {
 };
 const deleteUser = async (req, res, next) => {
   try {
+    await removeFriendRecordsForUser(req.params.id);
     await softDelete({
       req,
       res,
@@ -560,6 +574,8 @@ const deleteMyAccount = async (req, res, next) => {
         "Not found!"
       );
     }
+
+    await removeFriendRecordsForUser(userId);
 
     user.access_token = "";
     await user.save();

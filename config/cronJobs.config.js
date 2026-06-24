@@ -1,6 +1,7 @@
 const { CronJob } = require('cron');
 const cleanupUnpaidBookings = require('../src/v1/jobs/cleanupUnpaidBookings.job');
 const processAutomaticPayouts = require('../src/v1/jobs/automaticPayouts.job');
+const cleanupExpiredViewOnlyBags = require('../src/v1/jobs/cleanupExpiredViewOnlyBags.job');
 const payoutConfig = require('./automaticPayouts.config');
 
 /**
@@ -36,14 +37,27 @@ const initializeCronJobs = () => {
         true, // start immediately
         'Europe/Berlin' // Germany timezone
     );
+
+    const viewOnlyBagCleanupJob = new CronJob(
+        '0 3 * * *',
+        async () => {
+            console.log(`\n🗑️  [${new Date().toISOString()}] Running expired view-only bag cleanup...`);
+            await cleanupExpiredViewOnlyBags();
+        },
+        null,
+        true,
+        'Europe/Berlin'
+    );
     
     console.log('✅ Cron jobs initialized:');
     console.log('   - Cleanup unpaid bookings: Every 2 hours');
     console.log(`   - Automatic payouts: ${payoutSchedule} (from config file)`);
+    console.log('   - Expired view-only bags: Daily at 3 AM');
     
     return {
         cleanupJob,
-        payoutJob
+        payoutJob,
+        viewOnlyBagCleanupJob
     };
 };
 

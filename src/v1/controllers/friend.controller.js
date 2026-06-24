@@ -3,8 +3,32 @@
 const { ObjectId } = require("mongodb");
 const apiResponse = require("../../../helpers/apiResponse");
 const FriendModel = require("../models/friends.model");
-const friendHelper = require("../../../helpers/friend");
+const UserModel = require("../models/user.model");
 const moment = require('moment');
+
+function mapFriendRecords(friendsD, currentUserId) {
+  const currentId = String(currentUserId);
+  return friendsD
+    .filter((friend) => friend.user_id && friend.friend_id)
+    .map((friend) => {
+      const friendData =
+        String(friend.user_id._id) === currentId
+          ? friend.friend_id
+          : friend.user_id;
+      if (!friendData?._id) {
+        return null;
+      }
+      return {
+        _id: friend._id,
+        username: friendData.username,
+        image: friendData.image,
+        created_at: friend.created_at,
+        friend_id: friendData._id,
+        status: friend.status,
+      };
+    })
+    .filter(Boolean);
+}
 
 const addFriend = async (req, res, next) => {
   try {
@@ -75,17 +99,7 @@ const getFriends = async (req, res, next) => {
         .populate('user_id', 'username image')
         .populate('friend_id', 'username image');
 
-        friends = friendsD.map(friend => {
-            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
-            return {
-                _id: friend._id,
-                username: friendData.username,
-                image: friendData.image,
-                created_at: friend.created_at,
-                friend_id: friendData._id,
-                status: friend.status
-            };
-        });
+        friends = mapFriendRecords(friendsD, req.user.id);
 
     } else if (status === 'accepted') {
         const friendsD = await FriendModel.find({
@@ -98,17 +112,7 @@ const getFriends = async (req, res, next) => {
         .populate('user_id', 'username image')
         .populate('friend_id', 'username image');
 
-        friends = friendsD.map(friend => {
-            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
-            return {
-                _id: friend._id,
-                username: friendData.username,
-                image: friendData.image,
-                created_at: friend.created_at,
-                friend_id: friendData._id,
-                status: friend.status
-            };
-        });
+        friends = mapFriendRecords(friendsD, req.user.id);
 
     } else if (status === 'requested') {
         const friendsD = await FriendModel.find({
@@ -121,22 +125,12 @@ const getFriends = async (req, res, next) => {
         .populate('user_id', 'username image')
         .populate('friend_id', 'username image');
 
-        friends = friendsD.map(friend => {
-            const friendData = friend.user_id._id.equals(req.user.id) ? friend.friend_id : friend.user_id;
-            return {
-                _id: friend._id,
-                username: friendData.username,
-                image: friendData.image,
-                created_at: friend.created_at,
-                friend_id: friendData._id,
-                status: friend.status
-            };
-        });
+        friends = mapFriendRecords(friendsD, req.user.id);
     }
 
     return res.json({
         status: true,
-        message: "Data Found",
+        message: friends.length > 0 ? "Data Found" : "No data found",
         data: friends.sort((a, b) => moment(b.created_at).diff(moment(a.created_at)))
     });
 
@@ -146,6 +140,43 @@ const getFriends = async (req, res, next) => {
 
 };
 
+const getAvailableUsers = async (req, res, next) => {
+  try {
+    const currentUserId = new ObjectId(req.user.id);
+    const relationships = await FriendModel.find({
+      $or: [{ user_id: currentUserId }, { friend_id: currentUserId }],
+      status: { $in: ["requested", "accepted"] },
+    }).select("user_id friend_id");
+
+    const excludeIds = new Set([currentUserId.toString()]);
+    relationships.forEach((relationship) => {
+      excludeIds.add(relationship.user_id.toString());
+      excludeIds.add(relationship.friend_id.toString());
+    });
+
+    const users = await UserModel.find({
+      _id: { $nin: [...excludeIds] },
+      status: "active",
+    })
+      .select("username image first_name last_name created_at")
+      .sort({ created_at: -1 });
+
+    return res.json({
+      status: true,
+      message: users.length > 0 ? "Data Found" : "No data found",
+      data: users.map((user) => ({
+        id: user._id,
+        username: user.username,
+        image: user.image,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        created_at: user.created_at,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 const changeStatus = async (req, res, next) => {
   try {
@@ -205,5 +236,6 @@ const changeStatus = async (req, res, next) => {
 module.exports = {
     addFriend,
     getFriends,
+    getAvailableUsers,
     changeStatus
 };

@@ -41,6 +41,7 @@ module.exports.getNearbyMysteryBags = async function (data, user_id, latitude, l
                             drawing_file: element.drawing_file,
                             reward_file: element.reward_file,
                             bag_type: element.bag_type,
+                            expires_at: element.expires_at,
                             location: element.location,
                             visibility_radius: element.visibility_radius,
                             created_by: element.created_by?.username,

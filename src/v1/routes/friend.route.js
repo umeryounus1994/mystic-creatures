@@ -12,6 +12,7 @@ router.post(
   friendController.addFriend
 );
 
+router.get("/available-users", checkUserAuth, friendController.getAvailableUsers);
 router.get("/get_all/:status", checkUserAuth, friendController.getFriends);
 router.get("/change-status/:id/:status", checkUserAuth, friendController.changeStatus);
 

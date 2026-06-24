@@ -4,6 +4,11 @@ const apiResponse = require("../../../helpers/apiResponse");
 const { ObjectId } = require('mongodb');
 const mysteryBagHelper = require("../../../helpers/mysterybag");
 const MysteryBagQuizModel = require("../models/mysterybagquiz.model");
+const {
+  applyViewOnlyBagFields,
+  getActiveBagFilter,
+  isViewOnlyBagExpired,
+} = require("../../../utils/viewOnlyBag");
 
 const createMysteryBag = async (req, res, next) => {
     try {
@@ -18,6 +23,7 @@ const createMysteryBag = async (req, res, next) => {
         bagDetails.reward_file = req.files['reward_file'] ? req.files['reward_file'][0].location : "";
         bagDetails.drawing_file = req.files['drawing_file'] ? req.files['drawing_file'][0].location : "";
         bagDetails.created_by = req.user.id;
+        applyViewOnlyBagFields(bagDetails);
         var questions = [];
         if (req.body.questions) {
             try {
@@ -86,7 +92,7 @@ const getNearbyMysteryBags = async (req, res, next) => {
         const latitude = req.body.latitude;
         const longitude = req.body.longitude;
         
-        const mysteryBags = await MysteryBagModel.find({status: 'active'})
+        const mysteryBags = await MysteryBagModel.find(getActiveBagFilter())
             .sort({ created_at: -1 })
             .populate('created_by', 'username');
             
@@ -113,9 +119,13 @@ const interactWithMysteryBag = async (req, res, next) => {
         const action = req.body.action; // 'view' or 'collect'
         const user_answer = req.body.user_answer;
         
-        const mysteryBag = await MysteryBagModel.findOne({ _id: new ObjectId(id) });
+        const mysteryBag = await MysteryBagModel.findOne({ _id: new ObjectId(id), ...getActiveBagFilter() });
         if (!mysteryBag) {
             return apiResponse.notFoundResponse(res, "Mystery bag not found!");
+        }
+
+        if (isViewOnlyBagExpired(mysteryBag)) {
+            return apiResponse.notFoundResponse(res, "Mystery bag has expired");
         }
         
         // Check if user already interacted
@@ -241,6 +251,10 @@ const editMysteryBag = async (req, res, next) => {
             bagDetails.drawing_file = req.files['drawing_file'][0].location;
         }
         
+        if (req.body.bag_type !== undefined || bagDetails.bag_type !== undefined) {
+            applyViewOnlyBagFields(bagDetails);
+        }
+        
         const updatedBag = await MysteryBagModel.findByIdAndUpdate(
             id,
             bagDetails,
@@ -282,7 +296,7 @@ const editMysteryBag = async (req, res, next) => {
 
 const getAllMysteryBags = async (req, res, next) => {
     try {
-        const mysteryBags = await MysteryBagModel.find({ status: 'active' })
+        const mysteryBags = await MysteryBagModel.find(getActiveBagFilter())
             .sort({ created_at: -1 });
             
         // Add quiz questions to each bag
@@ -357,11 +371,15 @@ const getSingleMysteryBag = async (req, res, next) => {
         
         const mysteryBag = await MysteryBagModel.findOne({ 
             _id: new ObjectId(id),
-            status: 'active'
+            ...getActiveBagFilter(),
         }).populate('created_by', 'username');
         
         if (!mysteryBag) {
             return apiResponse.notFoundResponse(res, "Mystery bag not found!");
+        }
+        
+        if (isViewOnlyBagExpired(mysteryBag)) {
+            return apiResponse.notFoundResponse(res, "Mystery bag has expired");
         }
         
         // Check if current user has interacted with this bag
@@ -382,6 +400,7 @@ const getSingleMysteryBag = async (req, res, next) => {
             drawing_file: mysteryBag.drawing_file,
             reward_file: mysteryBag.reward_file,
             bag_type: mysteryBag.bag_type,
+            expires_at: mysteryBag.expires_at,
             location: mysteryBag.location,
             visibility_radius: mysteryBag.visibility_radius,
             created_by: mysteryBag.created_by?.username,
