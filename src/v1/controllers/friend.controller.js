@@ -11,8 +11,10 @@ function mapFriendRecords(friendsD, currentUserId) {
   return friendsD
     .filter((friend) => friend.user_id && friend.friend_id)
     .map((friend) => {
+      const senderId = friend.user_id._id;
+      const receiverId = friend.friend_id._id;
       const friendData =
-        String(friend.user_id._id) === currentId
+        String(senderId) === currentId
           ? friend.friend_id
           : friend.user_id;
       if (!friendData?._id) {
@@ -24,6 +26,9 @@ function mapFriendRecords(friendsD, currentUserId) {
         image: friendData.image,
         created_at: friend.created_at,
         friend_id: friendData._id,
+        sender_id: senderId,
+        receiver_id: receiverId,
+        is_outgoing: String(senderId) === currentId,
         status: friend.status,
       };
     })
