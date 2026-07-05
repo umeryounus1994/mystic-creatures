@@ -67,6 +67,11 @@ router.get(
   checkUserAuth,
   userController.getUser
 );
+router.post(
+  "/profile-picture",
+  checkUserAuth,
+  userController.setProfilePicture
+);
 router.get(
   "/player_creatures",
   checkUserAuth,

@@ -1762,6 +1762,41 @@ const uploadPartnerProfileImage = async (req, res, next) => {
   }
 };
 
+const setProfilePicture = async (req, res, next) => {
+  try {
+    const profilePictureId = Number(req.body.profile_picture_id);
+    if (!Number.isInteger(profilePictureId) || profilePictureId < 0) {
+      return apiResponse.ErrorResponse(
+        res,
+        "profile_picture_id must be a valid integer"
+      );
+    }
+
+    const updated = await UserModel.findByIdAndUpdate(
+      req.user.id,
+      { $set: { profile_picture_id: profilePictureId } },
+      { new: true }
+    )
+      .select("profile_picture_id")
+      .lean();
+
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "User not found");
+    }
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Profile picture saved successfully",
+      {
+        profile_picture_id: updated.profile_picture_id,
+      }
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -1801,4 +1836,5 @@ module.exports = {
   uploadPartnerGallery,
   uploadPartnerBackground,
   uploadPartnerProfileImage,
+  setProfilePicture,
 };

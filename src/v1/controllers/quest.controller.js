@@ -46,6 +46,52 @@ function buildQuestQuizRowsFromQuestions(questions, files, questId) {
   return quizes;
 }
 
+function parseQuestQrCodeInput(qrCodeInput) {
+  if (!qrCodeInput || String(qrCodeInput).trim() === "") {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(qrCodeInput);
+    if (parsed?.qr_code) {
+      return {
+        qr_code: String(parsed.qr_code).trim(),
+        quest_password: parsed.quest_password ?? null,
+      };
+    }
+  } catch (parseError) {
+    // fall through to raw string
+  }
+  return {
+    qr_code: String(qrCodeInput).trim(),
+    quest_password: null,
+  };
+}
+
+function buildUnlockQuestResponse(quest, questQuiz, userQuest = null) {
+  const questd = {
+    _id: quest?._id,
+    quest_question: quest?.quest_question,
+    quest_title: quest?.quest_title,
+    qr_code: quest?.qr_code,
+    no_of_xp: quest?.no_of_xp,
+    no_of_crypes: quest?.no_of_crypes,
+    reward_file: quest?.reward_file,
+    mythica_ID: quest?.mythica_ID?.creature_id,
+    quest_image: quest?.quest_image,
+    status: quest?.status,
+    deleted: quest?.deleted,
+    created_at: quest?.created_at,
+    updated_at: quest?.updated_at,
+    quest_type: quest?.quest_type,
+  };
+  return {
+    quest: questd,
+    data: questQuiz,
+    already_unlocked: !!userQuest,
+    user_quest_status: userQuest?.status ?? null,
+  };
+}
+
 const createQuest = async (req, res, next) => {
   try {
     const quests = await QuestModel.find({created_by: new ObjectId(req.user.id), status: 'active'}).sort({ created_at: -1 })
@@ -392,10 +438,14 @@ const getQuestsSubAdmin = async (req, res, next) => {
 
 const unlockQuestForUser = async (req, res, next) => {
   try {
-    const qr_code = req.body.qr_code;
-    const quest_password = req.body.quest_password; // Optional password
-    
-    const quest = await QuestModel.findOne({ qr_code: qr_code, status: 'active' })
+    const parsedQr = parseQuestQrCodeInput(req.body.qr_code);
+    if (!parsedQr?.qr_code) {
+      return apiResponse.ErrorResponse(res, "QR code data is required");
+    }
+
+    const quest_password = req.body.quest_password ?? parsedQr.quest_password;
+
+    const quest = await QuestModel.findOne({ qr_code: parsedQr.qr_code, status: 'active' })
     .populate([
       {
           path: 'mythica_ID', select: {
@@ -426,17 +476,27 @@ const unlockQuestForUser = async (req, res, next) => {
     }
 
     const questQuiz = await QuestQuizModel.find({quest_id: new ObjectId(quest?._id)});
-    const userQuest = await UserQuestModel.findOne({user_id: new ObjectId(req.user.id), quest_id: new ObjectId(quest?._id)});
-    if(userQuest){
-      return apiResponse.ErrorResponse(
+    const userQuest = await UserQuestModel.findOne({
+      user_id: new ObjectId(req.user.id),
+      quest_id: new ObjectId(quest?._id),
+    });
+
+    // Allow re-scanning the same quest QR — return quest data instead of blocking
+    if (userQuest) {
+      return apiResponse.successResponseWithData(
         res,
-        "Quest already unlocked for this user"
+        "Quest already unlocked",
+        buildUnlockQuestResponse(quest, questQuiz, userQuest)
       );
     }
-    const findDraftQuests = await UserQuestModel.find({user_id: new ObjectId(req.user.id), status: { $in: ['unlocked', 'inprogress'] } });
-    if(findDraftQuests.length > 0){
-      const findQust = await QuestModel.findOne({ _id: new ObjectId(findDraftQuests[0]._id) });
-      if(findQust & findQust?.status != "deleted"){
+
+    const findDraftQuests = await UserQuestModel.find({
+      user_id: new ObjectId(req.user.id),
+      status: { $in: ['unlocked', 'inprogress'] },
+    });
+    if (findDraftQuests.length > 0) {
+      const findQust = await QuestModel.findOne({ _id: new ObjectId(findDraftQuests[0].quest_id) });
+      if (findQust && findQust?.status !== "deleted") {
           return apiResponse.ErrorResponse(
             res,
             "Complete previous quest to unlock new"
@@ -457,30 +517,10 @@ const unlockQuestForUser = async (req, res, next) => {
           "System went wrong, Kindly try again later"
         );
       }
-      const questd = {
-        _id: quest?._id,
-        quest_question: quest?.quest_question,
-        quest_title: quest?.quest_title,
-        qr_code: quest?.qr_code,
-        no_of_xp: quest?.no_of_xp,
-        no_of_crypes: quest?.no_of_crypes,
-        reward_file: quest?.reward_file,
-        mythica_ID: quest?.mythica_ID?.creature_id,
-        quest_image: quest?.quest_image,
-        status: quest?.status,
-        deleted: quest?.deleted,
-        created_at: quest?.created_at,
-        updated_at: quest?.updated_at,
-        quest_type: quest?.quest_type
-      }
-      const responsedata = {
-        quest: questd,
-        data: questQuiz
-      }
       return apiResponse.successResponseWithData(
         res,
         "Created successfully",
-        responsedata
+        buildUnlockQuestResponse(quest, questQuiz, createdItem)
       );
     });
   } catch (err) {
@@ -1048,36 +1088,14 @@ const scanQuestQRCode = async (req, res, next) => {
   try {
     const { qr_code } = req.body;
 
-    if (!qr_code) {
+    const parsedData = parseQuestQrCodeInput(qr_code);
+    if (!parsedData?.qr_code) {
       return apiResponse.ErrorResponse(
         res,
         "QR code data is required"
       );
     }
 
-    let parsedData = {};
-
-    try {
-      // Try to parse as JSON first
-      parsedData = JSON.parse(qr_code);
-      
-      // Validate required qr_code field
-      if (!parsedData.qr_code) {
-        return apiResponse.ErrorResponse(
-          res,
-          "Invalid QR code format: qr_code field is required"
-        );
-      }
-
-    } catch (parseError) {
-      // If JSON parsing fails, treat as raw QR code
-      parsedData = {
-        qr_code: qr_code.trim(),
-        quest_password: null
-      };
-    }
-
-    // First check if quest exists with this qr_code
     const quest = await QuestModel.findOne({ 
       qr_code: parsedData.qr_code, 
       status: 'active' 
@@ -1090,11 +1108,18 @@ const scanQuestQRCode = async (req, res, next) => {
       );
     }
 
-    // Extract and validate data
+    const userQuest = await UserQuestModel.findOne({
+      user_id: new ObjectId(req.user.id),
+      quest_id: quest._id,
+    }).select("status");
+
     const result = {
       qr_code: quest.qr_code,
       quest_password: quest.quest_password || null,
-      has_password: !!(quest.quest_password && quest.quest_password.trim() !== "")
+      has_password: !!(quest.quest_password && quest.quest_password.trim() !== ""),
+      quest_id: quest._id,
+      already_unlocked: !!userQuest,
+      user_quest_status: userQuest?.status ?? null,
     };
 
     return apiResponse.successResponseWithData(
@@ -1112,45 +1137,25 @@ const confirmQuestQRCode = async (req, res, next) => {
   try {
     const { qr_code, quest_password } = req.body;
 
-    if (!qr_code) {
+    const parsedData = parseQuestQrCodeInput(qr_code);
+    if (!parsedData?.qr_code) {
       return apiResponse.ErrorResponse(
         res,
         "QR code data is required"
       );
     }
-    if (!quest_password) {
+
+    const password = quest_password ?? parsedData.quest_password;
+    if (!password) {
       return apiResponse.ErrorResponse(
         res,
         "Password is required"
       );
     }
 
-    let parsedData = {};
-
-    try {
-      // Try to parse as JSON first
-      parsedData = JSON.parse(qr_code);
-      
-      // Validate required qr_code field
-      if (!parsedData.qr_code) {
-        return apiResponse.ErrorResponse(
-          res,
-          "Invalid QR code format: qr_code field is required"
-        );
-      }
-
-    } catch (parseError) {
-      // If JSON parsing fails, treat as raw QR code
-      parsedData = {
-        qr_code: qr_code.trim(),
-        quest_password: null
-      };
-    }
-
-    // First check if quest exists with this qr_code
     const quest = await QuestModel.findOne({ 
-      qr_code: qr_code,
-      quest_password: quest_password, 
+      qr_code: parsedData.qr_code,
+      quest_password: password, 
       status: 'active' 
     });
 
@@ -1161,9 +1166,19 @@ const confirmQuestQRCode = async (req, res, next) => {
       );
     }
 
-    return apiResponse.successResponse(
+    const userQuest = await UserQuestModel.findOne({
+      user_id: new ObjectId(req.user.id),
+      quest_id: quest._id,
+    }).select("status");
+
+    return apiResponse.successResponseWithData(
       res,
-      "QR code verified successfully"
+      "QR code verified successfully",
+      {
+        quest_id: quest._id,
+        already_unlocked: !!userQuest,
+        user_quest_status: userQuest?.status ?? null,
+      }
     );
 
   } catch (err) {
