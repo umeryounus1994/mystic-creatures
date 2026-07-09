@@ -23,6 +23,12 @@ const {
   softDelete,
 } = require("../../../helpers/commonApis");
 const logger = require('../../../middlewares/logger');
+const {
+  ALLOWED_FIELD_TYPES,
+  buildQuestFileKey,
+  createPresignedUploadUrl,
+} = require("../../../helpers/spacesStorage");
+const { resolveQuestMediaUrl } = require("../../../helpers/questMedia");
 
 /** Build quiz rows: answer text is optional; image uploads always persist even without a matching questions[] entry. */
 function buildQuestQuizRowsFromQuestions(questions, files, questId) {
@@ -111,8 +117,16 @@ const createQuest = async (req, res, next) => {
       );
     }
     
-    itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
-    itemDetails.quest_image = req.files['quest_file'] ? req.files['quest_file'][0].location : ""
+    itemDetails.reward_file = resolveQuestMediaUrl(req, "reward", "reward_file_url");
+    itemDetails.quest_image = resolveQuestMediaUrl(req, "quest_file", "quest_image_url");
+
+    if (["image", "video"].includes(itemDetails.quest_type) && !itemDetails.quest_image) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest file is required for image and video quests. The file may be too large or the upload failed."
+      );
+    }
+    
     itemDetails.created_by = req.user.id;
     
     // Handle activity linking
@@ -204,8 +218,35 @@ const updateQuestData = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
-    itemDetails.quest_image = req.files['quest_file'] ? req.files['quest_file'][0].location : "";
+
+    const existingQuest = await QuestModel.findById(req.params.id);
+    if (!existingQuest) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest not found"
+      );
+    }
+
+    itemDetails.reward_file = resolveQuestMediaUrl(
+      req,
+      "reward",
+      "reward_file_url",
+      existingQuest.reward_file || ""
+    );
+    itemDetails.quest_image = resolveQuestMediaUrl(
+      req,
+      "quest_file",
+      "quest_image_url",
+      existingQuest.quest_image || ""
+    );
+
+    const questType = itemDetails.quest_type || existingQuest.quest_type;
+    if (["image", "video"].includes(questType) && !itemDetails.quest_image) {
+      return apiResponse.ErrorResponse(
+        res,
+        "Quest file is required for image and video quests. The file may be too large or the upload failed."
+      );
+    }
     
     // Safely parse questions with error handling
     var questions = [];
@@ -1193,6 +1234,45 @@ const confirmQuestQRCode = async (req, res, next) => {
   }
 };
 
+const getPresignedUploadUrl = async (req, res, next) => {
+  try {
+    const { file_name, content_type, field_type, quest_title } = req.body;
+
+    if (!file_name || !field_type) {
+      return apiResponse.ErrorResponse(res, "file_name and field_type are required");
+    }
+
+    if (!ALLOWED_FIELD_TYPES.includes(field_type)) {
+      return apiResponse.ErrorResponse(res, "Invalid field_type");
+    }
+
+    const key = buildQuestFileKey({
+      questTitle: quest_title,
+      fieldType: field_type,
+      fileName: file_name,
+    });
+
+    const presigned = createPresignedUploadUrl({
+      key,
+      contentType: content_type,
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Presigned upload URL generated",
+      {
+        upload_url: presigned.uploadUrl,
+        public_url: presigned.publicUrl,
+        key: presigned.key,
+        expires_in: presigned.expiresIn,
+      }
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createQuest,
   createQuestQuiz,
@@ -1215,5 +1295,6 @@ module.exports = {
   getActivityQuests,
   getQuestsByGroupId,
   scanQuestQRCode,
-  confirmQuestQRCode
+  confirmQuestQRCode,
+  getPresignedUploadUrl,
 };

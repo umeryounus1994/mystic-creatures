@@ -4,21 +4,12 @@ const multer = require("multer");
 const multerS3 = require("multer-s3");
 const path = require("path");
 const { slugify } = require("../src/v1/utils/slug");
-
-const spacesEndpoint = new aws.Endpoint(process.env.AWS_END_POINT);
-const s3 = new aws.S3({
-  endpoint: spacesEndpoint,
-});
-
-const fieldSuffixMap = {
-  quest_file: "",
-  reward: "_reward",
-  option1: "_option1",
-  option2: "_option2",
-  option3: "_option3",
-  option4: "_option4",
-  option5: "_option5",
-};
+const { MAX_UPLOAD_BYTES } = require("./handleUploadError");
+const {
+  BUCKET,
+  fieldSuffixMap,
+  getS3Client,
+} = require("../helpers/spacesStorage");
 
 function getQuestSlugFromRequest(req) {
   const questTitle = req.body?.quest_title || req.body?.quest_question || "quest";
@@ -26,9 +17,12 @@ function getQuestSlugFromRequest(req) {
 }
 
 module.exports = multer({
+  limits: {
+    fileSize: MAX_UPLOAD_BYTES,
+  },
   storage: multerS3({
-    s3,
-    bucket: "mysticcrts",
+    s3: getS3Client(),
+    bucket: BUCKET,
     acl: "public-read",
     contentType: multerS3.AUTO_CONTENT_TYPE,
     metadata(req, file, cb) {
