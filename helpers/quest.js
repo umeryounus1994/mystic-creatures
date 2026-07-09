@@ -4,6 +4,10 @@ const QuestQuizModel = require("../src/v1/models/questquiz.model");
 const QuestModel = require("../src/v1/models/quest.model");
 const QuestPurchaseModel = require("../src/v1/models/questpurchases.model");
 const UserQuestGroupModel = require("../src/v1/models/userquestgroup.model");
+const {
+    buildQuestFileDisplayName,
+    enrichQuestQuizWithFileNames,
+} = require("./questFileNames");
 
 module.exports.getAllQuests = async function (data) {
     const promiseArr = [];
@@ -13,17 +17,20 @@ module.exports.getAllQuests = async function (data) {
             promiseArr.push(
                 new Promise(async (resolvve, rejectt) => {
                     var findQuestQuiz = await QuestQuizModel.find({quest_id: new ObjectID(element._id)})
+                    const questTitle = element.quest_title ? element.quest_title : "";
                     var el = {
                         id: element._id,
-                        quest_title: element.quest_title ? element.quest_title : "",
+                        quest_title: questTitle,
                         quest_question: element.quest_question,
                         qr_code: element.qr_code,
                         quest_password: element?.quest_password ? element?.quest_password : "",
                         quest_image: element.quest_image,
+                        quest_image_name: buildQuestFileDisplayName(questTitle, element.quest_image),
                         quest_type: element.quest_type,
                         no_of_xp: element.no_of_xp,
                         no_of_crypes: element.no_of_crypes,
                         reward_file: element.reward_file,
+                        reward_file_name: buildQuestFileDisplayName(questTitle, element.reward_file, "reward"),
                         mythica: element?.mythica_ID?.creature_name,
                         quest_context: element.quest_context,
                         // Activity details if linked
@@ -45,7 +52,7 @@ module.exports.getAllQuests = async function (data) {
                         deleted: element.deleted,
                         created_at: element.created_at,
                         updated_at: element.updated_at,
-                        quiz: findQuestQuiz
+                        quiz: enrichQuestQuizWithFileNames(questTitle, findQuestQuiz)
                     }
                     result.push(el);
                     resolvve();
@@ -70,22 +77,25 @@ module.exports.getAllPlayerQuests = async function (data) {
                     .populate('mythica_ID')
                     var findQuestQuiz = await QuestQuizModel.find({quest_id: new ObjectID(element.quest_id)})
                     var el ={}
+                    const questTitle = findQuest.quest_title ? findQuest.quest_title : "";
                     var el ={
                         id: findQuest._id,
-                        quest_title : findQuest.quest_title ? findQuest.quest_title : "",
+                        quest_title : questTitle,
                         quest_question : findQuest.quest_question,
                         status: element.status,
                         quest_image: findQuest.quest_image,
+                        quest_image_name: buildQuestFileDisplayName(questTitle, findQuest.quest_image),
                         quest_type: findQuest.quest_type,
                         qr_code: findQuest.qr_code,
                         quest_password: findQuest?.quest_password ? findQuest?.quest_password : "",
                         no_of_xp: findQuest.no_of_xp,
                         reward_file: findQuest.reward_file,
+                        reward_file_name: buildQuestFileDisplayName(questTitle, findQuest.reward_file, "reward"),
                         no_of_crypes : findQuest.no_of_crypes,
                         mythica: findQuest.mythica_ID?.creature_name,
                         level_increase: findQuest.level_increase,
                         mythica_ID: findQuest.mythica_ID?.creature_id,
-                        options: findQuestQuiz,
+                        options: enrichQuestQuizWithFileNames(questTitle, findQuestQuiz),
                         quest_progress: element?.submitted_answer ? 1 : 0,
                         created_at: findQuest.created_at
                     }

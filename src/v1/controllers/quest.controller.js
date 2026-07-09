@@ -12,6 +12,12 @@ const UserQuestModel = require("../models/userquest.model");
 const UserQuestGroupModel = require("../models/userquestgroup.model");
 const QuestPurchaseModel = require("../models/questpurchases.model");
 var questHelper = require("../../../helpers/quest");
+const {
+  buildQuestFileDisplayName,
+  enrichQuestWithFileNames,
+  enrichQuestQuizWithFileNames,
+  getQuestTitleFromQuest,
+} = require("../../../helpers/questFileNames");
 const userModel = require("../models/user.model");
 const {
   softDelete,
