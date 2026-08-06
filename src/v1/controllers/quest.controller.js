@@ -537,20 +537,7 @@ const unlockQuestForUser = async (req, res, next) => {
       );
     }
 
-    const findDraftQuests = await UserQuestModel.find({
-      user_id: new ObjectId(req.user.id),
-      status: { $in: ['unlocked', 'inprogress'] },
-    });
-    if (findDraftQuests.length > 0) {
-      const findQust = await QuestModel.findOne({ _id: new ObjectId(findDraftQuests[0].quest_id) });
-      if (findQust && findQust?.status !== "deleted") {
-          return apiResponse.ErrorResponse(
-            res,
-            "Complete previous quest to unlock new"
-          );
-      }
-    }
- 
+    // Multiple quests can be unlocked in parallel; no previous-quest completion required
     const itemToAdd = {
       user_id: req.user.id,
       quest_id: quest?._id
