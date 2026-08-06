@@ -17,9 +17,25 @@ const createDrop = async (req, res, next) => {
 
     var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     itemDetails.location = location;
-    itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    itemDetails.reward_file = req.files && req.files['reward'] ? req.files['reward'][0].location : ""
     itemDetails.created_by = req.user.id;
-    var questions = JSON.parse(req.body.questions);
+    var questions = [];
+    if (req.body.questions) {
+      try {
+        if (typeof req.body.questions === 'string') {
+          questions = JSON.parse(req.body.questions);
+        } else if (Array.isArray(req.body.questions)) {
+          questions = req.body.questions;
+        } else {
+          questions = [];
+        }
+        if (!Array.isArray(questions)) {
+          questions = [];
+        }
+      } catch (parseError) {
+        questions = [];
+      }
+    }
     const createdItem = new DropModel(itemDetails);
 
     createdItem.save(async (err) => {

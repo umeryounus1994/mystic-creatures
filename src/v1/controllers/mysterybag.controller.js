@@ -27,7 +27,13 @@ const createMysteryBag = async (req, res, next) => {
         var questions = [];
         if (req.body.questions) {
             try {
-                questions = JSON.parse(req.body.questions);
+                if (typeof req.body.questions === 'string') {
+                    questions = JSON.parse(req.body.questions);
+                } else if (Array.isArray(req.body.questions)) {
+                    questions = req.body.questions;
+                } else {
+                    questions = [];
+                }
                 if (!Array.isArray(questions)) {
                     questions = [];
                 }
@@ -261,10 +267,22 @@ const editMysteryBag = async (req, res, next) => {
             { new: true }
         );
         
-        // Handle quiz questions if provided
+        // Handle quiz questions if provided (optional)
         if (req.body.questions) {
-            var questions = JSON.parse(req.body.questions);
-            
+            var questions = [];
+            try {
+                if (typeof req.body.questions === 'string') {
+                    questions = JSON.parse(req.body.questions);
+                } else if (Array.isArray(req.body.questions)) {
+                    questions = req.body.questions;
+                }
+                if (!Array.isArray(questions)) {
+                    questions = [];
+                }
+            } catch (parseError) {
+                questions = [];
+            }
+
             // Delete existing quiz questions
             await MysteryBagQuizModel.deleteMany({mystery_bag_id: new ObjectId(id)});
             
