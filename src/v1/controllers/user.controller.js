@@ -653,6 +653,43 @@ const deleteAccountPublic = async (req, res, next) => {
   }
 };
 
+/**
+ * Admin-only: delete a user account by email (no user password required).
+ */
+const deleteAccountByEmailAdmin = async (req, res, next) => {
+  try {
+    const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "";
+    if (!email) {
+      return apiResponse.badRequestResponse(res, "Email is required");
+    }
+
+    const user = await UserModel.findOne({ email }).exec();
+    if (!user) {
+      return apiResponse.notFoundResponse(res, "User not found");
+    }
+
+    await removeFriendRecordsForUser(user._id);
+    user.access_token = "";
+    await user.save();
+
+    user.delete((err) => {
+      if (err) {
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      return apiResponse.successResponse(
+        res,
+        "Account deleted successfully"
+      );
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 const updateUser = async (req, res, next) => {
   try {
     if (req.body.password) {
@@ -1860,6 +1897,7 @@ module.exports = {
   deleteUser,
   deleteMyAccount,
   deleteAccountPublic,
+  deleteAccountByEmailAdmin,
   totalUsers,
   loginUser,
   verifyEmail,
