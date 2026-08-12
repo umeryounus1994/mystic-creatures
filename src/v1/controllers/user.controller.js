@@ -598,6 +598,61 @@ const deleteMyAccount = async (req, res, next) => {
   }
 };
 
+/**
+ * Public account deletion for Play Store / web reviewers.
+ * No JWT — verifies email + password, then soft-deletes the account.
+ */
+const deleteAccountPublic = async (req, res, next) => {
+  try {
+    const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "";
+    const password = req.body?.password ? String(req.body.password) : "";
+
+    if (!email || !password) {
+      return apiResponse.badRequestResponse(
+        res,
+        "Email and password are required"
+      );
+    }
+
+    const user = await UserModel.findOne({ email }).exec();
+    if (!user) {
+      return apiResponse.unauthorizedResponse(
+        res,
+        "Invalid email or password"
+      );
+    }
+
+    const match = await user.checkPassword(password, user.password);
+    if (!match) {
+      return apiResponse.unauthorizedResponse(
+        res,
+        "Invalid email or password"
+      );
+    }
+
+    await removeFriendRecordsForUser(user._id);
+
+    user.access_token = "";
+    await user.save();
+
+    user.delete((err) => {
+      if (err) {
+        return apiResponse.ErrorResponse(
+          res,
+          "System went wrong, Kindly try again later"
+        );
+      }
+      return apiResponse.successResponse(
+        res,
+        "Account deleted successfully"
+      );
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 const updateUser = async (req, res, next) => {
   try {
     if (req.body.password) {
@@ -1804,6 +1859,7 @@ module.exports = {
   updateUser,
   deleteUser,
   deleteMyAccount,
+  deleteAccountPublic,
   totalUsers,
   loginUser,
   verifyEmail,

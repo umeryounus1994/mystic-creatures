@@ -24,6 +24,8 @@ const corsOptions = {
     // List of allowed origins
     const allowedOrigins = [
       'https://app.mycrebooking.com',
+      'https://mycrebooking.com',
+      'https://www.mycrebooking.com',
       'http://localhost:3000',
       'http://localhost:3001',
       'http://127.0.0.1:3000',

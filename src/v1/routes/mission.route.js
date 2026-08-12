@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const missionController = require("../controllers/mission.controller");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
+const { buildQuizUploadFields } = require("../../../helpers/quizUploadFields");
 const {
   checkAdminUserAuth,
 } = require("../../../middlewares/authMiddlewareAdminPanel");
@@ -13,6 +14,8 @@ const {
   checkAuthOrigins,
 } = require("../../../middlewares/authMiddlewareGenericAll");
 
+const quizUploadFields = buildQuizUploadFields(50);
+
 router.post(
   "/createMission",
   checkAdminUserAuth,
@@ -21,15 +24,7 @@ router.post(
 router.post(
   "/createMissionAdmin",
   checkAdminUserAuth,
-  mediaUpload.fields([{
-    name: 'option1', maxCount: 1
-  }, {
-    name: 'option2', maxCount: 1
-  },{
-    name: 'option3', maxCount: 1
-  }, {
-    name: 'reward', maxCount: 1
-  }]),
+  mediaUpload.fields(quizUploadFields),
   missionController.createMissionAdmin
 );
 
@@ -37,15 +32,7 @@ router.post(
 router.post(
   "/updateMissionAdmin/:id",
   checkAdminUserAuth,
-  mediaUpload.fields([{
-    name: 'option1', maxCount: 1
-  }, {
-    name: 'option2', maxCount: 1
-  },{
-    name: 'option3', maxCount: 1
-  }, {
-    name: 'reward', maxCount: 1
-  }]),
+  mediaUpload.fields(quizUploadFields),
   missionController.updateMissionAdmin
 );
 
