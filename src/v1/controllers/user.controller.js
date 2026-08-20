@@ -24,7 +24,7 @@ const {
 } = require("../../../helpers/commonApis");
 const emailController = require('./email.controller');
 const userHelper = require("../../../helpers/user");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const moment = require('moment');
 const logger = require('../../../middlewares/logger');
 const userskygiftsModel = require("../models/userskygifts.model");

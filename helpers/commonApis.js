@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { validationResult } = require("express-validator");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const moment = require("moment");
 const apiResponse = require("./apiResponse");
 

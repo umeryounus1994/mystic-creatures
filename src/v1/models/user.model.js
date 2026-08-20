@@ -1,7 +1,7 @@
 /* eslint-disable arrow-body-style */
 const mongoose = require("mongoose");
 const mongooseDelete = require("mongoose-delete");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
