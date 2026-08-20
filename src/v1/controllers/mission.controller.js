@@ -215,13 +215,6 @@ const createMissionQuiz = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    var checkMissionQuiz = await MissionQuizModel.find({ mission_id: new ObjectId(req.body.mission_id) });
-    if (checkMissionQuiz.length == 3) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Maximum 3 Quizez can be in one mission"
-      );
-    }
     var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     var itemDetails = {
       quiz_title: req.body?.quiz_title,
@@ -740,7 +733,8 @@ const top10Players = async (req, res, next) => {
           _id: 0,
           count: 1,
           username: "$user.username", // Include only the username field from the user,
-          icon: "$user.image"
+          icon: "$user.image",
+          profile_picture_id: { $ifNull: ["$user.profile_picture_id", null] }
         }
       },
       {

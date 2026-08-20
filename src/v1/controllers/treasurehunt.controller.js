@@ -228,13 +228,6 @@ const createTreasureHuntQuiz = async (req, res, next) => {
         "Invalid Data"
       );
     }
-    var checkTreasureHuntQuiz = await TreasureHuntQuizModel.find({ treasure_hunt_id: new ObjectId(req.body.treasure_hunt_id) });
-    if (checkTreasureHuntQuiz.length == 5) {
-      return apiResponse.ErrorResponse(
-        res,
-        "Maximum 5 Quizez can be in one Treasure Hunt"
-      );
-    }
     var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
     var itemDetails = {
       treasure_hunt_title: req.body?.treasure_hunt_title,
@@ -833,7 +826,8 @@ const top10Players = async (req, res, next) => {
           _id: 0,
           count: 1,
           username: "$user.username", // Include only the username field from the user,
-          icon: "$user.image"
+          icon: "$user.image",
+          profile_picture_id: { $ifNull: ["$user.profile_picture_id", null] }
         }
       },
       {

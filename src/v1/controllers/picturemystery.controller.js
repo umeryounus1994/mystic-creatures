@@ -428,7 +428,8 @@ const top10Players = async (req, res, next) => {
           _id: 0,
           count: 1,
           username: "$user.username", // Include only the username field from the user,
-          icon: "$user.image"
+          icon: "$user.image",
+          profile_picture_id: { $ifNull: ["$user.profile_picture_id", null] }
         }
       },
       {

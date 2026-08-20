@@ -6,6 +6,7 @@ const {
   checkAdminUserAuth,
 } = require("../../../middlewares/authMiddlewareAdminPanel");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
+const { buildQuizUploadFields } = require("../../../helpers/quizUploadFields");
 const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
@@ -13,40 +14,18 @@ const {
   checkAuthOrigins,
 } = require("../../../middlewares/authMiddlewareGenericAll");
 
+const quizUploadFields = buildQuizUploadFields(50);
+
 router.post(
   "/createTreasureHuntAdmin",
   checkAuthOrigins,
-  mediaUpload.fields([{
-    name: 'option1', maxCount: 1
-  }, {
-    name: 'option2', maxCount: 1
-  },{
-    name: 'option3', maxCount: 1
-  },{
-    name: 'option4', maxCount: 1
-  },{
-    name: 'option5', maxCount: 1
-  }, {
-    name: 'reward', maxCount: 1
-  }]),
+  mediaUpload.fields(quizUploadFields),
   treasureHuntController.createTreasureHuntAdmin
 );
 router.post(
   "/updateTreasureHuntAdmin/:id",
   checkAuthOrigins,
-  mediaUpload.fields([{
-    name: 'option1', maxCount: 1
-  }, {
-    name: 'option2', maxCount: 1
-  },{
-    name: 'option3', maxCount: 1
-  },{
-    name: 'option4', maxCount: 1
-  },{
-    name: 'option5', maxCount: 1
-  }, {
-    name: 'reward', maxCount: 1
-  }]),
+  mediaUpload.fields(quizUploadFields),
   treasureHuntController.updateTreasureHuntAdmin
 );
 router.post(
