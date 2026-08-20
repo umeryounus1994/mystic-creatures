@@ -415,8 +415,23 @@ const top10Players = async (req, res, next) => {
       {
         $lookup: {
           from: 'users', // The collection name for the User model
-          localField: '_id',
-          foreignField: '_id',
+          let: { userId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [{ $toString: "$_id" }, { $toString: "$$userId" }]
+                }
+              }
+            },
+            {
+              $project: {
+                username: 1,
+                image: 1,
+                profile_picture_id: 1
+              }
+            }
+          ],
           as: 'user'
         }
       },
@@ -429,7 +444,14 @@ const top10Players = async (req, res, next) => {
           count: 1,
           username: "$user.username", // Include only the username field from the user,
           icon: "$user.image",
-          profile_picture_id: { $ifNull: ["$user.profile_picture_id", null] }
+          profile_picture_id: {
+            $convert: {
+              input: "$user.profile_picture_id",
+              to: "int",
+              onError: null,
+              onNull: null
+            }
+          }
         }
       },
       {

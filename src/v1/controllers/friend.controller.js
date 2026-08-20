@@ -24,6 +24,7 @@ function mapFriendRecords(friendsD, currentUserId) {
         _id: friend._id,
         username: friendData.username,
         image: friendData.image,
+        profile_picture_id: friendData.profile_picture_id ?? null,
         created_at: friend.created_at,
         friend_id: friendData._id,
         sender_id: senderId,
@@ -101,8 +102,8 @@ const getFriends = async (req, res, next) => {
             ]
         })
         .sort({ created_at: -1 })
-        .populate('user_id', 'username image')
-        .populate('friend_id', 'username image');
+        .populate('user_id', 'username image profile_picture_id')
+        .populate('friend_id', 'username image profile_picture_id');
 
         friends = mapFriendRecords(friendsD, req.user.id);
 
@@ -114,8 +115,8 @@ const getFriends = async (req, res, next) => {
             ]
         })
         .sort({ created_at: -1 })
-        .populate('user_id', 'username image')
-        .populate('friend_id', 'username image');
+        .populate('user_id', 'username image profile_picture_id')
+        .populate('friend_id', 'username image profile_picture_id');
 
         friends = mapFriendRecords(friendsD, req.user.id);
 
@@ -127,8 +128,8 @@ const getFriends = async (req, res, next) => {
             ]
         })
         .sort({ created_at: -1 })
-        .populate('user_id', 'username image')
-        .populate('friend_id', 'username image');
+        .populate('user_id', 'username image profile_picture_id')
+        .populate('friend_id', 'username image profile_picture_id');
 
         friends = mapFriendRecords(friendsD, req.user.id);
     }
@@ -163,7 +164,7 @@ const getAvailableUsers = async (req, res, next) => {
       _id: { $nin: [...excludeIds] },
       status: "active",
     })
-      .select("username image first_name last_name created_at")
+      .select("username image profile_picture_id first_name last_name created_at")
       .sort({ created_at: -1 });
 
     return res.json({
@@ -173,6 +174,7 @@ const getAvailableUsers = async (req, res, next) => {
         id: user._id,
         username: user.username,
         image: user.image,
+        profile_picture_id: user.profile_picture_id ?? null,
         first_name: user.first_name,
         last_name: user.last_name,
         created_at: user.created_at,
