@@ -133,6 +133,7 @@ module.exports.getAllUsers = async function (data, userId) {
                         id: element?._id,
                         username: element?.username,
                         image: element?.image,
+                        profile_picture_id: element?.profile_picture_id ?? null,
                         isFriend: friendRecord != null ? friendRecord.status : 'open',
                         created_at: element.created_at
                     }

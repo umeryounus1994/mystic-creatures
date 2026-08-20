@@ -198,7 +198,7 @@ const getGroupFriends = async (req, res, next) => {
       .sort({ created_at: -1 })
       .populate([
         {
-            path: 'friend_id', select: { username: 1, image: 1 }
+            path: 'friend_id', select: { username: 1, image: 1, profile_picture_id: 1 }
         }
       ]);
       return res.json({

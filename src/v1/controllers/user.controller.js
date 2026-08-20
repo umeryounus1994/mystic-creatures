@@ -700,6 +700,15 @@ const updateUser = async (req, res, next) => {
     // }
    
 
+    if (req.body.profile_picture_id !== undefined && req.body.profile_picture_id !== "") {
+      const parsedPictureId = Number(req.body.profile_picture_id);
+      if (Number.isInteger(parsedPictureId) && parsedPictureId >= 0) {
+        req.body.profile_picture_id = parsedPictureId;
+      } else {
+        delete req.body.profile_picture_id;
+      }
+    }
+
     // update user profile
     const updatedUser = await UserModel.findByIdAndUpdate(
       req.params.id,

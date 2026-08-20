@@ -9,7 +9,7 @@ module.exports.getAllMyGroups = async function (groupusers) {
                 .populate([
                     {
                         path: 'friend_id',
-                        select: { username: 1, image: 1 }
+                        select: { username: 1, image: 1, profile_picture_id: 1 }
                     }
                 ]);
                 let group_admin = await UserModel.findOne({ _id: new ObjectID(element?.group_id?.group_creater) });
@@ -18,7 +18,8 @@ module.exports.getAllMyGroups = async function (groupusers) {
                 var gp = {
                     member_id: el?.friend_id?._id,
                     member_username: el?.friend_id?.username,
-                    member_image: el?.friend_id?.image
+                    member_image: el?.friend_id?.image,
+                    profile_picture_id: el?.friend_id?.profile_picture_id ?? null
                 }
                 group_members.push(gp);
             });
