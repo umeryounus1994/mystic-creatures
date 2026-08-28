@@ -8,21 +8,32 @@ const {
   checkUserAuth,
 } = require("../../../middlewares/authMiddleware");
 const mediaUpload = require("../../../middlewares/upload-aws-image");
+const handleUploadError = require("../../../middlewares/handleUploadError");
 const { checkAuthOrigins } = require("../../../middlewares/authMiddlewareGenericAll");
+
+const skyGiftUpload = (req, res, next) => {
+  mediaUpload.fields([
+    { name: "reward", maxCount: 1 },
+    { name: "reward_file", maxCount: 1 },
+  ])(req, res, (err) => {
+    if (err) {
+      return handleUploadError(err, req, res, next);
+    }
+    return next();
+  });
+};
 
 router.post(
   "/create",
   checkAdminUserAuth,
-  mediaUpload.fields([{
-    name: 'reward', maxCount: 1
-  }]),
+  skyGiftUpload,
   skyGiftsController.createSkyGift
 );
 
 router.post(
     "/edit/:id",
     checkAdminUserAuth,
-    mediaUpload.fields([{ name: 'reward', maxCount: 1 }]),
+    skyGiftUpload,
     skyGiftsController.editSkyGift
 );
 
