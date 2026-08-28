@@ -384,8 +384,6 @@ const getUser = async (req, res, next) => {
     // remove extra fields from response
     user.password = undefined;
     user.access_token = undefined;
-    user.current_level = undefined;
-    user.current_xp = undefined;
     if(user.purchased_package == true){
       const givenDate = moment(user.package_end_date);
       const currentDate = moment();
@@ -446,31 +444,33 @@ const getUser = async (req, res, next) => {
 
     const xpForLevel = (level) => 120 + (level - 1) * 20;
 
-    let xpThreshold = xpForLevel(user_data.current_level);
-    
-    // Accumulate XP and calculate the correct level and remaining XP
-    while (user_data.total_xp >= xpThreshold) {
-      user_data.total_xp -= xpThreshold;
-      user_data.current_level += 1;
-      xpThreshold = xpForLevel(user_data.current_level);
+    let computedLevel = 1;
+    let remainingXp = dummyTotalXp;
+    let xpThreshold = xpForLevel(computedLevel);
+    while (remainingXp >= xpThreshold) {
+      remainingXp -= xpThreshold;
+      computedLevel += 1;
+      xpThreshold = xpForLevel(computedLevel);
     }
-    
-    // Set the current XP and XP needed for the next level
-    user_data.current_xp = user_data.total_xp;
-    user_data.xp_needed = xpThreshold;
-    
-    // Ensure total_xp reflects the actual total XP earned
-    user_data.total_xp = dummyTotalXp;
-    user_data.current_level = user_data.current_level -1;    
 
-    if (user_data.current_level > lastLevel?.level) {
-      const level = {
+    user_data.current_level = computedLevel;
+    user_data.current_xp = remainingXp;
+    user_data.xp_needed = xpThreshold;
+    user_data.total_xp = dummyTotalXp;
+    user.current_level = computedLevel;
+    user.current_xp = remainingXp;
+
+    if (!lastLevel || computedLevel > lastLevel.level) {
+      const item = new LevelModel({
         user_id: req.user.id,
-        level: user_data.current_level
-      }
-      const item = new LevelModel(level);
+        level: computedLevel
+      });
       await item.save();
     }
+    await UserModel.findByIdAndUpdate(userId, {
+      current_level: computedLevel,
+      current_xp: remainingXp,
+    });
     const drops = await UserRewardModel.find({user_id: new ObjectId(req.user.id)}).populate([
         {
             path: 'reward_id',

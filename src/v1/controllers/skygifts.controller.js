@@ -11,7 +11,7 @@ const createSkyGift = async (req, res, next) => {
   try {
     const { ...giftDetails } = req.body;
 
-    var location = { type: 'Point', coordinates: [req.body?.latitude, req.body?.longitude] };
+    var location = { type: 'Point', coordinates: [parseFloat(req.body?.longitude), parseFloat(req.body?.latitude)] };
     giftDetails.location = location;
     giftDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
     giftDetails.created_by = req.user.id;
@@ -40,34 +40,41 @@ const createSkyGift = async (req, res, next) => {
 const editSkyGift = async (req, res, next) => {
     try {
         const id = req.params.id;
-        const { ...giftDetails } = req.body;
-        
-        const existingGift = await SkyGiftModel.findOne({ 
-            _id: new ObjectId(id),
-            created_by: new ObjectId(req.user.id)
-        });
-        
-        if (!existingGift) {
-            return apiResponse.notFoundResponse(res, "Sky gift not found or unauthorized!");
+        if (!ObjectId.isValid(id)) {
+            return apiResponse.validationErrorWithData(res, "Invalid sky gift id");
         }
-        
-        if (req.body.latitude && req.body.longitude) {
-            giftDetails.location = { 
-                type: 'Point', 
-                coordinates: [req.body.latitude, req.body.longitude] 
+
+        const existingGift = await SkyGiftModel.findById(id);
+        if (!existingGift) {
+            return apiResponse.notFoundResponse(res, "Sky gift not found!");
+        }
+
+        const update = {};
+        if (req.body.gift_name !== undefined) update.gift_name = req.body.gift_name;
+        if (req.body.gift_description !== undefined) {
+            update.gift_description = req.body.gift_description;
+        }
+        if (req.body.mythica_reward) update.mythica_reward = req.body.mythica_reward;
+
+        const lat = parseFloat(req.body.latitude);
+        const lng = parseFloat(req.body.longitude);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            update.location = {
+                type: "Point",
+                coordinates: [lng, lat],
             };
         }
-        
-        if (req.files && req.files['reward']) {
-            giftDetails.reward_file = req.files['reward'][0].location;
+
+        const uploadedReward =
+            req.files?.reward?.[0] || req.files?.reward_file?.[0];
+        if (uploadedReward?.location) {
+            update.reward_file = uploadedReward.location;
         }
-        
-        const updatedGift = await SkyGiftModel.findByIdAndUpdate(
-            id,
-            giftDetails,
-            { new: true }
-        );
-        
+
+        const updatedGift = await SkyGiftModel.findByIdAndUpdate(id, update, {
+            new: true,
+        });
+
         return apiResponse.successResponseWithData(
             res,
             "Sky gift updated successfully",
