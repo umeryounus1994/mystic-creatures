@@ -106,6 +106,15 @@ exports.forbiddenResponse = (res, message) => {
   return res.status(403).json(data);
 };
 
+exports.paymentRequiredResponse = (res, message, data = {}) => {
+  return res.status(402).json({
+    success: false,
+    code: "QUEST_GROUP_PAYMENT_REQUIRED",
+    message,
+    data,
+  });
+};
+
 exports.notFoundResponse = (res, message) => {
   const data = {
     success: false,

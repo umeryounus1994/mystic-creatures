@@ -1898,6 +1898,29 @@ const setProfilePicture = async (req, res, next) => {
   }
 };
 
+const savePushToken = async (req, res, next) => {
+  try {
+    const token = req.body.push_token || req.body.device_token || "";
+    if (!token || String(token).trim() === "") {
+      return apiResponse.validationErrorWithData(res, "push_token is required");
+    }
+    const updated = await UserModel.findByIdAndUpdate(
+      req.user.id,
+      { push_token: String(token).trim() },
+      { new: true }
+    ).select("-password -access_token");
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Not found!");
+    }
+    return apiResponse.successResponseWithData(res, "Push token saved", {
+      push_token: updated.push_token,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -1940,4 +1963,5 @@ module.exports = {
   uploadPartnerBackground,
   uploadPartnerProfileImage,
   setProfilePicture,
+  savePushToken,
 };

@@ -34,6 +34,9 @@ module.exports = {
   uploadQuestFiles: withUploadErrorHandling(mediaUpload.fields(questUploadFields)),
   uploadQuestQuizFiles: withUploadErrorHandling(mediaUpload.fields(questQuizUploadFields)),
   uploadQuestGroupReward: withUploadErrorHandling(
-    mediaUpload.fields([{ name: "reward", maxCount: 1 }])
+    mediaUpload.fields([
+      { name: "reward", maxCount: 1 },
+      { name: "reward_file", maxCount: 1 },
+    ])
   ),
 };

@@ -14,6 +14,7 @@ const groupRoute = require("./group.route");
 const pictureRoute = require("./picturemystery.route");
 const mysteryBagRoute = require("./mysterybag.route");
 const skyGiftRoute = require("./skygifts.route");
+const exploringSpotRoute = require("./exploringspot.route");
 const activityRoute = require("./activity.routes");
 const bookingRoute = require("./booking.routes");
 // Add these route imports
@@ -46,6 +47,7 @@ app.use("/pictureMystery/", pictureRoute);
 app.use("/fileupload/", filehandlingRoute);
 app.use("/mysteryBag/", mysteryBagRoute);
 app.use("/skyGift/", skyGiftRoute);
+app.use("/exploringSpot/", exploringSpotRoute);
 app.use("/activity/", activityRoute);
 app.use("/booking/", bookingRoute);
 app.use("/activity-drop/", activityDropRoutes);

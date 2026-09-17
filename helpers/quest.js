@@ -3,11 +3,11 @@ var moment = require('moment');
 const QuestQuizModel = require("../src/v1/models/questquiz.model");
 const QuestModel = require("../src/v1/models/quest.model");
 const QuestPurchaseModel = require("../src/v1/models/questpurchases.model");
-const UserQuestGroupModel = require("../src/v1/models/userquestgroup.model");
 const {
     buildQuestFileDisplayName,
     enrichQuestQuizWithFileNames,
 } = require("./questFileNames");
+const { getValidQuestGroupPurchase } = require("./questGroupPurchase");
 
 module.exports.getAllQuests = async function (data) {
     const promiseArr = [];
@@ -47,7 +47,9 @@ module.exports.getAllQuests = async function (data) {
                                   `${element.created_by.first_name} ${element.created_by.last_name}` ||
                                   'Unknown Creator'
                         } : null,
+                        quest_group_id: element?.quest_group_id?._id || element?.quest_group_id || null,
                         quest_group: element?.quest_group_id?.quest_group_name,
+                        group_package: element?.quest_group_id?.group_package || null,
                         status: element.status,
                         deleted: element.deleted,
                         created_at: element.created_at,
@@ -111,7 +113,9 @@ module.exports.getAllPlayerQuests = async function (data) {
         })
     })
 }
-module.exports.getAllQuestGroups = async function (data) {
+module.exports.getAllQuestGroups = async function (data, options = {}) {
+    const userId = options.userId || null;
+    const hideUnpurchasedQuests = options.hideUnpurchasedQuests === true;
     const promiseArr = [];
     var result = [];
     return new Promise((resolve, reject) => {
@@ -125,20 +129,26 @@ module.exports.getAllQuestGroups = async function (data) {
                                 creature_id: 1
                             }
                         }])
-                    var questPurchase = await QuestPurchaseModel.findOne({quest_group_id: new ObjectID(element?._id)});
-                    var questGroupPurchase = await UserQuestGroupModel.findOne({quest_group_id: new ObjectID(element?._id)});
-                    var el ={}
+                    const valid = userId
+                        ? await getValidQuestGroupPurchase(userId, element._id)
+                        : null;
+                    var questPurchase = userId
+                        ? valid?.purchase || null
+                        : await QuestPurchaseModel.findOne({quest_group_id: new ObjectID(element?._id)});
                     var el ={
                         id: element._id,
                         quest_group_name : element.quest_group_name ? element.quest_group_name : "",
                         qr_code : element.qr_code,
+                        payment_qr_code: element.qr_code,
                         quest_password: element?.quest_password ? element?.quest_password : "",
                         no_of_crypes : element.no_of_crypes,
                         reward_file: element.reward_file,
                         package: element.group_package,
                         status: element.status,
-                        quests: questPurchase != null ? findQuests : [],
-                        is_purchased: questPurchase != null ? true : false,
+                        quests: hideUnpurchasedQuests && !valid ? [] : findQuests,
+                        is_purchased: !!questPurchase,
+                        needs_purchase: userId ? !valid : false,
+                        expires_at: valid?.expiresAt || null,
                         created_at: element.created_at,
                     }
                     result.push(el)

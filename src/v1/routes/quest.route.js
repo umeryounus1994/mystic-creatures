@@ -75,6 +75,18 @@ router.post(
   uploadQuestGroupReward,
   questController.createQuestGroup
 );
+router.post(
+  "/editQuestGroup/:id",
+  checkAuthOrigins,
+  uploadQuestGroupReward,
+  questController.editQuestGroup
+);
+router.delete(
+  "/deleteQuestGroup/:id",
+  checkAuthOrigins,
+  questController.deleteQuestGroup
+);
+router.get("/get_quest_group/:id", checkAuthOrigins, questController.getQuestGroupById);
 router.get("/get_all_quest_groups", checkAuthOrigins, questController.getAllQuestGroups);
 
 router.post(
@@ -83,6 +95,10 @@ router.post(
   questController.addQuestToGroup
 );
 router.get("/purchase_quest_group/:qr_code", checkUserAuth, questController.purchaseQuestGroup);
+router.post("/purchase_quest_group", checkUserAuth, questController.purchaseQuestGroup);
+router.get("/purchase_status/:id", checkUserAuth, questController.getQuestGroupPurchaseStatus);
+router.get("/group_purchases/:id", checkAuthOrigins, questController.getQuestGroupPurchases);
+router.get("/my_purchases", checkUserAuth, questController.getMyQuestGroupPurchases);
 
 router.post("/scan_qr", checkUserAuth, questController.scanQuestQRCode);
 

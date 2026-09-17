@@ -29,6 +29,14 @@ const {
   createPresignedUploadUrl,
 } = require("../../../helpers/spacesStorage");
 const { resolveQuestMediaUrl } = require("../../../helpers/questMedia");
+const {
+  purchaseExpiry,
+  getValidQuestGroupPurchase,
+  groupPayload,
+  requireQuestGroupPurchase,
+  ensureUserQuestGroupProgress,
+} = require("../../../helpers/questGroupPurchase");
+const { sendEmail } = require("../../../utils/sendEmail");
 
 /** Build quiz rows: answer text is optional; image uploads always persist even without a matching questions[] entry. */
 function buildQuestQuizRowsFromQuestions(questions, files, questId) {
@@ -56,6 +64,19 @@ function buildQuestQuizRowsFromQuestions(questions, files, questId) {
     }
   }
   return quizes;
+}
+
+function generateQuestGroupPaymentQr() {
+  return `${Date.now().toString(36)}${Math.floor(Math.random() * 1e8).toString(36)}`;
+}
+
+async function ensureQuestGroupPaymentQr(group) {
+  if (!group || group.qr_code) {
+    return group;
+  }
+  group.qr_code = generateQuestGroupPaymentQr();
+  await group.save();
+  return group;
 }
 
 function parseQuestQrCodeInput(qrCodeInput) {
@@ -439,7 +460,7 @@ const getQuests = async (req, res, next) => {
           path: 'mythica_ID'
       },
       {
-          path: 'quest_group_id', select: { quest_group_name: 1 }
+          path: 'quest_group_id', select: { quest_group_name: 1, group_package: 1, qr_code: 1 }
       },
       {
           path: 'activity_id', 
@@ -522,6 +543,11 @@ const unlockQuestForUser = async (req, res, next) => {
       }
     }
 
+    const paymentBlock = await requireQuestGroupPurchase(req, res, quest);
+    if (paymentBlock) {
+      return paymentBlock;
+    }
+
     const questQuiz = await QuestQuizModel.find({quest_id: new ObjectId(quest?._id)});
     const userQuest = await UserQuestModel.findOne({
       user_id: new ObjectId(req.user.id),
@@ -599,10 +625,32 @@ const getQuestById = async (req, res, next) => {
         "Quest not found"
       );
     }
+
+    let groupAccess = {
+      quest_group_id: quest.quest_group_id || null,
+      needs_purchase: false,
+      is_purchased: false,
+      expires_at: null,
+      group_package: null,
+    };
+    if (quest.quest_group_id && req.user?.id) {
+      const group = await QuestGroupModel.findById(quest.quest_group_id);
+      const valid = await getValidQuestGroupPurchase(req.user.id, quest.quest_group_id);
+      groupAccess = {
+        quest_group_id: quest.quest_group_id,
+        needs_purchase: !valid,
+        is_purchased: !!valid,
+        expires_at: valid?.expiresAt || null,
+        group_package: group?.group_package || "Bronze",
+        quest_group_name: group?.quest_group_name || null,
+        payment_qr_code: group?.qr_code || null,
+      };
+    }
+
     return res.json({
       status: true,
       message: "Data Found",
-      data: {quest, questQuiz}
+      data: {quest, questQuiz, group_access: groupAccess}
     })
   } catch (err) {
     logger.error(err);
@@ -627,6 +675,10 @@ const completeQuest = async (req, res, next) => {
         res,
         "Quest not found"
       );
+    }
+    const paymentBlock = await requireQuestGroupPurchase(req, res, quest);
+    if (paymentBlock) {
+      return paymentBlock;
     }
     // const questOption = await QuestQuizModel.findOne({_id: new ObjectId(user_answer), quest_id: new ObjectId(id)});
     // if(!questOption){
@@ -949,6 +1001,9 @@ const createQuestGroup = async (req, res, next) => {
       );
     }
     itemDetails.reward_file = req.files['reward'] ? req.files['reward'][0].location : ""
+    if (!itemDetails.qr_code) {
+      itemDetails.qr_code = generateQuestGroupPaymentQr();
+    }
     const createdItem = new QuestGroupModel(itemDetails);
 
     createdItem.save(async (err) => {
@@ -973,10 +1028,17 @@ const createQuestGroup = async (req, res, next) => {
 const getAllQuestGroups = async (req, res, next) => {
   try {
     const quests = await QuestGroupModel.find({status: 'active'}).sort({ created_at: -1 });
+    for (const group of quests) {
+      await ensureQuestGroupPaymentQr(group);
+    }
+    const isAppPlayer = req.user?.user_type === "user";
     return res.json({
       status: true,
       message: "Data Found",
-      data: await questHelper.getAllQuestGroups(quests)
+      data: await questHelper.getAllQuestGroups(quests, {
+        userId: isAppPlayer ? req.user.id : null,
+        hideUnpurchasedQuests: isAppPlayer,
+      })
     })
   } catch (err) {
     logger.error(err);
@@ -1020,12 +1082,105 @@ const addQuestToGroup = async (req, res, next) => {
   }
 };
 
+const editQuestGroup = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid quest group id");
+    }
+    const existing = await QuestGroupModel.findById(id);
+    if (!existing || existing.status === "deleted") {
+      return apiResponse.notFoundResponse(res, "Quest group not found");
+    }
+
+    const update = {};
+    if (req.body.quest_group_name !== undefined) {
+      update.quest_group_name = req.body.quest_group_name;
+    }
+    if (req.body.no_of_crypes !== undefined) {
+      update.no_of_crypes = req.body.no_of_crypes;
+    }
+    if (req.body.group_package) {
+      update.group_package = req.body.group_package;
+    }
+    if (req.body.qr_code) {
+      update.qr_code = req.body.qr_code;
+    }
+    const uploadedReward = req.files?.reward?.[0] || req.files?.reward_file?.[0];
+    if (uploadedReward?.location) {
+      update.reward_file = uploadedReward.location;
+    }
+
+    const updated = await QuestGroupModel.findByIdAndUpdate(id, update, {
+      new: true,
+    });
+    return apiResponse.successResponseWithData(
+      res,
+      "Quest group updated successfully",
+      updated
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const deleteQuestGroup = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid quest group id");
+    }
+    const existing = await QuestGroupModel.findById(id);
+    if (!existing) {
+      return apiResponse.notFoundResponse(res, "Quest group not found");
+    }
+    await QuestGroupModel.findByIdAndUpdate(id, { status: "deleted" });
+    await QuestModel.updateMany(
+      { quest_group_id: new ObjectId(id) },
+      { $unset: { quest_group_id: 1 } }
+    );
+    return apiResponse.successResponse(res, "Quest group deleted");
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getQuestGroupById = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid quest group id");
+    }
+    const group = await QuestGroupModel.findById(id);
+    if (!group || group.status === "deleted") {
+      return apiResponse.notFoundResponse(res, "Quest group not found");
+    }
+    await ensureQuestGroupPaymentQr(group);
+    return apiResponse.successResponseWithData(res, "Quest group found", group);
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 const purchaseQuestGroup = async (req, res, next) => {
   try {
-    const qr_code = req.params.qr_code;
-    const package = req.params.group_package;
+    const qr_code = req.body?.qr_code || req.params.qr_code;
+    const packageName = req.body?.package || req.query.package || req.params.group_package;
+    const receipt = req.body?.receipt || req.body?.receipt_data || "";
+    const appleTransactionId =
+      req.body?.apple_transaction_id || req.body?.transaction_id || "";
 
-    const questgroup = await QuestGroupModel.findOne({ qr_code: qr_code });
+    if (!qr_code) {
+      return apiResponse.validationErrorWithData(res, "QR code is required");
+    }
+
+    const questgroup = await QuestGroupModel.findOne({
+      qr_code: qr_code,
+      status: "active",
+    });
     if (!questgroup) {
       return apiResponse.notFoundResponse(
         res,
@@ -1033,35 +1188,85 @@ const purchaseQuestGroup = async (req, res, next) => {
       );
     }
 
-    const userQuest = await QuestPurchaseModel.findOne({ user_id: new ObjectId(req.user.id), quest_group_id: new ObjectId(questgroup?._id) });
-    if (userQuest) {
-      return apiResponse.ErrorResponse(
+    const valid = await getValidQuestGroupPurchase(req.user.id, questgroup._id);
+    if (valid) {
+      return apiResponse.successResponseWithData(
         res,
-        "You have already purchased this Quest Group"
+        "Quest group already purchased",
+        {
+          needs_purchase: false,
+          already_purchased: true,
+          quest_group_id: questgroup._id,
+          group_package: questgroup.group_package || valid.purchase.package,
+          expires_at: valid.expiresAt,
+        }
       );
     }
-    var items = {
-      user_id: req.user.id,
-      quest_group_id: questgroup?._id,
-      package: package ? package : "Bronze"
+
+    const chosenPackage = ["Bronze", "Silver", "Gold"].includes(packageName)
+      ? packageName
+      : questgroup.group_package || "Bronze";
+    const expiresAt = purchaseExpiry();
+
+    const existingExpired = await QuestPurchaseModel.findOne({
+      user_id: new ObjectId(req.user.id),
+      quest_group_id: new ObjectId(questgroup._id),
+    }).sort({ created_at: -1 });
+
+    let purchase;
+    if (existingExpired) {
+      existingExpired.package = chosenPackage;
+      existingExpired.status = "active";
+      existingExpired.purchased_at = new Date();
+      existingExpired.expires_at = expiresAt;
+      existingExpired.receipt = receipt;
+      existingExpired.apple_transaction_id = appleTransactionId;
+      purchase = await existingExpired.save();
+    } else {
+      purchase = await QuestPurchaseModel.create({
+        user_id: req.user.id,
+        quest_group_id: questgroup._id,
+        package: chosenPackage,
+        purchased_at: new Date(),
+        expires_at: expiresAt,
+        receipt,
+        apple_transaction_id: appleTransactionId,
+        status: "active",
+      });
     }
-    const createdItem = new QuestPurchaseModel(items);
-    createdItem.save(async (err) => {
-        const userHunt = await UserQuestGroupModel.findOne({ user_id: new ObjectId(req.user.id), quest_group_id: new ObjectId(questgroup?._id) });
-        if(!userHunt){
-          const itemToAdd = {
-            user_id: req.user._id,
-            quest_group_id: questgroup?._id,
-            status: 'inprogress' 
-          };
-          const createdItem = new UserQuestGroupModel(itemToAdd);
-          createdItem.save(async (err) => {});
-        }
-    })
-    return apiResponse.successResponse(
-      res,
-      "Quest Group purchased"
-    );
+
+    await ensureUserQuestGroupProgress(req.user.id, questgroup._id);
+
+    try {
+      if (req.user.email) {
+        await sendEmail({
+          to: req.user.email,
+          subject: `Quest group unlocked - ${questgroup.quest_group_name}`,
+          template: "quest-purchase",
+          useIonos: true,
+          data: {
+            customerName: req.user.username || req.user.first_name || "there",
+            questGroupName: questgroup.quest_group_name,
+            packageName: chosenPackage,
+            expiresAt: expiresAt.toISOString(),
+            transactionId: appleTransactionId,
+          },
+        });
+        purchase.invoice_email_sent = true;
+        await purchase.save();
+      }
+    } catch (emailErr) {
+      logger.error(emailErr);
+    }
+
+    return apiResponse.successResponseWithData(res, "Quest Group purchased", {
+      needs_purchase: false,
+      already_purchased: true,
+      quest_group_id: questgroup._id,
+      group_package: chosenPackage,
+      expires_at: expiresAt,
+      purchase_id: purchase._id,
+    });
   } catch (err) {
     logger.error(err);
     next(err);
@@ -1116,7 +1321,7 @@ const getQuestsByGroupId = async (req, res, next) => {
       .sort({ created_at: -1 })
       .populate([
         { path: "mythica_ID" },
-        { path: "quest_group_id", select: { quest_group_name: 1 } },
+        { path: "quest_group_id", select: { quest_group_name: 1, group_package: 1, qr_code: 1 } },
         {
           path: "activity_id",
           select: { title: 1, partner_id: 1 },
@@ -1147,9 +1352,46 @@ const scanQuestQRCode = async (req, res, next) => {
 
     const parsedData = parseQuestQrCodeInput(qr_code);
     if (!parsedData?.qr_code) {
-      return apiResponse.ErrorResponse(
+      return apiResponse.validationErrorWithData(
         res,
         "QR code data is required"
+      );
+    }
+
+    const questGroup = await QuestGroupModel.findOne({
+      qr_code: parsedData.qr_code,
+      status: "active",
+    });
+    if (questGroup) {
+      const valid = await getValidQuestGroupPurchase(req.user.id, questGroup._id);
+      if (!valid) {
+        return apiResponse.successResponseWithData(
+          res,
+          "Quest group payment required",
+          groupPayload(questGroup, {
+            scan_type: "quest_group_payment",
+            already_purchased: false,
+          })
+        );
+      }
+      const groupedQuests = await QuestModel.find({
+        quest_group_id: questGroup._id,
+        status: "active",
+      }).select("qr_code quest_title _id");
+      return apiResponse.successResponseWithData(
+        res,
+        "Quest group already purchased",
+        {
+          scan_type: "quest_group_payment",
+          needs_purchase: false,
+          already_purchased: true,
+          quest_group_id: questGroup._id,
+          quest_group_name: questGroup.quest_group_name,
+          group_package: questGroup.group_package || "Bronze",
+          qr_code: questGroup.qr_code,
+          expires_at: valid.expiresAt,
+          quests: groupedQuests,
+        }
       );
     }
 
@@ -1165,16 +1407,24 @@ const scanQuestQRCode = async (req, res, next) => {
       );
     }
 
+    const paymentBlock = await requireQuestGroupPurchase(req, res, quest);
+    if (paymentBlock) {
+      return paymentBlock;
+    }
+
     const userQuest = await UserQuestModel.findOne({
       user_id: new ObjectId(req.user.id),
       quest_id: quest._id,
     }).select("status");
 
     const result = {
+      scan_type: "quest",
+      needs_purchase: false,
       qr_code: quest.qr_code,
       quest_password: quest.quest_password || null,
       has_password: !!(quest.quest_password && quest.quest_password.trim() !== ""),
       quest_id: quest._id,
+      quest_group_id: quest.quest_group_id || null,
       already_unlocked: !!userQuest,
       user_quest_status: userQuest?.status ?? null,
     };
@@ -1221,6 +1471,11 @@ const confirmQuestQRCode = async (req, res, next) => {
         res,
         "No quest found with this QR code"
       );
+    }
+
+    const paymentBlock = await requireQuestGroupPurchase(req, res, quest);
+    if (paymentBlock) {
+      return paymentBlock;
     }
 
     const userQuest = await UserQuestModel.findOne({
@@ -1283,6 +1538,95 @@ const getPresignedUploadUrl = async (req, res, next) => {
   }
 };
 
+const getQuestGroupPurchaseStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid quest group id");
+    }
+    const group = await QuestGroupModel.findById(id);
+    if (!group || group.status === "deleted") {
+      return apiResponse.notFoundResponse(res, "Quest group not found");
+    }
+    const valid = await getValidQuestGroupPurchase(req.user.id, id);
+    return apiResponse.successResponseWithData(res, "Purchase status", {
+      quest_group_id: group._id,
+      quest_group_name: group.quest_group_name,
+      group_package: group.group_package || "Bronze",
+      qr_code: group.qr_code,
+      needs_purchase: !valid,
+      is_purchased: !!valid,
+      expires_at: valid?.expiresAt || null,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getQuestGroupPurchases = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
+      return apiResponse.validationErrorWithData(res, "Invalid quest group id");
+    }
+    const purchases = await QuestPurchaseModel.find({
+      quest_group_id: new ObjectId(id),
+    })
+      .populate("user_id", "username email")
+      .sort({ created_at: -1 });
+
+    return res.json({
+      status: true,
+      message: purchases.length ? "Purchases found" : "No purchases yet",
+      data: purchases.map((p) => ({
+        id: p._id,
+        username: p.user_id?.username || "",
+        email: p.user_id?.email || "",
+        package: p.package,
+        purchased_at: p.purchased_at || p.created_at,
+        expires_at: p.expires_at,
+        is_active: p.expires_at ? new Date(p.expires_at).getTime() > Date.now() : false,
+        apple_transaction_id: p.apple_transaction_id || "",
+        invoice_email_sent: p.invoice_email_sent,
+      })),
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getMyQuestGroupPurchases = async (req, res, next) => {
+  try {
+    const purchases = await QuestPurchaseModel.find({
+      user_id: new ObjectId(req.user.id),
+    })
+      .populate("quest_group_id", "quest_group_name group_package qr_code")
+      .sort({ created_at: -1 });
+
+    return apiResponse.successResponseWithData(
+      res,
+      "Your quest group purchases",
+      purchases.map((p) => {
+        const expiresAt = p.expires_at || null;
+        return {
+          id: p._id,
+          quest_group_id: p.quest_group_id?._id || p.quest_group_id,
+          quest_group_name: p.quest_group_id?.quest_group_name,
+          group_package: p.package,
+          purchased_at: p.purchased_at || p.created_at,
+          expires_at: expiresAt,
+          is_active: expiresAt ? new Date(expiresAt).getTime() > Date.now() : false,
+        };
+      })
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createQuest,
   createQuestQuiz,
@@ -1299,9 +1643,15 @@ module.exports = {
   updateQuestQuiz,
   getQuestsSubAdmin,
   createQuestGroup,
+  editQuestGroup,
+  deleteQuestGroup,
+  getQuestGroupById,
   getAllQuestGroups,
   addQuestToGroup,
   purchaseQuestGroup,
+  getQuestGroupPurchaseStatus,
+  getQuestGroupPurchases,
+  getMyQuestGroupPurchases,
   getActivityQuests,
   getQuestsByGroupId,
   scanQuestQRCode,

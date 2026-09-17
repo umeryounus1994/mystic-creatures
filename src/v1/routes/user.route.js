@@ -89,6 +89,11 @@ router.get(
   userController.purhasePackage
 );
 router.post(
+  "/push_token",
+  checkUserAuth,
+  userController.savePushToken
+);
+router.post(
   "/updateprofile/:id",
   checkUserAuth,
   userController.updateUser

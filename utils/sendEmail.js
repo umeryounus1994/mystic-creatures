@@ -23,6 +23,8 @@ const sendEmail = async (emailData) => {
             htmlContent = generatePasswordResetHTML(data);
         } else if (template === 'email-verification') {
             htmlContent = generateEmailVerificationHTML(data);
+        } else if (template === 'quest-purchase') {
+            htmlContent = generateQuestPurchaseHTML(data);
         }
         
         // Try IONOS first if specified, otherwise use SendGrid
@@ -203,6 +205,31 @@ const generateEmailVerificationHTML = (data) => {
             <p style="font-size: 12px; color: #666;">
                 Wenn Sie kein Konto erstellt haben, ignorieren Sie diese E-Mail.
             </p>
+        </div>
+    </body>
+    </html>`;
+};
+
+const generateQuestPurchaseHTML = (data) => {
+    return `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Quest Group Purchase</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #7C3AED;">Quest group unlocked</h2>
+            <p>Hello ${data.customerName || "there"},</p>
+            <p>Your payment for a MyCre quest group was recorded. The other QR codes in this group are unlocked for 24 hours.</p>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>Quest group:</strong> ${data.questGroupName}</p>
+                <p><strong>Package:</strong> ${data.packageName}</p>
+                <p><strong>Valid until:</strong> ${data.expiresAt}</p>
+                ${data.transactionId ? `<p><strong>Transaction:</strong> ${data.transactionId}</p>` : ""}
+            </div>
+            <p>Apple / App Store also stores the official in-app purchase receipt on your account.</p>
+            <p>Team MyCre</p>
         </div>
     </body>
     </html>`;
