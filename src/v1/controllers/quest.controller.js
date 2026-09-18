@@ -1215,6 +1215,9 @@ const purchaseQuestGroup = async (req, res, next) => {
 
     let purchase;
     if (existingExpired) {
+      if (!existingExpired.purchase_id) {
+        existingExpired.purchase_id = `${req.user.id}-${questgroup._id}-${Date.now()}`;
+      }
       existingExpired.package = chosenPackage;
       existingExpired.status = "active";
       existingExpired.purchased_at = new Date();
@@ -1224,6 +1227,7 @@ const purchaseQuestGroup = async (req, res, next) => {
       purchase = await existingExpired.save();
     } else {
       purchase = await QuestPurchaseModel.create({
+        purchase_id: `${req.user.id}-${questgroup._id}-${Date.now()}`,
         user_id: req.user.id,
         quest_group_id: questgroup._id,
         package: chosenPackage,
@@ -1265,11 +1269,20 @@ const purchaseQuestGroup = async (req, res, next) => {
       quest_group_id: questgroup._id,
       group_package: chosenPackage,
       expires_at: expiresAt,
-      purchase_id: purchase._id,
+      purchase_id: purchase.purchase_id || purchase._id,
     });
   } catch (err) {
     logger.error(err);
-    next(err);
+    if (err?.code === 11000) {
+      return apiResponse.conflictResponse(
+        res,
+        "This quest group purchase could not be saved. Please retry."
+      );
+    }
+    return apiResponse.ErrorResponse(
+      res,
+      err?.message || "Failed to purchase quest group"
+    );
   }
 };
 

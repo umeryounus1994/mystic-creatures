@@ -1,10 +1,12 @@
 /* eslint-disable arrow-body-style */
 const mongoose = require("mongoose");
 const mongooseDelete = require("mongoose-delete");
+const { v4: uuidv4 } = require("uuid");
 
 
 const questPurchasesSchema = new mongoose.Schema(
     {
+        purchase_id: { type: String, default: () => uuidv4() },
         user_id: {
             type: mongoose.Schema.Types.ObjectId, ref: 'User'
         },
