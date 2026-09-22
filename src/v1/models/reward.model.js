@@ -7,6 +7,12 @@ const rewardSchema = new mongoose.Schema(
         reward_name: { type: Number },
         reward_file: {type: String},
         reward_crypes: {type: Number},
+        reward_type: {
+            type: String,
+            enum: ["drop", "exploring"],
+            default: "drop",
+        },
+        points_required: { type: Number, default: 0 },
         status: {
             type: String,
             enum: ["active", "deleted"],

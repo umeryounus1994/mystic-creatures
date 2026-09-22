@@ -189,7 +189,8 @@ const createDropReward = async (req, res, next) => {
     const data = {
       reward_name: req?.body?.reward_limit,
       reward_file: req.files['reward_file'] ? req.files['reward_file'][0].location : "",
-      reward_crypes: req?.body?.reward_crypes
+      reward_crypes: req?.body?.reward_crypes,
+      reward_type: "drop",
     }
 
     const createdItem = new RewardModel(data);
@@ -276,7 +277,10 @@ const getDropsSubAdmin = async (req, res, next) => {
 
 const getDropsReward = async (req, res, next) => {
   try {
-    const drops = await RewardModel.find({status: 'active'}).sort({ created_at: -1 });
+    const drops = await RewardModel.find({
+      status: "active",
+      reward_type: { $ne: "exploring" },
+    }).sort({ created_at: -1 });
     return res.json({
       status: true,
       message: "Data Found",
@@ -335,7 +339,10 @@ const getUserDrops = async (req, res, next) => {
 const claimDrop = async (req, res, next) => {
   try {
     let findNoOfDrops = await UserDropModel.countDocuments({ user_id: new ObjectId(req.user.id) });
-    const checkDrops = await RewardModel.findOne({reward_name: findNoOfDrops + 1});
+    const checkDrops = await RewardModel.findOne({
+      reward_name: findNoOfDrops + 1,
+      reward_type: { $ne: "exploring" },
+    });
    
     const id = req.params.id;
     const user_answer = req.body.user_answer;

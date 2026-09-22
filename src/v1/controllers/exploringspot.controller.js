@@ -3,6 +3,9 @@ const haversine = require("haversine");
 const apiResponse = require("../../../helpers/apiResponse");
 const ExploringSpotModel = require("../models/exploringspot.model");
 const UserExploringSpotModel = require("../models/userexploringspot.model");
+const UserModel = require("../models/user.model");
+const RewardModel = require("../models/reward.model");
+const UserRewardModel = require("../models/userreward.model");
 const logger = require("../../../middlewares/logger");
 
 const NOTIFY_COOLDOWN_MS = 4 * 60 * 60 * 1000;
@@ -225,8 +228,10 @@ const findNearbySpotsForUser = async (userId, latitude, longitude) => {
           distance_km: km,
           in_radius: true,
           checked_in: visit?.status === "checked_in",
+          collected: visit?.status === "checked_in",
           should_notify:
-            !visit?.last_notified_at || Date.now() - lastNotified >= NOTIFY_COOLDOWN_MS,
+            visit?.status !== "checked_in" &&
+            (!visit?.last_notified_at || Date.now() - lastNotified >= NOTIFY_COOLDOWN_MS),
           last_notified_at: visit?.last_notified_at || null,
         })
       );
@@ -253,6 +258,67 @@ const getNearbyExploringSpots = async (req, res, next) => {
     logger.error(err);
     next(err);
   }
+};
+
+const serializeReward = (reward) => ({
+  id: reward._id,
+  reward_id: reward._id,
+  points_required: reward.points_required || reward.reward_name || 0,
+  reward_name: reward.reward_name,
+  reward_crypes: reward.reward_crypes || 0,
+  reward_file: reward.reward_file || "",
+  reward_type: reward.reward_type || "exploring",
+});
+
+const getExploringThreshold = (reward) =>
+  Number(reward.points_required || reward.reward_name || 0);
+
+const unlockExploringRewards = async (userId, previousTotal, newTotal) => {
+  if (newTotal <= previousTotal) return [];
+  const rewards = await RewardModel.find({
+    status: "active",
+    reward_type: "exploring",
+  }).sort({ points_required: 1, reward_name: 1 });
+  const unlocked = [];
+  for (const reward of rewards) {
+    const threshold = getExploringThreshold(reward);
+    if (threshold <= 0 || threshold <= previousTotal || threshold > newTotal) {
+      continue;
+    }
+    const existing = await UserRewardModel.findOne({
+      reward_id: reward._id,
+      user_id: new ObjectId(userId),
+    });
+    if (existing) continue;
+    await new UserRewardModel({
+      reward_id: reward._id,
+      user_id: userId,
+    }).save();
+    unlocked.push(serializeReward(reward));
+  }
+  return unlocked;
+};
+
+const getUserExploringTotal = async (userId) => {
+  const user = await UserModel.findById(userId);
+  if (!user) return { user: null, total_points: 0 };
+  let total = Number(user.exploring_points || 0);
+  if (total === 0) {
+    const visits = await UserExploringSpotModel.find({
+      user_id: new ObjectId(userId),
+      status: "checked_in",
+    });
+    const summed = visits.reduce(
+      (sum, visit) => sum + Number(visit.points_awarded || 0),
+      0
+    );
+    if (summed > 0) {
+      user.exploring_points = summed;
+      await user.save();
+      total = summed;
+    }
+  }
+  return { user, total_points: total };
 };
 
 const checkInExploringSpot = async (req, res, next) => {
@@ -285,14 +351,27 @@ const checkInExploringSpot = async (req, res, next) => {
       user_id: new ObjectId(req.user.id),
       exploring_spot_id: spot._id,
     });
+    const { user, total_points: currentTotal } = await getUserExploringTotal(req.user.id);
+    if (!user) {
+      return apiResponse.unauthorizedResponse(res, "User not found");
+    }
 
     if (visit?.status === "checked_in") {
-      return apiResponse.successResponseWithData(res, "Already checked in", {
-        ...serializeSpot(spot, { distance_km: km, checked_in: true }),
-        points_awarded: visit.points_awarded,
+      return apiResponse.successResponseWithData(res, "Spot already collected", {
+        ...serializeSpot(spot, {
+          distance_km: km,
+          checked_in: true,
+          collected: true,
+        }),
+        already_collected: true,
+        points_awarded: 0,
+        points_from_spot: visit.points_awarded || 0,
+        total_points: currentTotal,
+        unlocked_rewards: [],
       });
     }
 
+    const pointsFromSpot = spot.no_of_points || 0;
     if (!visit) {
       visit = new UserExploringSpotModel({
         user_id: req.user.id,
@@ -302,13 +381,182 @@ const checkInExploringSpot = async (req, res, next) => {
     visit.status = "checked_in";
     visit.checked_in_at = new Date();
     visit.last_entered_at = new Date();
-    visit.points_awarded = spot.no_of_points || 0;
+    visit.points_awarded = pointsFromSpot;
     await visit.save();
 
-    return apiResponse.successResponseWithData(res, "Checked in to exploring spot", {
-      ...serializeSpot(spot, { distance_km: km, checked_in: true }),
-      points_awarded: visit.points_awarded,
+    const previousTotal = currentTotal;
+    const newTotal = previousTotal + pointsFromSpot;
+    user.exploring_points = newTotal;
+    await user.save();
+
+    const unlockedRewards = await unlockExploringRewards(
+      req.user.id,
+      previousTotal,
+      newTotal
+    );
+
+    return apiResponse.successResponseWithData(res, "Exploring spot collected", {
+      ...serializeSpot(spot, {
+        distance_km: km,
+        checked_in: true,
+        collected: true,
+      }),
+      already_collected: false,
+      points_awarded: pointsFromSpot,
+      points_from_spot: pointsFromSpot,
+      total_points: newTotal,
+      unlocked_rewards: unlockedRewards,
     });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getMapExploringSpots = async (req, res, next) => {
+  try {
+    const latitude = parseFloat(req.query.latitude ?? req.body?.latitude);
+    const longitude = parseFloat(req.query.longitude ?? req.body?.longitude);
+    const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
+    const spots = await ExploringSpotModel.find({ status: "active" }).sort({
+      created_at: -1,
+    });
+    const visits = await UserExploringSpotModel.find({
+      user_id: new ObjectId(req.user.id),
+    });
+    const visitBySpot = {};
+    visits.forEach((visit) => {
+      visitBySpot[String(visit.exploring_spot_id)] = visit;
+    });
+
+    const data = spots.map((spot) => {
+      const visit = visitBySpot[String(spot._id)];
+      const collected = visit?.status === "checked_in";
+      const km = hasCoords ? distanceKm(spot, latitude, longitude) : null;
+      const radiusKm = (spot.radius_meters || 100) / 1000;
+      const inRadius = km != null && km <= radiusKm;
+      return serializeSpot(spot, {
+        distance_km: km,
+        in_radius: inRadius,
+        collected,
+        checked_in: collected,
+        can_collect: inRadius && !collected,
+      });
+    });
+
+    data.sort((a, b) => {
+      if (a.distance_km == null && b.distance_km == null) return 0;
+      if (a.distance_km == null) return 1;
+      if (b.distance_km == null) return -1;
+      return a.distance_km - b.distance_km;
+    });
+
+    return apiResponse.successResponseWithData(
+      res,
+      data.length ? "Exploring spots found" : "No exploring spots found",
+      data
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getMyExploringPoints = async (req, res, next) => {
+  try {
+    const { total_points } = await getUserExploringTotal(req.user.id);
+    const collectedCount = await UserExploringSpotModel.countDocuments({
+      user_id: new ObjectId(req.user.id),
+      status: "checked_in",
+    });
+    return apiResponse.successResponseWithData(res, "Exploring points found", {
+      total_points,
+      collected_spots: collectedCount,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getMyExploringRewards = async (req, res, next) => {
+  try {
+    const { total_points } = await getUserExploringTotal(req.user.id);
+    const claimed = await UserRewardModel.find({
+      user_id: new ObjectId(req.user.id),
+    }).populate("reward_id");
+    const rewards = claimed
+      .map((item) => item.reward_id)
+      .filter((reward) => reward && reward.reward_type === "exploring")
+      .map(serializeReward);
+    return apiResponse.successResponseWithData(res, "Exploring rewards found", {
+      total_points,
+      rewards,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getExploringRewards = async (req, res, next) => {
+  try {
+    const rewards = await RewardModel.find({
+      status: "active",
+      reward_type: "exploring",
+    }).sort({ points_required: 1, reward_name: 1, created_at: -1 });
+    return apiResponse.successResponseWithData(
+      res,
+      "Exploring rewards found",
+      rewards
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const createExploringReward = async (req, res, next) => {
+  try {
+    const points = parseInt(
+      req.body.points_required || req.body.reward_limit,
+      10
+    );
+    if (!Number.isFinite(points) || points <= 0) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "points_required is required"
+      );
+    }
+    const crypes = parseInt(req.body.reward_crypes, 10);
+    const createdItem = new RewardModel({
+      reward_name: points,
+      points_required: points,
+      reward_crypes: Number.isFinite(crypes) ? crypes : 0,
+      reward_file: req.files?.reward_file ? req.files.reward_file[0].location : "",
+      reward_type: "exploring",
+    });
+    await createdItem.save();
+    return apiResponse.successResponseWithData(
+      res,
+      "Created successfully",
+      createdItem
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const updateExploringReward = async (req, res, next) => {
+  try {
+    const updated = await RewardModel.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "Reward not found");
+    }
+    return apiResponse.successResponse(res, "Reward updated");
   } catch (err) {
     logger.error(err);
     next(err);
@@ -369,4 +617,10 @@ module.exports = {
   getNearbyExploringSpots,
   checkInExploringSpot,
   notifyNearbyExploringSpots,
+  getMapExploringSpots,
+  getMyExploringPoints,
+  getMyExploringRewards,
+  getExploringRewards,
+  createExploringReward,
+  updateExploringReward,
 };
