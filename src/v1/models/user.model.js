@@ -33,6 +33,7 @@ const userSchema = new mongoose.Schema(
     access_token: { type: String, default: "" },
     current_level: { type: Number, default: 1 },
     current_xp: { type: Number, default: 0 },  //XP required = 100 * (1.2^(currentLevel - 1))
+    exploring_points: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ["active", "blocked"],
