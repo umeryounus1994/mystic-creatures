@@ -12,6 +12,8 @@ const rewardSchema = new mongoose.Schema(
             enum: ["drop", "exploring"],
             default: "drop",
         },
+        city: { type: String, default: "" },
+        spots_required: { type: Number, default: 0 },
         points_required: { type: Number, default: 0 },
         status: {
             type: String,

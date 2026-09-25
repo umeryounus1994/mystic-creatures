@@ -7,6 +7,7 @@ const UserModel = require("../models/user.model");
 const RewardModel = require("../models/reward.model");
 const UserRewardModel = require("../models/userreward.model");
 const logger = require("../../../middlewares/logger");
+const { sendPushToAllUsers, sendPushToUser } = require("../../../helpers/push");
 
 const NOTIFY_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
@@ -60,7 +61,7 @@ const buildSpotFromBody = (req, createdFrom) => {
     spot: {
       spot_name: req.body.spot_name,
       description: req.body.description || "",
-      city: req.body.city || "",
+      city: String(req.body.city || "").trim(),
       radius_meters: Number.isFinite(radius) && radius > 0 ? radius : 100,
       no_of_points: Number.isFinite(points) && points > 0 ? points : 1,
       location,
@@ -79,7 +80,21 @@ const createExploringSpot = async (req, res, next) => {
     if (!built.spot.spot_name) {
       return apiResponse.validationErrorWithData(res, "Spot name is required");
     }
+    if (!built.spot.city) {
+      return apiResponse.validationErrorWithData(res, "City is required");
+    }
     const created = await ExploringSpotModel.create(built.spot);
+    sendPushToAllUsers({
+      title: "New Exploring Spot",
+      body: `A new exploring spot "${created.spot_name}" was added in ${created.city}.`,
+      data: {
+        type: "exploring_spot_created",
+        exploring_spot_id: created._id,
+        city: created.city,
+        latitude: created.location?.coordinates?.[1],
+        longitude: created.location?.coordinates?.[0],
+      },
+    }).catch((err) => logger.error(err));
     return apiResponse.successResponseWithData(
       res,
       "Exploring spot created successfully",
@@ -99,6 +114,9 @@ const createExploringSpotByUser = async (req, res, next) => {
     }
     if (!built.spot.spot_name) {
       return apiResponse.validationErrorWithData(res, "Spot name is required");
+    }
+    if (!built.spot.city) {
+      return apiResponse.validationErrorWithData(res, "City is required");
     }
     const created = await ExploringSpotModel.create(built.spot);
     return apiResponse.successResponseWithData(
@@ -263,26 +281,69 @@ const getNearbyExploringSpots = async (req, res, next) => {
 const serializeReward = (reward) => ({
   id: reward._id,
   reward_id: reward._id,
-  points_required: reward.points_required || reward.reward_name || 0,
+  city: reward.city || "",
+  spots_required: reward.spots_required || reward.reward_name || 0,
+  points_required: reward.points_required || 0,
   reward_name: reward.reward_name,
   reward_crypes: reward.reward_crypes || 0,
   reward_file: reward.reward_file || "",
   reward_type: reward.reward_type || "exploring",
 });
 
-const getExploringThreshold = (reward) =>
-  Number(reward.points_required || reward.reward_name || 0);
+const escapeRegex = (value) =>
+  String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const unlockExploringRewards = async (userId, previousTotal, newTotal) => {
-  if (newTotal <= previousTotal) return [];
+const cityFilter = (city) => ({
+  $regex: `^${escapeRegex(String(city || "").trim())}$`,
+  $options: "i",
+});
+
+const getCollectedCountInCity = async (userId, city) => {
+  if (!String(city || "").trim()) return 0;
+  const spots = await ExploringSpotModel.find({
+    status: "active",
+    city: cityFilter(city),
+  }).select("_id");
+  if (!spots.length) return 0;
+  return UserExploringSpotModel.countDocuments({
+    user_id: new ObjectId(userId),
+    status: "checked_in",
+    exploring_spot_id: { $in: spots.map((spot) => spot._id) },
+  });
+};
+
+const getCollectedByCity = async (userId) => {
+  const visits = await UserExploringSpotModel.find({
+    user_id: new ObjectId(userId),
+    status: "checked_in",
+  }).populate("exploring_spot_id");
+  const byCity = {};
+  visits.forEach((visit) => {
+    const cityName = String(visit.exploring_spot_id?.city || "").trim();
+    if (!cityName) return;
+    const key = cityName.toLowerCase();
+    if (!byCity[key]) {
+      byCity[key] = { city: cityName, collected_spots: 0 };
+    }
+    byCity[key].collected_spots += 1;
+  });
+  return Object.values(byCity);
+};
+
+const getSpotsRequired = (reward) =>
+  Number(reward.spots_required || reward.reward_name || 0);
+
+const unlockExploringRewards = async (userId, city, previousCount, newCount) => {
+  if (!String(city || "").trim() || newCount <= previousCount) return [];
   const rewards = await RewardModel.find({
     status: "active",
     reward_type: "exploring",
-  }).sort({ points_required: 1, reward_name: 1 });
+    city: cityFilter(city),
+  }).sort({ spots_required: 1, reward_name: 1 });
   const unlocked = [];
   for (const reward of rewards) {
-    const threshold = getExploringThreshold(reward);
-    if (threshold <= 0 || threshold <= previousTotal || threshold > newTotal) {
+    const required = getSpotsRequired(reward);
+    if (required <= 0 || required <= previousCount || required > newCount) {
       continue;
     }
     const existing = await UserRewardModel.findOne({
@@ -356,6 +417,7 @@ const checkInExploringSpot = async (req, res, next) => {
       return apiResponse.unauthorizedResponse(res, "User not found");
     }
 
+    const collectedInCity = await getCollectedCountInCity(req.user.id, spot.city);
     if (visit?.status === "checked_in") {
       return apiResponse.successResponseWithData(res, "Spot already collected", {
         ...serializeSpot(spot, {
@@ -367,6 +429,8 @@ const checkInExploringSpot = async (req, res, next) => {
         points_awarded: 0,
         points_from_spot: visit.points_awarded || 0,
         total_points: currentTotal,
+        city: spot.city || "",
+        collected_in_city: collectedInCity,
         unlocked_rewards: [],
       });
     }
@@ -384,15 +448,16 @@ const checkInExploringSpot = async (req, res, next) => {
     visit.points_awarded = pointsFromSpot;
     await visit.save();
 
-    const previousTotal = currentTotal;
-    const newTotal = previousTotal + pointsFromSpot;
-    user.exploring_points = newTotal;
+    const previousCount = collectedInCity;
+    const newCount = previousCount + 1;
+    user.exploring_points = currentTotal + pointsFromSpot;
     await user.save();
 
     const unlockedRewards = await unlockExploringRewards(
       req.user.id,
-      previousTotal,
-      newTotal
+      spot.city,
+      previousCount,
+      newCount
     );
 
     return apiResponse.successResponseWithData(res, "Exploring spot collected", {
@@ -404,7 +469,9 @@ const checkInExploringSpot = async (req, res, next) => {
       already_collected: false,
       points_awarded: pointsFromSpot,
       points_from_spot: pointsFromSpot,
-      total_points: newTotal,
+      total_points: user.exploring_points,
+      city: spot.city || "",
+      collected_in_city: newCount,
       unlocked_rewards: unlockedRewards,
     });
   } catch (err) {
@@ -469,9 +536,11 @@ const getMyExploringPoints = async (req, res, next) => {
       user_id: new ObjectId(req.user.id),
       status: "checked_in",
     });
+    const by_city = await getCollectedByCity(req.user.id);
     return apiResponse.successResponseWithData(res, "Exploring points found", {
       total_points,
       collected_spots: collectedCount,
+      by_city,
     });
   } catch (err) {
     logger.error(err);
@@ -491,6 +560,7 @@ const getMyExploringRewards = async (req, res, next) => {
       .map(serializeReward);
     return apiResponse.successResponseWithData(res, "Exploring rewards found", {
       total_points,
+      by_city: await getCollectedByCity(req.user.id),
       rewards,
     });
   } catch (err) {
@@ -504,7 +574,7 @@ const getExploringRewards = async (req, res, next) => {
     const rewards = await RewardModel.find({
       status: "active",
       reward_type: "exploring",
-    }).sort({ points_required: 1, reward_name: 1, created_at: -1 });
+    }).sort({ city: 1, spots_required: 1, reward_name: 1, created_at: -1 });
     return apiResponse.successResponseWithData(
       res,
       "Exploring rewards found",
@@ -518,20 +588,26 @@ const getExploringRewards = async (req, res, next) => {
 
 const createExploringReward = async (req, res, next) => {
   try {
-    const points = parseInt(
-      req.body.points_required || req.body.reward_limit,
+    const city = String(req.body.city || "").trim();
+    const spotsRequired = parseInt(
+      req.body.spots_required || req.body.reward_limit,
       10
     );
-    if (!Number.isFinite(points) || points <= 0) {
+    if (!city) {
+      return apiResponse.validationErrorWithData(res, "city is required");
+    }
+    if (!Number.isFinite(spotsRequired) || spotsRequired <= 0) {
       return apiResponse.validationErrorWithData(
         res,
-        "points_required is required"
+        "spots_required is required"
       );
     }
     const crypes = parseInt(req.body.reward_crypes, 10);
     const createdItem = new RewardModel({
-      reward_name: points,
-      points_required: points,
+      city,
+      spots_required: spotsRequired,
+      reward_name: spotsRequired,
+      points_required: 0,
       reward_crypes: Number.isFinite(crypes) ? crypes : 0,
       reward_file: req.files?.reward_file ? req.files.reward_file[0].location : "",
       reward_type: "exploring",
@@ -542,6 +618,42 @@ const createExploringReward = async (req, res, next) => {
       "Created successfully",
       createdItem
     );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getExploringRewardRules = async (req, res, next) => {
+  try {
+    const { total_points } = await getUserExploringTotal(req.user.id);
+    const byCity = await getCollectedByCity(req.user.id);
+    const collectedByCity = {};
+    byCity.forEach((item) => {
+      collectedByCity[item.city.toLowerCase()] = item.collected_spots;
+    });
+    const rewards = await RewardModel.find({
+      status: "active",
+      reward_type: "exploring",
+    }).sort({ city: 1, spots_required: 1, reward_name: 1 });
+    const rules = rewards.map((reward) => {
+      const required = getSpotsRequired(reward);
+      const collected =
+        collectedByCity[String(reward.city || "").trim().toLowerCase()] || 0;
+      return {
+        id: reward._id,
+        city: reward.city || "",
+        spots_required: required,
+        collected_in_city: collected,
+        remaining: Math.max(required - collected, 0),
+        unlocked: collected >= required,
+      };
+    });
+    return apiResponse.successResponseWithData(res, "Exploring reward rules found", {
+      total_points,
+      by_city: byCity,
+      rules,
+    });
   } catch (err) {
     logger.error(err);
     next(err);
@@ -596,6 +708,21 @@ const notifyNearbyExploringSpots = async (req, res, next) => {
       });
     }
 
+    if (toNotify.length) {
+      const first = toNotify[0];
+      sendPushToUser(req.user.id, {
+        title: first.push_title,
+        body: first.push_body,
+        data: {
+          type: "exploring_spot_nearby",
+          exploring_spot_id: first.id,
+          city: first.city || "",
+          latitude: first.latitude,
+          longitude: first.longitude,
+        },
+      }).catch((err) => logger.error(err));
+    }
+
     return apiResponse.successResponseWithData(
       res,
       toNotify.length ? "Push payloads ready" : "No new nearby notifications",
@@ -621,6 +748,7 @@ module.exports = {
   getMyExploringPoints,
   getMyExploringRewards,
   getExploringRewards,
+  getExploringRewardRules,
   createExploringReward,
   updateExploringReward,
 };
