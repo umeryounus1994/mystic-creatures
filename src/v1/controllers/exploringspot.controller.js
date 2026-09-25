@@ -11,6 +11,14 @@ const { sendPushToAllUsers, sendPushToUser } = require("../../../helpers/push");
 
 const NOTIFY_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
+const parseBool = (value) =>
+  value === true ||
+  value === 1 ||
+  value === "1" ||
+  String(value).toLowerCase() === "true" ||
+  String(value).toLowerCase() === "on" ||
+  String(value).toLowerCase() === "yes";
+
 const parseLocation = (body) => {
   const lat = parseFloat(body?.latitude);
   const lng = parseFloat(body?.longitude);
@@ -39,6 +47,7 @@ const serializeSpot = (spot, extras = {}) => ({
   city: spot.city,
   radius_meters: spot.radius_meters,
   no_of_points: spot.no_of_points,
+  is_ar: Boolean(spot.is_ar),
   latitude: spot.location?.coordinates?.[1],
   longitude: spot.location?.coordinates?.[0],
   location: spot.location,
@@ -64,6 +73,7 @@ const buildSpotFromBody = (req, createdFrom) => {
       city: String(req.body.city || "").trim(),
       radius_meters: Number.isFinite(radius) && radius > 0 ? radius : 100,
       no_of_points: Number.isFinite(points) && points > 0 ? points : 1,
+      is_ar: parseBool(req.body.is_ar),
       location,
       created_from: createdFrom,
       created_by: req.user.id,
@@ -91,6 +101,7 @@ const createExploringSpot = async (req, res, next) => {
         type: "exploring_spot_created",
         exploring_spot_id: created._id,
         city: created.city,
+        is_ar: Boolean(created.is_ar),
         latitude: created.location?.coordinates?.[1],
         longitude: created.location?.coordinates?.[0],
       },
@@ -144,7 +155,8 @@ const editExploringSpot = async (req, res, next) => {
     const update = {};
     if (req.body.spot_name !== undefined) update.spot_name = req.body.spot_name;
     if (req.body.description !== undefined) update.description = req.body.description;
-    if (req.body.city !== undefined) update.city = req.body.city;
+    if (req.body.city !== undefined) update.city = String(req.body.city || "").trim();
+    if (req.body.is_ar !== undefined) update.is_ar = parseBool(req.body.is_ar);
     const radius = parseFloat(req.body.radius_meters);
     if (Number.isFinite(radius) && radius > 0) update.radius_meters = radius;
     const points = parseInt(req.body.no_of_points, 10);
@@ -297,6 +309,33 @@ const cityFilter = (city) => ({
   $regex: `^${escapeRegex(String(city || "").trim())}$`,
   $options: "i",
 });
+
+const getUniqueCities = async () => {
+  const spots = await ExploringSpotModel.find({
+    status: "active",
+    city: { $exists: true, $nin: [null, ""] },
+  }).select("city");
+  const seen = {};
+  const cities = [];
+  spots.forEach((spot) => {
+    const name = String(spot.city || "").trim();
+    const key = name.toLowerCase();
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    cities.push(name);
+  });
+  return cities.sort((a, b) => a.localeCompare(b));
+};
+
+const resolveCanonicalCity = async (city) => {
+  const trimmed = String(city || "").trim();
+  if (!trimmed) return "";
+  const match = await ExploringSpotModel.findOne({
+    status: "active",
+    city: cityFilter(trimmed),
+  }).select("city");
+  return match?.city ? String(match.city).trim() : "";
+};
 
 const getCollectedCountInCity = async (userId, city) => {
   if (!String(city || "").trim()) return 0;
@@ -588,13 +627,16 @@ const getExploringRewards = async (req, res, next) => {
 
 const createExploringReward = async (req, res, next) => {
   try {
-    const city = String(req.body.city || "").trim();
+    const canonicalCity = await resolveCanonicalCity(req.body.city);
     const spotsRequired = parseInt(
       req.body.spots_required || req.body.reward_limit,
       10
     );
-    if (!city) {
-      return apiResponse.validationErrorWithData(res, "city is required");
+    if (!canonicalCity) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Select a city from existing exploring spots"
+      );
     }
     if (!Number.isFinite(spotsRequired) || spotsRequired <= 0) {
       return apiResponse.validationErrorWithData(
@@ -604,7 +646,7 @@ const createExploringReward = async (req, res, next) => {
     }
     const crypes = parseInt(req.body.reward_crypes, 10);
     const createdItem = new RewardModel({
-      city,
+      city: canonicalCity,
       spots_required: spotsRequired,
       reward_name: spotsRequired,
       points_required: 0,
@@ -617,6 +659,20 @@ const createExploringReward = async (req, res, next) => {
       res,
       "Created successfully",
       createdItem
+    );
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
+const getExploringCities = async (req, res, next) => {
+  try {
+    const cities = await getUniqueCities();
+    return apiResponse.successResponseWithData(
+      res,
+      cities.length ? "Cities found" : "No exploring spot cities yet",
+      cities
     );
   } catch (err) {
     logger.error(err);
@@ -649,9 +705,11 @@ const getExploringRewardRules = async (req, res, next) => {
         unlocked: collected >= required,
       };
     });
+    const cities = await getUniqueCities();
     return apiResponse.successResponseWithData(res, "Exploring reward rules found", {
       total_points,
       by_city: byCity,
+      cities,
       rules,
     });
   } catch (err) {
@@ -717,6 +775,7 @@ const notifyNearbyExploringSpots = async (req, res, next) => {
           type: "exploring_spot_nearby",
           exploring_spot_id: first.id,
           city: first.city || "",
+          is_ar: Boolean(first.is_ar),
           latitude: first.latitude,
           longitude: first.longitude,
         },
@@ -749,6 +808,7 @@ module.exports = {
   getMyExploringRewards,
   getExploringRewards,
   getExploringRewardRules,
+  getExploringCities,
   createExploringReward,
   updateExploringReward,
 };
