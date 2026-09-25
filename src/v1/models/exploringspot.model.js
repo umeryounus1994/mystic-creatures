@@ -22,6 +22,7 @@ const exploringSpotSchema = new mongoose.Schema(
         city: { type: String, default: "" },
         radius_meters: { type: Number, default: 100 },
         no_of_points: { type: Number, default: 1 },
+        is_ar: { type: Boolean, default: false },
         location: {
             type: pointSchema,
             required: true,
