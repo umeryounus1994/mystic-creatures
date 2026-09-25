@@ -9,7 +9,7 @@
   ],
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "node init && node app.js",
     "backfill-partner-slugs": "node scripts/backfill-partner-slugs.js"
   },
   "engines": {
