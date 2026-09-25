@@ -53,6 +53,11 @@ router.get(
   exploringSpotController.getMyExploringRewards
 );
 router.get(
+  "/cities",
+  checkAuthOrigins,
+  exploringSpotController.getExploringCities
+);
+router.get(
   "/reward_rules",
   checkUserAuth,
   exploringSpotController.getExploringRewardRules
