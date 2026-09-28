@@ -10,16 +10,19 @@ const mediaUpload = require("../../../middlewares/upload-aws-image");
 router.post(
   "/create",
   checkAuthOrigins,
+  mediaUpload.fields([{ name: "image", maxCount: 1 }, { name: "Imageurl", maxCount: 1 }]),
   exploringSpotController.createExploringSpot
 );
 router.post(
   "/create_user",
   checkUserAuth,
+  mediaUpload.fields([{ name: "image", maxCount: 1 }, { name: "Imageurl", maxCount: 1 }]),
   exploringSpotController.createExploringSpotByUser
 );
 router.post(
   "/edit/:id",
   checkAuthOrigins,
+  mediaUpload.fields([{ name: "image", maxCount: 1 }, { name: "Imageurl", maxCount: 1 }]),
   exploringSpotController.editExploringSpot
 );
 router.delete(

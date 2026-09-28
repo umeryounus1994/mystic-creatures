@@ -19,6 +19,14 @@ const parseBool = (value) =>
   String(value).toLowerCase() === "on" ||
   String(value).toLowerCase() === "yes";
 
+const getUploadedImageUrl = (req) => {
+  const file =
+    req.files?.image?.[0] ||
+    req.files?.Imageurl?.[0] ||
+    req.files?.ImageUrl?.[0];
+  return file?.location || "";
+};
+
 const parseLocation = (body) => {
   const lat = parseFloat(body?.latitude);
   const lng = parseFloat(body?.longitude);
@@ -48,6 +56,7 @@ const serializeSpot = (spot, extras = {}) => ({
   radius_meters: spot.radius_meters,
   no_of_points: spot.no_of_points,
   is_ar: Boolean(spot.is_ar),
+  Imageurl: spot.image || "",
   latitude: spot.location?.coordinates?.[1],
   longitude: spot.location?.coordinates?.[0],
   location: spot.location,
@@ -74,6 +83,7 @@ const buildSpotFromBody = (req, createdFrom) => {
       radius_meters: Number.isFinite(radius) && radius > 0 ? radius : 100,
       no_of_points: Number.isFinite(points) && points > 0 ? points : 1,
       is_ar: parseBool(req.body.is_ar),
+      image: getUploadedImageUrl(req) || String(req.body.Imageurl || req.body.image || "").trim(),
       location,
       created_from: createdFrom,
       created_by: req.user.id,
@@ -102,6 +112,7 @@ const createExploringSpot = async (req, res, next) => {
         exploring_spot_id: created._id,
         city: created.city,
         is_ar: Boolean(created.is_ar),
+        Imageurl: created.image || "",
         latitude: created.location?.coordinates?.[1],
         longitude: created.location?.coordinates?.[0],
       },
@@ -157,6 +168,8 @@ const editExploringSpot = async (req, res, next) => {
     if (req.body.description !== undefined) update.description = req.body.description;
     if (req.body.city !== undefined) update.city = String(req.body.city || "").trim();
     if (req.body.is_ar !== undefined) update.is_ar = parseBool(req.body.is_ar);
+    const uploadedImage = getUploadedImageUrl(req);
+    if (uploadedImage) update.image = uploadedImage;
     const radius = parseFloat(req.body.radius_meters);
     if (Number.isFinite(radius) && radius > 0) update.radius_meters = radius;
     const points = parseInt(req.body.no_of_points, 10);
@@ -776,6 +789,7 @@ const notifyNearbyExploringSpots = async (req, res, next) => {
           exploring_spot_id: first.id,
           city: first.city || "",
           is_ar: Boolean(first.is_ar),
+          Imageurl: first.Imageurl || "",
           latitude: first.latitude,
           longitude: first.longitude,
         },
