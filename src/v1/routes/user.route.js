@@ -78,6 +78,11 @@ router.post(
   checkUserAuth,
   userController.setProfilePicture
 );
+router.post(
+  "/avatar-customization",
+  checkUserAuth,
+  userController.saveAvatarCustomization
+);
 router.get(
   "/player_creatures",
   checkUserAuth,

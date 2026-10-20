@@ -52,6 +52,7 @@ const serializeSpot = (spot, extras = {}) => ({
   id: spot._id,
   spot_name: spot.spot_name,
   description: spot.description,
+  address: spot.address || "",
   city: spot.city,
   radius_meters: spot.radius_meters,
   no_of_points: spot.no_of_points,
@@ -79,6 +80,7 @@ const buildSpotFromBody = (req, createdFrom) => {
     spot: {
       spot_name: req.body.spot_name,
       description: req.body.description || "",
+      address: String(req.body.address || "").trim(),
       city: String(req.body.city || "").trim(),
       radius_meters: Number.isFinite(radius) && radius > 0 ? radius : 100,
       no_of_points: Number.isFinite(points) && points > 0 ? points : 1,
@@ -451,6 +453,19 @@ const checkInExploringSpot = async (req, res, next) => {
       return apiResponse.notFoundResponse(res, "Exploring spot not found");
     }
 
+    // Information spots (no quiz/questions) can be claimed with check-in only.
+    // Quiz answer is only required when the spot actually has quiz data.
+    const quizAnswer = req.body.quiz_answer || req.body.user_answer || req.body.answer;
+    const spotHasQuiz =
+      (Array.isArray(spot.questions) && spot.questions.length > 0) ||
+      Boolean(spot.has_quiz);
+    if (spotHasQuiz && !quizAnswer) {
+      return apiResponse.validationErrorWithData(
+        res,
+        "Quiz answer is required for this exploring spot"
+      );
+    }
+
     const km = distanceKm(spot, latitude, longitude);
     const radiusKm = (spot.radius_meters || 100) / 1000;
     if (km == null || km > radiusKm) {
@@ -807,6 +822,56 @@ const notifyNearbyExploringSpots = async (req, res, next) => {
   }
 };
 
+const getExploringSpotHistory = async (req, res, next) => {
+  try {
+    const visits = await UserExploringSpotModel.find({
+      user_id: new ObjectId(req.user.id),
+      status: "checked_in",
+    })
+      .populate("exploring_spot_id")
+      .sort({ checked_in_at: -1, created_at: -1 })
+      .lean();
+
+    const history = visits
+      .filter((visit) => visit.exploring_spot_id)
+      .map((visit) => {
+        const spot = visit.exploring_spot_id;
+        const visitedAt = visit.checked_in_at || visit.created_at;
+        return {
+          spot_id: String(spot._id),
+          title: spot.spot_name || "",
+          spot_name: spot.spot_name || "",
+          description: spot.description || "",
+          address: spot.address || spot.city || "",
+          city: spot.city || "",
+          image_url: spot.image || "",
+          Imageurl: spot.image || "",
+          visited_at: visitedAt
+            ? new Date(visitedAt).toISOString().slice(0, 10)
+            : null,
+          visited_at_iso: visitedAt || null,
+          points_awarded: visit.points_awarded || 0,
+          latitude: spot.location?.coordinates?.[1],
+          longitude: spot.location?.coordinates?.[0],
+        };
+      });
+
+    return res.status(200).json({
+      status: true,
+      success: true,
+      message:
+        history.length > 0
+          ? "Exploring spot history retrieved"
+          : "No visited exploring spots",
+      history,
+      data: history,
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   createExploringSpot,
   createExploringSpotByUser,
@@ -825,4 +890,5 @@ module.exports = {
   getExploringCities,
   createExploringReward,
   updateExploringReward,
+  getExploringSpotHistory,
 };

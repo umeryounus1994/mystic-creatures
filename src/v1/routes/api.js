@@ -31,9 +31,13 @@ const paypalPayoutRoutes = require('./paypalPayout.route');
 const payoutRoutes = require('./payout.route');
 const commissionRoutes = require('./commission.routes');
 const commissionRateRoutes = require("./commissionRate.route");
+const chatRoute = require("./chat.route");
+const magicArtRoute = require("./magicart.route");
 
 // End Points of Api
 app.use("/user/", userRoute);
+app.use("/chat/", chatRoute);
+app.use("/magicArt/", magicArtRoute);
 app.use("/admin/", adminRoute);
 app.use("/quest/", questRoute);
 app.use("/mission/", missionRoute);

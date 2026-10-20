@@ -100,7 +100,32 @@ function parseQuestQrCodeInput(qrCodeInput) {
   };
 }
 
+function parseHasMystic(value, mythicaId) {
+  if (value === undefined || value === null || value === "") {
+    // Default: mystic required only when a creature is linked
+    return Boolean(mythicaId);
+  }
+  if (value === false || value === 0 || value === "0") {
+    return false;
+  }
+  const normalized = String(value).toLowerCase();
+  if (["false", "no", "0"].includes(normalized)) {
+    return false;
+  }
+  if (value === true || value === 1 || value === "1") {
+    return true;
+  }
+  if (["true", "yes", "1"].includes(normalized)) {
+    return true;
+  }
+  return Boolean(mythicaId);
+}
+
 function buildUnlockQuestResponse(quest, questQuiz, userQuest = null) {
+  const hasMystic =
+    quest?.has_mystic !== undefined && quest?.has_mystic !== null
+      ? Boolean(quest.has_mystic)
+      : Boolean(quest?.mythica_ID);
   const questd = {
     _id: quest?._id,
     quest_question: quest?.quest_question,
@@ -110,6 +135,7 @@ function buildUnlockQuestResponse(quest, questQuiz, userQuest = null) {
     no_of_crypes: quest?.no_of_crypes,
     reward_file: quest?.reward_file,
     mythica_ID: quest?.mythica_ID?.creature_id,
+    has_mystic: hasMystic,
     quest_image: quest?.quest_image,
     status: quest?.status,
     deleted: quest?.deleted,
@@ -171,6 +197,14 @@ const createQuest = async (req, res, next) => {
       }
     } else {
       itemDetails.quest_context = "standalone";
+    }
+
+    itemDetails.has_mystic = parseHasMystic(
+      req.body.has_mystic ?? req.body.hasMystic,
+      itemDetails.mythica_ID
+    );
+    if (!itemDetails.has_mystic) {
+      itemDetails.mythica_ID = null;
     }
     
     // Safely parse questions with error handling
@@ -267,6 +301,18 @@ const updateQuestData = async (req, res, next) => {
         res,
         "Quest file is required for image and video quests. The file may be too large or the upload failed."
       );
+    }
+
+    if (req.body.has_mystic !== undefined || req.body.hasMystic !== undefined) {
+      itemDetails.has_mystic = parseHasMystic(
+        req.body.has_mystic ?? req.body.hasMystic,
+        itemDetails.mythica_ID !== undefined
+          ? itemDetails.mythica_ID
+          : existingQuest.mythica_ID
+      );
+      if (!itemDetails.has_mystic) {
+        itemDetails.mythica_ID = null;
+      }
     }
     
     // Safely parse questions with error handling
@@ -694,12 +740,43 @@ const completeQuest = async (req, res, next) => {
         "Please add quest to user first"
       );
     }
-    if(userQuest?.status == 'completed'){
+    if(userQuest?.status == 'completed' || userQuest?.status == 'claimed'){
       return apiResponse.ErrorResponse(
         res,
         "Quest already completed"
       );
     }
+
+    // Optional mystic: when has_mystic is false (or no creature linked),
+    // complete without requiring creature capture verification.
+    const hasMystic =
+      quest.has_mystic !== undefined && quest.has_mystic !== null
+        ? Boolean(quest.has_mystic)
+        : Boolean(quest.mythica_ID);
+
+    if (hasMystic) {
+      const creatureCaptured =
+        req.body.creature_captured === true ||
+        req.body.creature_captured === "true" ||
+        req.body.mystic_captured === true ||
+        req.body.mystic_captured === "true" ||
+        Boolean(req.body.mythica_distinguisher) ||
+        Boolean(req.body.creature_id);
+      // Soft check: Unity may send capture confirmation; if omitted we still
+      // award rewards for backward compatibility with older clients.
+      if (
+        req.body.require_capture === true ||
+        req.body.require_capture === "true"
+      ) {
+        if (!creatureCaptured) {
+          return apiResponse.validationErrorWithData(
+            res,
+            "Creature capture is required to complete this quest"
+          );
+        }
+      }
+    }
+
     const findCorrectOption = await QuestQuizModel.findOne({ quest_id: new ObjectId(id), correct_option: true });
    // if(findCorrectOption?._id == user_answer){
       await UserQuestModel.findOneAndUpdate(
@@ -714,14 +791,20 @@ const completeQuest = async (req, res, next) => {
       var items = {
         user_id: req.user.id,
         quest_id: quest?._id,
-        mythica_distinguisher: generateUniqueID()
+      };
+      if (hasMystic) {
+        items.mythica_distinguisher = generateUniqueID();
       }
       const createdItem = new TransactionModel(items);
   
       createdItem.save(async (err) => {})
-      return apiResponse.successResponse(
+      return apiResponse.successResponseWithData(
         res,
-        "Quest completed"
+        "Quest completed",
+        {
+          has_mystic: hasMystic,
+          mystic_awarded: hasMystic,
+        }
       );
     // } else {
     //   return apiResponse.successResponse(
@@ -948,7 +1031,8 @@ const top10Players = async (req, res, next) => {
               $project: {
                 username: 1,
                 image: 1,
-                profile_picture_id: 1
+                profile_picture_id: 1,
+                avatar_data: 1
               }
             }
           ],
@@ -971,7 +1055,8 @@ const top10Players = async (req, res, next) => {
               onError: null,
               onNull: null
             }
-          }
+          },
+          avatar_data: "$user.avatar_data"
         }
       },
       {

@@ -29,6 +29,19 @@ const userSchema = new mongoose.Schema(
     },
     image: { type: String, default: "" },
     profile_picture_id: { type: Number, default: null },
+    avatar_data: {
+      base_character: { type: String, default: "" },
+      outfit_id: { type: Number, default: null },
+      hat_id: { type: Number, default: null },
+      wand_id: { type: Number, default: null },
+      color_tint: { type: String, default: "" },
+    },
+    blocked_users: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     push_token: { type: String, default: "" },
     access_token: { type: String, default: "" },
     current_level: { type: Number, default: 1 },

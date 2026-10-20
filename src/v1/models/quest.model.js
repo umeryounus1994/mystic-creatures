@@ -35,6 +35,11 @@ const questSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'Creature'
          },
+        // When false (or mythica_ID is null), quest can complete without creature capture.
+        // No default: legacy quests infer this from whether mythica_ID is set.
+        has_mystic: {
+            type: Boolean,
+        },
         status: {
             type: String,
             enum: ["active", "deleted"],

@@ -384,6 +384,10 @@ const getUser = async (req, res, next) => {
     // remove extra fields from response
     user.password = undefined;
     user.access_token = undefined;
+    // Use GET /chat/blocked-users for the full blocked list
+    user.blocked_users = undefined;
+    // Use GET /chat/blocked-users for the full blocked list
+    user.blocked_users = undefined;
     if(user.purchased_package == true){
       const givenDate = moment(user.package_end_date);
       const currentDate = moment();
@@ -1898,6 +1902,74 @@ const setProfilePicture = async (req, res, next) => {
   }
 };
 
+const saveAvatarCustomization = async (req, res, next) => {
+  try {
+    const avatarPayload = req.body.avatar_data || req.body;
+    const baseCharacter =
+      avatarPayload.base_character || avatarPayload.baseCharacter || "";
+    const outfitId =
+      avatarPayload.outfit_id != null
+        ? Number(avatarPayload.outfit_id)
+        : avatarPayload.outfitId != null
+          ? Number(avatarPayload.outfitId)
+          : null;
+    const hatId =
+      avatarPayload.hat_id != null
+        ? Number(avatarPayload.hat_id)
+        : avatarPayload.hatId != null
+          ? Number(avatarPayload.hatId)
+          : null;
+    const wandId =
+      avatarPayload.wand_id != null
+        ? Number(avatarPayload.wand_id)
+        : avatarPayload.wandId != null
+          ? Number(avatarPayload.wandId)
+          : null;
+    const colorTint =
+      avatarPayload.color_tint || avatarPayload.colorTint || "";
+
+    if (!baseCharacter || String(baseCharacter).trim() === "") {
+      return apiResponse.validationErrorWithData(
+        res,
+        "avatar_data.base_character is required"
+      );
+    }
+
+    const avatar_data = {
+      base_character: String(baseCharacter).trim(),
+      outfit_id: Number.isFinite(outfitId) ? outfitId : null,
+      hat_id: Number.isFinite(hatId) ? hatId : null,
+      wand_id: Number.isFinite(wandId) ? wandId : null,
+      color_tint: String(colorTint || "").trim(),
+    };
+
+    const updated = await UserModel.findByIdAndUpdate(
+      req.user.id,
+      { $set: { avatar_data } },
+      { new: true }
+    )
+      .select("avatar_data profile_picture_id")
+      .lean();
+
+    if (!updated) {
+      return apiResponse.notFoundResponse(res, "User not found");
+    }
+
+    return res.status(200).json({
+      status: true,
+      success: true,
+      message: "Avatar updated successfully",
+      data: {
+        avatar_data: updated.avatar_data,
+        profile_picture_id: updated.profile_picture_id ?? null,
+      },
+    });
+  } catch (err) {
+    logger.error(err);
+    next(err);
+  }
+};
+
 const savePushToken = async (req, res, next) => {
   try {
     const token = req.body.push_token || req.body.device_token || "";
@@ -1963,5 +2035,6 @@ module.exports = {
   uploadPartnerBackground,
   uploadPartnerProfileImage,
   setProfilePicture,
+  saveAvatarCustomization,
   savePushToken,
 };

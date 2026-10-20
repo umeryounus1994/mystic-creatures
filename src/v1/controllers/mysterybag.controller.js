@@ -10,6 +10,26 @@ const {
   isViewOnlyBagExpired,
 } = require("../../../utils/viewOnlyBag");
 
+const parseCollectibleFlag = (value) => {
+    if (value === undefined || value === null || value === "") {
+        return null;
+    }
+    if (value === false || value === 0 || value === "0") {
+        return false;
+    }
+    const normalized = String(value).toLowerCase();
+    if (["false", "no", "view-only", "view_only", "watch"].includes(normalized)) {
+        return false;
+    }
+    if (value === true || value === 1 || value === "1") {
+        return true;
+    }
+    if (["true", "yes", "collectible", "collect"].includes(normalized)) {
+        return true;
+    }
+    return null;
+};
+
 const createMysteryBag = async (req, res, next) => {
     try {
         const { ...bagDetails } = req.body;
@@ -23,6 +43,19 @@ const createMysteryBag = async (req, res, next) => {
         bagDetails.reward_file = req.files['reward_file'] ? req.files['reward_file'][0].location : "";
         bagDetails.drawing_file = req.files['drawing_file'] ? req.files['drawing_file'][0].location : "";
         bagDetails.created_by = req.user.id;
+
+        // Accept is_collectible (Unity) and map to bag_type collectible | view-only
+        const collectibleFlag = parseCollectibleFlag(
+            req.body.is_collectible ?? req.body.isCollectible
+        );
+        if (collectibleFlag === false) {
+            bagDetails.bag_type = "view-only";
+        } else if (collectibleFlag === true) {
+            bagDetails.bag_type = "collectible";
+        } else if (!bagDetails.bag_type) {
+            bagDetails.bag_type = "collectible";
+        }
+
         applyViewOnlyBagFields(bagDetails);
         var questions = [];
         if (req.body.questions) {
@@ -255,6 +288,15 @@ const editMysteryBag = async (req, res, next) => {
         }
         if (req.files && req.files['drawing_file']) {
             bagDetails.drawing_file = req.files['drawing_file'][0].location;
+        }
+
+        const collectibleFlag = parseCollectibleFlag(
+            req.body.is_collectible ?? req.body.isCollectible
+        );
+        if (collectibleFlag === false) {
+            bagDetails.bag_type = "view-only";
+        } else if (collectibleFlag === true) {
+            bagDetails.bag_type = "collectible";
         }
         
         if (req.body.bag_type !== undefined || bagDetails.bag_type !== undefined) {

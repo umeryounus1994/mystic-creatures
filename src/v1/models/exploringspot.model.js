@@ -19,6 +19,7 @@ const exploringSpotSchema = new mongoose.Schema(
     {
         spot_name: { type: String, required: true },
         description: { type: String, default: "" },
+        address: { type: String, default: "" },
         city: { type: String, default: "" },
         radius_meters: { type: Number, default: 100 },
         no_of_points: { type: Number, default: 1 },

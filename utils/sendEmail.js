@@ -25,6 +25,8 @@ const sendEmail = async (emailData) => {
             htmlContent = generateEmailVerificationHTML(data);
         } else if (template === 'quest-purchase') {
             htmlContent = generateQuestPurchaseHTML(data);
+        } else if (template === 'chat-report') {
+            htmlContent = generateChatReportHTML(data);
         }
         
         // Try IONOS first if specified, otherwise use SendGrid
@@ -267,6 +269,51 @@ const generatePasswordResetHTML = (data) => {
             <p style="font-size: 12px; color: #666;">
                 Wenn Sie diese Passwort-Zurücksetzung nicht angefordert haben, ignorieren Sie bitte diese E-Mail.
             </p>
+        </div>
+    </body>
+    </html>`;
+};
+
+const generateChatReportHTML = (data) => {
+    return `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Chat Report</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 640px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #c62828;">MyCre Chat Report</h2>
+            <p>A player submitted a chat/content report that needs moderation review.</p>
+
+            <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>Report ID:</strong> ${data.reportId || "N/A"}</p>
+                <p><strong>Reported at:</strong> ${data.reportedAt || ""}</p>
+                <p><strong>Reason:</strong> ${data.reason || "(none)"}</p>
+            </div>
+
+            <div style="background: #fff3e0; padding: 16px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Reporter</h3>
+                <p><strong>Username:</strong> ${data.reporterUsername || "Unknown"}</p>
+                <p><strong>User ID:</strong> ${data.reporterId || ""}</p>
+                <p><strong>Email:</strong> ${data.reporterEmail || "N/A"}</p>
+            </div>
+
+            <div style="background: #ffebee; padding: 16px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Reported User</h3>
+                <p><strong>Username:</strong> ${data.reportedUsername || "Unknown"}</p>
+                <p><strong>User ID:</strong> ${data.reportedUserId || ""}</p>
+            </div>
+
+            <div style="background: #eceff1; padding: 16px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Message</h3>
+                <p style="white-space: pre-wrap;">${data.messageText || "(no message text)"}</p>
+                <p><strong>Photon Message ID:</strong> ${data.photonMessageId || "N/A"}</p>
+                <p><strong>Channel ID:</strong> ${data.channelId || "N/A"}</p>
+            </div>
+
+            <p>You can review and block this player from the MyCre admin panel if needed.</p>
+            <p style="font-size: 12px; color: #666;">This email was sent automatically by MyCre Chat Security.</p>
         </div>
     </body>
     </html>`;
