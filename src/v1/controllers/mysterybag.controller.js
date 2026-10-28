@@ -542,6 +542,151 @@ const getUserCollectedMysteryBags = async (req, res, next) => {
     }
 };
 
+/**
+ * MCU-7 — Classify player map content for admin moderation.
+ * Magic Art = mystery bag with a drawing_file; old map bags have no drawing.
+ */
+const resolvePlayerContentType = (bag) => {
+    const hasDrawing = !!(bag.drawing_file && String(bag.drawing_file).trim());
+    if (hasDrawing) {
+        return bag.bag_type === "view-only" ? "magic_art_view" : "magic_art_collect";
+    }
+    return "map_bag_old";
+};
+
+/**
+ * Admin: list all player-created map content (active mystery bags), newest first.
+ * Includes Magic Art (view/collect) and legacy map bags.
+ */
+const getPlayerMapContent = async (req, res, next) => {
+    try {
+        const search = (req.query.search || req.query.username || "").toString().trim();
+
+        const bags = await MysteryBagModel.find({ status: "active" })
+            .populate("created_by", "username user_type email")
+            .sort({ created_at: -1 })
+            .lean();
+
+        const bagIds = bags.map((bag) => bag._id);
+        const collectedCounts = await UserMysteryBagModel.aggregate([
+            {
+                $match: {
+                    mystery_bag_id: { $in: bagIds },
+                    status: "collected",
+                },
+            },
+            {
+                $group: {
+                    _id: "$mystery_bag_id",
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+        const collectedMap = {};
+        collectedCounts.forEach((row) => {
+            collectedMap[String(row._id)] = row.count;
+        });
+
+        let items = bags.map((bag) => {
+            const coords = bag.location?.coordinates || [];
+            // App stores coordinates as [latitude, longitude]
+            const latitude = coords.length > 0 ? coords[0] : null;
+            const longitude = coords.length > 1 ? coords[1] : null;
+            const contentType = resolvePlayerContentType(bag);
+
+            return {
+                id: String(bag._id),
+                _id: bag._id,
+                preview_url: bag.drawing_file || bag.reward_file || "",
+                drawing_file: bag.drawing_file || "",
+                reward_file: bag.reward_file || "",
+                content_type: contentType,
+                bag_type: bag.bag_type || "collectible",
+                bag_title: bag.bag_title || "",
+                bag_description: bag.bag_description || "",
+                created_by: {
+                    id: bag.created_by?._id ? String(bag.created_by._id) : null,
+                    username: bag.created_by?.username || "",
+                    user_type: bag.created_by?.user_type || "",
+                },
+                created_at: bag.created_at,
+                location: {
+                    latitude,
+                    longitude,
+                },
+                collected_count: collectedMap[String(bag._id)] || 0,
+            };
+        });
+
+        if (search) {
+            const q = search.toLowerCase();
+            items = items.filter((item) =>
+                (item.created_by?.username || "").toLowerCase().includes(q)
+            );
+        }
+
+        return apiResponse.successResponseWithData(
+            res,
+            "Player map content retrieved successfully",
+            {
+                items,
+                total: items.length,
+            }
+        );
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * Admin: permanently remove player map content from the map and all galleries.
+ * Soft-deletes the bag and removes all user interactions (gallery entries).
+ */
+const adminDeletePlayerMapContent = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+
+        if (!ObjectId.isValid(id)) {
+            return apiResponse.ErrorResponse(res, "Invalid content id");
+        }
+
+        const existingBag = await MysteryBagModel.findOne({
+            _id: new ObjectId(id),
+            status: "active",
+        });
+
+        if (!existingBag) {
+            return apiResponse.notFoundResponse(
+                res,
+                "Player map content not found!"
+            );
+        }
+
+        await MysteryBagModel.findByIdAndUpdate(
+            id,
+            { status: "deleted" },
+            { new: true }
+        );
+
+        // Remove from every player's gallery / interaction history
+        await UserMysteryBagModel.deleteMany({
+            mystery_bag_id: new ObjectId(id),
+        });
+
+        // Clean up quiz options tied to this bag
+        await MysteryBagQuizModel.deleteMany({
+            mystery_bag_id: new ObjectId(id),
+        });
+
+        return apiResponse.successResponse(
+            res,
+            "Player map content deleted successfully"
+        );
+    } catch (err) {
+        next(err);
+    }
+};
+
 module.exports = {
     createMysteryBag,
     getNearbyMysteryBags,
@@ -551,5 +696,7 @@ module.exports = {
     getAllMysteryBags,
     deleteMysteryBag,
     getSingleMysteryBag,
-    getUserCollectedMysteryBags
+    getUserCollectedMysteryBags,
+    getPlayerMapContent,
+    adminDeletePlayerMapContent,
 };

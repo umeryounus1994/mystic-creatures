@@ -52,6 +52,19 @@ router.get(
     mysteryBagController.getAllMysteryBags
 );
 
+// MCU-7 — Admin: Player Map Content moderation (must be before /:id)
+router.get(
+    "/admin/player-map-content",
+    checkAdminUserAuth,
+    mysteryBagController.getPlayerMapContent
+);
+
+router.delete(
+    "/admin/player-map-content/:id",
+    checkAdminUserAuth,
+    mysteryBagController.adminDeletePlayerMapContent
+);
+
 router.delete(
     "/delete/:id",
     checkAdminUserAuth,
