@@ -26,6 +26,9 @@ const checkUserAuth = async (req, res, next) => {
           "Unauthorized User"
         );
       }
+      if (data.status === "blocked" || data.status === "deleted") {
+        return apiResponse.userBlockedResponse(res);
+      }
       req.user = data;
       next();
     } catch (error) {

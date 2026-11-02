@@ -106,6 +106,14 @@ exports.forbiddenResponse = (res, message) => {
   return res.status(403).json(data);
 };
 
+exports.userBlockedResponse = (res) => {
+  return res.status(403).json({
+    success: false,
+    code: "USER_BLOCKED",
+    message: "Your account has been blocked.",
+  });
+};
+
 exports.paymentRequiredResponse = (res, message, data = {}) => {
   return res.status(402).json({
     success: false,

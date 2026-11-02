@@ -821,6 +821,10 @@ const loginUser = async (req, res, next) => {
       );
     }
 
+    if (user.status === "blocked" || user.status === "deleted") {
+      return apiResponse.userBlockedResponse(res);
+    }
+
     if (
       (user.user_type === "partner" || user.user_type === "family") &&
       user.email_verified === false
@@ -1200,10 +1204,15 @@ const updateUserStatus = async (req, res, next) => {
       );
     }
 
-    // Update user status
+    // Update user status; invalidate token when blocking so old JWTs stop working
+    const updatePayload = { status };
+    if (status === "blocked") {
+      updatePayload.access_token = "";
+    }
+
     const updatedUser = await UserModel.findByIdAndUpdate(
       id,
-      { status: status },
+      updatePayload,
       { new: true }
     ).select('-password -access_token');
 
