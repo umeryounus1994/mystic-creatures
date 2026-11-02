@@ -1,5 +1,6 @@
 const MysteryBagModel = require("../models/mysterybag.model");
 const UserMysteryBagModel = require("../models/usermysterybag.model");
+const UserModel = require("../models/user.model");
 const apiResponse = require("../../../helpers/apiResponse");
 const { ObjectId } = require('mongodb');
 const mysteryBagHelper = require("../../../helpers/mysterybag");
@@ -9,6 +10,7 @@ const {
   getActiveBagFilter,
   isViewOnlyBagExpired,
 } = require("../../../utils/viewOnlyBag");
+const { MAGIC_ART_COLLECT_CRYPES } = require("../../../utils/constants");
 
 const parseCollectibleFlag = (value) => {
     if (value === undefined || value === null || value === "") {
@@ -176,10 +178,23 @@ const interactWithMysteryBag = async (req, res, next) => {
         if (existingInteraction) {
             return apiResponse.ErrorResponse(res, "Already interacted with this mystery bag");
         }
+
+        const creatorId = mysteryBag.created_by
+            ? String(mysteryBag.created_by._id || mysteryBag.created_by)
+            : null;
+        const isOwnContent = creatorId && creatorId === String(req.user.id);
         
         // Validate action based on bag type
         if (mysteryBag.bag_type === "view-only" && action === "collect") {
             return apiResponse.ErrorResponse(res, "This mystery bag is view-only");
+        }
+
+        // Artist cannot collect their own Magic Art / map bag
+        if (action === "collect" && isOwnContent) {
+            return apiResponse.forbiddenResponse(
+                res,
+                "You cannot collect your own picture"
+            );
         }
         
         let status = action === "collect" ? "collected" : "viewed";
@@ -194,6 +209,12 @@ const interactWithMysteryBag = async (req, res, next) => {
             });
             
             if (correctOption && correctOption._id.toString() === user_answer) {
+                if (isOwnContent) {
+                    return apiResponse.forbiddenResponse(
+                        res,
+                        "You cannot collect your own picture"
+                    );
+                }
                 status = "collected";
                 responseMessage = "Correct answer! Mystery bag collected successfully";
                 isCorrect = true;
@@ -213,6 +234,18 @@ const interactWithMysteryBag = async (req, res, next) => {
         });
         
         await userInteraction.save();
+
+        let crypesAwarded = 0;
+        let exploringPointsTotal = null;
+        if (status === "collected") {
+            crypesAwarded = MAGIC_ART_COLLECT_CRYPES;
+            const updatedUser = await UserModel.findByIdAndUpdate(
+                req.user.id,
+                { $inc: { exploring_points: crypesAwarded } },
+                { new: true }
+            ).select("exploring_points");
+            exploringPointsTotal = updatedUser?.exploring_points ?? null;
+        }
         
         return apiResponse.successResponseWithData(
             res,
@@ -222,7 +255,10 @@ const interactWithMysteryBag = async (req, res, next) => {
                 drawing_file: mysteryBag.drawing_file,
                 reward_file: mysteryBag.reward_file,
                 action: status,
-                is_correct: isCorrect
+                is_correct: isCorrect,
+                crypes_awarded: crypesAwarded,
+                crypes: crypesAwarded,
+                exploring_points: exploringPointsTotal,
             }
         );
     } catch (err) {

@@ -1,6 +1,7 @@
 const { ObjectId } = require("mongodb");
 const apiResponse = require("../../../helpers/apiResponse");
 const UserMysteryBagModel = require("../models/usermysterybag.model");
+const { MAGIC_ART_COLLECT_CRYPES } = require("../../../utils/constants");
 
 /**
  * Personal Magic Art Gallery — drawings the logged-in user collected from the map
@@ -31,7 +32,8 @@ const getCollectedMagicArt = async (req, res, next) => {
           drawing_file_url: bag.drawing_file || "",
           creator_username: bag.created_by?.username || "",
           collected_at: item.created_at,
-          reward_points: bag.reward_points != null ? bag.reward_points : 0,
+          reward_points:
+            bag.reward_points != null ? bag.reward_points : MAGIC_ART_COLLECT_CRYPES,
           reward_file: bag.reward_file || "",
           bag_title: bag.bag_title || "",
           bag_type: bag.bag_type || "collectible",
