@@ -12,6 +12,11 @@ const HuntPurchaseModel = require("../models/huntpurchases.model");
 var huntHelper = require("../../../helpers/hunt");
 const userModel = require("../models/user.model");
 const logger = require('../../../middlewares/logger');
+const {
+  normalizeLanguage,
+  normalizeDefaultImage,
+  normalizePriceLevel,
+} = require("../../../helpers/mcu10Constants");
 
 
 const createTreasureHuntAdmin = async (req, res, next) => {
@@ -33,6 +38,10 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       );
     }
     var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
+    const isPremium =
+      req.body?.premium_hunt === true ||
+      req.body?.premium_hunt === "true" ||
+      req.body?.premium_hunt === "Yes";
     var huntdata = {
       treasure_hunt_title: req.body?.treasure_hunt_title,
       no_of_xp: req.body?.no_of_xp,
@@ -46,9 +55,17 @@ const createTreasureHuntAdmin = async (req, res, next) => {
       premium_hunt: req.body?.premium_hunt,
       have_qr: req.body?.have_qr,
       hunt_package: req.body?.hunt_package != "null" ? req.body?.hunt_package : undefined,
+      language: normalizeLanguage(req.body?.language),
+      default_image: normalizeDefaultImage(req.body?.default_image),
+      price_level: isPremium ? normalizePriceLevel(req.body?.price_level) : undefined,
       reward_file: req.files['reward'] ? req.files['reward'][0].location : "",
       created_by : req.user.id
     };
+    if (req.files?.treasure_hunt_image?.[0]?.location) {
+      huntdata.treasure_hunt_image = req.files.treasure_hunt_image[0].location;
+    } else if (req.files?.image?.[0]?.location) {
+      huntdata.treasure_hunt_image = req.files.image[0].location;
+    }
     const createdItem = new TreasureHuntModel(huntdata);
 
     createdItem.save(async (err) => {
@@ -115,6 +132,10 @@ const updateTreasureHuntAdmin = async (req, res, next) => {
       );
     }
     var location = { type: 'Point', coordinates: [req.body?.hunt_latitude, req.body?.hunt_longitude] };
+    const isPremiumUpdate =
+      req.body?.premium_hunt === true ||
+      req.body?.premium_hunt === "true" ||
+      req.body?.premium_hunt === "Yes";
     var huntdata = {
       treasure_hunt_title: req.body?.treasure_hunt_title,
       no_of_xp: req.body?.no_of_xp,
@@ -129,7 +150,17 @@ const updateTreasureHuntAdmin = async (req, res, next) => {
       reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.reward_file,
       qr_code: req.body?.qr_code,
       have_qr: req.body?.have_qr,
+      language: normalizeLanguage(req.body?.language),
+      default_image: normalizeDefaultImage(req.body?.default_image),
+      price_level: isPremiumUpdate
+        ? normalizePriceLevel(req.body?.price_level)
+        : undefined,
     };
+    if (req.files?.treasure_hunt_image?.[0]?.location) {
+      huntdata.treasure_hunt_image = req.files.treasure_hunt_image[0].location;
+    } else if (req.files?.image?.[0]?.location) {
+      huntdata.treasure_hunt_image = req.files.image[0].location;
+    }
     await TreasureHuntModel.findByIdAndUpdate(
       req.params.id,
       huntdata,

@@ -152,6 +152,7 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 const { connectDB } = require("./config/connectDB.config");
 const indexRouter = require("./src/v1/routes");
 const apiRouter = require("./src/v1/routes/api");
+const apiRouterV2 = require("./src/v2/routes/api");
 const apiResponse = require("./helpers/apiResponse");
 const { initializeCronJobs } = require("./config/cronJobs.config");
 
@@ -162,6 +163,8 @@ initializeCronJobs();
 
 app.use("/", indexRouter);
 app.use("/api/v1/", apiRouter);
+/** MCU-10 Treasure Hunt / Map Hunt — new clients only; v1 unchanged */
+app.use("/api/v2/", apiRouterV2);
 
 
 

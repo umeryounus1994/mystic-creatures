@@ -8,6 +8,10 @@ function buildQuizUploadFields(maxOptions = 50) {
     fields.push({ name: `option${i}`, maxCount: 1 });
   }
   fields.push({ name: "reward", maxCount: 1 });
+  // MCU-10 optional list image (hunt / mission)
+  fields.push({ name: "treasure_hunt_image", maxCount: 1 });
+  fields.push({ name: "mission_image", maxCount: 1 });
+  fields.push({ name: "image", maxCount: 1 });
   return fields;
 }
 

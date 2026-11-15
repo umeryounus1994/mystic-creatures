@@ -38,6 +38,18 @@ const missionSchema = new mongoose.Schema(
             enum: ["draft","active", "deleted"],
             default: "draft",
         },
+        /** MCU-10: content language for Map Hunt filtering */
+        language: {
+            type: String,
+            enum: ["german", "english"],
+            default: "german",
+        },
+        /** MCU-10: fallback list image when no custom upload */
+        default_image: {
+            type: String,
+            enum: ["chest", "map", "compass", "door"],
+            default: "chest",
+        },
         created_by: {  
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'User'

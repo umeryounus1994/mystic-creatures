@@ -11,6 +11,10 @@ const UserMissionModel = require("../models/usermission.model");
 var missionHelper = require("../../../helpers/mission");
 const userModel = require("../models/user.model");
 const logger = require('../../../middlewares/logger');
+const {
+  normalizeLanguage,
+  normalizeDefaultImage,
+} = require("../../../helpers/mcu10Constants");
 
 
 const createMissionAdmin = async (req, res, next) => {
@@ -36,8 +40,15 @@ const createMissionAdmin = async (req, res, next) => {
       mission_end_date: req.body?.mission_end_date,
       mission_location: location,
       reward_file: req.files['reward'] ? req.files['reward'][0].location : "",
+      language: normalizeLanguage(req.body?.language),
+      default_image: normalizeDefaultImage(req.body?.default_image),
       created_by: req.user.id
     };
+    if (req.files?.mission_image?.[0]?.location) {
+      missiondata.mission_image = req.files.mission_image[0].location;
+    } else if (req.files?.image?.[0]?.location) {
+      missiondata.mission_image = req.files.image[0].location;
+    }
     const createdItem = new MissionModel(missiondata);
 
     createdItem.save(async (err) => {
@@ -115,8 +126,15 @@ const updateMissionAdmin = async (req, res, next) => {
       mission_start_date: req.body?.mission_start_date,
       mission_end_date: req.body?.mission_end_date,
       mission_location: location,
-      reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.rewardFile
+      reward_file: req.files['reward'] ? req.files['reward'][0].location : req.body.rewardFile,
+      language: normalizeLanguage(req.body?.language),
+      default_image: normalizeDefaultImage(req.body?.default_image),
     };
+    if (req.files?.mission_image?.[0]?.location) {
+      missiondata.mission_image = req.files.mission_image[0].location;
+    } else if (req.files?.image?.[0]?.location) {
+      missiondata.mission_image = req.files.image[0].location;
+    }
     await MissionModel.findByIdAndUpdate(
       req.params.id,
       missiondata,

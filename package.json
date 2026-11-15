@@ -10,7 +10,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "backfill-partner-slugs": "node scripts/backfill-partner-slugs.js"
+    "backfill-partner-slugs": "node scripts/backfill-partner-slugs.js",
+    "mcu10-backfill": "node scripts/mcu10-backfill-language-default-image.js"
   },
   "engines": {
     "node": "16.x"

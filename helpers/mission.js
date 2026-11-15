@@ -116,6 +116,8 @@ module.exports.getAllAdminMissions = async function (data) {
                         mythica_ID: element?.mythica_ID?.creature_id,
                         status: element.status,
                         mission_image: element.mission_image,
+                        language: element?.language || "german",
+                        default_image: element?.default_image || "chest",
                         quiz: filteredArray.length > 0 ? quizzesWithOptions : [],
                         created_at: element.created_at
                     }
@@ -169,6 +171,9 @@ module.exports.getSingleMission = async function (data) {
         mythica: data.mythica_ID?.creature_name,
         mythica_ID: data?.mythica_ID?.creature_id,
         status: data.status,
+        mission_image: data.mission_image,
+        language: data?.language || "german",
+        default_image: data?.default_image || "chest",
         mission_start_date: data.mission_start_date,
         mission_end_date: data.mission_end_date,
         quiz: filteredArray.length > 0 ? filteredArray : [],

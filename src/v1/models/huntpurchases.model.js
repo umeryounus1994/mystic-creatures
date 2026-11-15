@@ -13,7 +13,14 @@ const huntPurchasesSchema = new mongoose.Schema(
             type: String,
             type: mongoose.Schema.Types.ObjectId, ref: 'TreasureHunt'
         },
-        package: { type: String, enum: ["Bronze","Silver","Gold"], default: 'Bronze' },
+        /** Legacy Bronze/Silver/Gold — kept for v1 purchases */
+        package: { type: String, default: "Bronze" },
+        /** MCU-10 price level e.g. "4.99" */
+        price_level: { type: String, required: false, default: undefined },
+        /** Store product id for the price level */
+        store_product_id: { type: String, required: false, default: undefined },
+        /** Optional store purchase token / receipt id */
+        purchase_token: { type: String, required: false, default: undefined },
         status: {
             type: String,
             enum: ["active", "deleted"],
